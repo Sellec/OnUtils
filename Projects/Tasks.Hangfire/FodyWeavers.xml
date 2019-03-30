@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
+  <Costura CreateTemporaryAssemblies="true">
+    <IncludeAssemblies>
+      CronExpressionDescriptor
+      Hangfire.Core
+      Hangfire.SqlServer
+      Microsoft.Owin
+      NCrontab.Signed
+      Owin
+    </IncludeAssemblies>
+  </Costura>
+</Weavers>

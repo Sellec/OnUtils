@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>OnUtils.Application</PackageId>
+    <Description>Предоставляет модульное ядро приложения с поддержкой DI.</Description>
+    <Company>TraceStudio</Company>
+    <Product>OnUtils</Product>
+    <Authors>Sellec</Authors>
+    <Version>0.1.1</Version>
+    <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
+    <AssemblyName>OnUtils.Application</AssemblyName>
+    <RootNamespace>OnUtils.Application</RootNamespace>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\..\TraceStudio\SigningKeys\TraceUtils.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <IncludeSymbols>True</IncludeSymbols>
+    <IncludeSource>True</IncludeSource>
+    <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIconUrl>http://tracestudio.ru/favicon.ico</PackageIconUrl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\OnUtils.Application.xml</DocumentationFile>
+    <OutputPath>bin\Debug</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\OnUtils.Application.xml</DocumentationFile>
+    <OutputPath>bin\Release</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Core\**" />
+    <Compile Remove="Managers\**" />
+    <Compile Remove="Utils\**" />
+    <EmbeddedResource Remove="Core\**" />
+    <EmbeddedResource Remove="Managers\**" />
+    <EmbeddedResource Remove="Utils\**" />
+    <None Remove="Core\**" />
+    <None Remove="Managers\**" />
+    <None Remove="Utils\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Application.csproj.vspscc" />
+    <None Remove="ApplicationCore.csproj.vspscc" />
+    <None Remove="Core.csproj.vspscc" />
+    <None Remove="FodyWeavers.xml" />
+    <None Remove="TraceStudio.Web.Core.xml" />
+    <None Remove="Web.Core.csproj.vspscc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.NetStandard.csproj" />
+  </ItemGroup>
+  <Target Name="RemovePackage" AfterTargets="Build">
+    <Exec Command="del &quot;$(ProjectDir)bin\$(ConfigurationName)\*.nupkg&quot;" />
+  </Target>
+  <Target Name="CopyPackage" AfterTargets="Pack">
+    <Exec Command="xcopy /y &quot;$(ProjectDir)bin\$(ConfigurationName)\*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;&#xD;&#xA;" />
+    <ItemGroup>
+      <RenameFile Include="$(SolutionDir)..\Build\$(ConfigurationName)\*.symbols.nupkg" />
+    </ItemGroup>
+    <Message Text="Move: @(RenameFile) -&gt; @(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" Importance="High" />
+    <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" />
+  </Target>
+</Project>

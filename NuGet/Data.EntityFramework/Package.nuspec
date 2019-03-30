@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package>
+  <metadata minClientVersion="3.3">
+    <id>OnUtils.Data.EntityFramework</id>
+    <version>0.1.1</version>
+    <authors>Sellec</authors>
+    <owners>Sellec</owners>
+    <description>
+      Реализация абстракций уровня данных для OnUtils на основе EntityFramework.
+    </description>
+    <releaseNotes>
+    </releaseNotes>
+    <language>ru-RU</language>
+    <projectUrl>https://github.com/Sellec/OnUtils</projectUrl>
+    <iconUrl>http://tracestudio.ru/favicon.ico</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</licenseUrl>
+    <copyright>Copyright © Петров Дмитрий 2016 (Sellec)</copyright>
+    <tags>Repository, Startup, .Net 4.0+</tags>
+    <dependencies>
+      <group targetFramework="net40">
+        <dependency id="OnUtils" version="0.1.1" />
+        <dependency id="EntityFramework" version="6.2.0" />
+      </group>
+      <group targetFramework="netstandard2.0">
+        <dependency id="OnUtils" version="0.1.1" />
+        <dependency id="Microsoft.EntityFrameworkCore" version="2.2.3" />
+        <dependency id="Microsoft.EntityFrameworkCore.SqlServer" version="2.2.3" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="lib\" target="lib" />
+    <file src="tools\" target="tools" />
+    <file src="content\" target="content" />
+    <file src="src\**\*.cs" target="src" />
+  </files>
+</package>

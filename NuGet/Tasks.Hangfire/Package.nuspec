@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>OnUtils.Tasks.Hangfire</id>
+    <version>0.1.1</version>
+    <authors>Sellec</authors>
+    <owners>Sellec</owners>
+    <description>
+      Реализация абстракций для фоновых задач для OnUtils на основе Hangfire.
+    </description>
+    <releaseNotes>
+    </releaseNotes>
+    <language>ru-RU</language>
+    <projectUrl>https://github.com/Sellec/OnUtils</projectUrl>
+    <iconUrl>http://tracestudio.ru/favicon.ico</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</licenseUrl>
+    <copyright>Copyright © Петров Дмитрий 2016 (Sellec)</copyright>
+    <tags>Repository, Startup, .Net 4.5+</tags>
+    <dependencies>
+      <dependency id="OnUtils" version="0.1.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="lib\" target="lib" />
+    <file src="tools\" target="tools" />
+    <file src="content\" target="content" />
+    <file src="src\**\*.cs" target="src" />
+  </files>
+</package>

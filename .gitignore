@@ -1,0 +1,30 @@
+﻿################################################################################
+# Данный GITIGNORE-файл был автоматически создан Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Build/
+/BuildSolutions/.vs
+/External Libraries/**/bin
+/External Libraries/**/obj
+/NuGet/**/bin
+/NuGet/**/obj
+/NuGet/**/obj40
+/NuGet/**/lib
+/NuGet/**/src
+/NuGet/**/NuGet.log
+/NuGet/**/*.nupkg
+/NuGet/**/*.nupkg.bak
+
+/Projects/**/bin
+/Projects/**/obj
+/Projects/**/obj40
+/Projects/**/objMVC
+/Projects/**/FodyWeavers.xsd
+/Projects/**/*proj.user
+/Projects/**/Symlinks
+
+/Tests/**/bin
+/Tests/**/obj
+/Tests/**/*proj.user
+

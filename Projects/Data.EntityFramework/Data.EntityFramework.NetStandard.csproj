@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>OnUtils.Data.EntityFramework</AssemblyName>
+    <RootNamespace>OnUtils.Data</RootNamespace>
+    <PackageId>OnUtils.Data.EntityFramework</PackageId>
+    <Authors>Sellec</Authors>
+    <Version>0.1.1</Version>
+    <Company>TraceStudio</Company>
+    <Product>TraceUtils</Product>
+    <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>
+    <Copyright>Copyright © Петров Дмитрий 2016 (Sellec)</Copyright>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\..\TraceStudio\SigningKeys\TraceUtils.snk</AssemblyOriginatorKeyFile>
+    <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug</OutputPath>
+    <DocumentationFile>bin\Debug\OnUtils.Data.EntityFramework.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>bin\Release</OutputPath>
+    <DocumentationFile>bin\Release\OnUtils.Data.EntityFramework.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ef\**" />
+    <Compile Remove="EntityFramework\**" />
+    <Compile Remove="obj40\**" />
+    <EmbeddedResource Remove="ef\**" />
+    <EmbeddedResource Remove="EntityFramework\**" />
+    <EmbeddedResource Remove="obj40\**" />
+    <None Remove="ef\**" />
+    <None Remove="EntityFramework\**" />
+    <None Remove="obj40\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="FodyWeavers.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="EntityFramework\Internal\DapperColumnAttributeTypeMapper.cs" />
+    <Compile Include="EntityFramework\Internal\DBHelpers.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\DataService.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\DBQueryProvider.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\DataContextInternal.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\ModelAccessorInternal.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\ModelAccessorExtensions.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\QueryInternal.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\RepositoryEntryInternal.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\RepositoryInternal.cs" />
+    <Compile Include="EntityFramework\Internal\ExpressionExtensions.cs" />
+    <Compile Include="EntityFramework\Internal\TransactionScopeInternal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="3.3.3" />
+    <PackageReference Include="Dapper.StrongName" Version="1.50.2" />
+    <PackageReference Include="Fody" Version="4.2.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.NetStandard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>
