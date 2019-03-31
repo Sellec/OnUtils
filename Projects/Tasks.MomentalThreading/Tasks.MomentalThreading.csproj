@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>OnUtils.Tasks.MomentalThreading</AssemblyName>
+    <Description>Реализация абстракций для фоновых задач на основе встроенных средств для работы с потоками .Net Framework. Не сохраняет задачи при остановке.</Description>
+    <Authors>Sellec</Authors>
+    <Company>Sellec</Company>
+    <Product>OnUtils.Tasks.MomentalThreading</Product>
+    <Copyright>Copyright © Петров Дмитрий 2016 (Sellec)</Copyright>
+    <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>0.1.1.1</Version>
+    <PackageIconUrl>http://tracestudio.ru/favicon.ico</PackageIconUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\..\TraceStudio\SigningKeys\TraceUtils.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>True</IncludeSymbols>
+    <IncludeSource>True</IncludeSource>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug</OutputPath>
+    <DocumentationFile>bin\Debug\OnUtils.Tasks.MomentalThreading.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>bin\Release</OutputPath>
+    <DocumentationFile>bin\Release\OnUtils.Tasks.MomentalThreading.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.NetStandard.csproj" />
+  </ItemGroup>
+  <Target Name="RemovePackage" AfterTargets="Build">
+    <Exec Command="del &quot;$(ProjectDir)bin\$(ConfigurationName)\*.nupkg&quot;" />
+  </Target>
+  <Target Name="CopyPackage" AfterTargets="Pack">
+    <Exec Command="xcopy /y &quot;$(ProjectDir)bin\$(ConfigurationName)\*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;&#xD;&#xA;" />
+    <ItemGroup>
+      <RenameFile Include="$(SolutionDir)..\Build\$(ConfigurationName)\*.symbols.nupkg" />
+    </ItemGroup>
+    <Message Text="Move: @(RenameFile) -&gt; @(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" Importance="High" />
+    <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" />
+  </Target>
+
+</Project>

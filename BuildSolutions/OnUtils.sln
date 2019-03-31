@@ -46,6 +46,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsole.NetCore", "..\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework", "..\Tests\TestConsole.NetFramework\TestConsole.NetFramework.csproj", "{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{4413870B-8A01-4EF5-B944-F409839D414D} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{4B28218E-9A51-4D1E-8865-C2050DD1D144} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
+		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EED38A6B-FD8B-4735-9632-1F78301B6F9F}
