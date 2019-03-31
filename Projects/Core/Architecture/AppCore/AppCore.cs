@@ -407,7 +407,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public TQuery Create<TQuery>() where TQuery : class, IComponentTransient<TAppCore>
         {
-            return Create<TQuery>(null);
+            return Create<TQuery>((Action<TQuery>)null);
         }
 
         /// <summary>
@@ -426,6 +426,45 @@ namespace OnUtils.Architecture.AppCore
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             var instance = _objectProvider.GetInstances<TQuery>(false, true)?.FirstOrDefault();
+            onCreateAction?.Invoke(instance);
+            return instance;
+        }
+
+        /// <summary>
+        /// Возвращает новый экземпляр компонента ядра на базе типа <paramref name="queryType"/>, при этом тип <paramref name="queryType"/> должен наследоваться от <typeparamref name="TQueryBase"/>.
+        /// </summary>
+        /// <param name="queryType">Это query-тип, для которого задаются привязки типов (см. <see cref="IBindingsCollection{TAppCore}"/>).</param>
+        /// <returns>
+        /// Возвращает экземпляр компонента ядра или null, если не задана привязка типа или не удалось создать экземпляр компонента. 
+        /// Если была задана привязка нескольких типов, то возвращается экземпляр первого заданного типа (см. <see cref="BindingsCollection{TAppCore}.SetTransient{TTransient}(Type[])"/>).
+        /// </returns>
+        /// <exception cref="ArgumentException">Возникает, тип <paramref name="queryType"/> не наследуется от <typeparamref name="TQueryBase"/>.</exception>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        public TQueryBase Create<TQueryBase>(Type queryType) where TQueryBase : class, IComponentTransient<TAppCore>
+        {
+            return Create<TQueryBase>(queryType, null);
+        }
+
+        /// <summary>
+        /// Возвращает новый экземпляр компонента ядра на базе типа <paramref name="queryType"/>, при этом тип <paramref name="queryType"/> должен наследоваться от <typeparamref name="TQueryBase"/>.
+        /// </summary>
+        /// <param name="queryType">Это query-тип, для которого задаются привязки типов (см. <see cref="IBindingsCollection{TAppCore}"/>).</param>
+        /// <param name="onCreateAction">Метод, вызываемый перед возвратом компонента. Может быть null.</param>
+        /// <returns>
+        /// Возвращает экземпляр компонента ядра или null, если не задана привязка типа или не удалось создать экземпляр компонента. 
+        /// Если была задана привязка нескольких типов, то возвращается экземпляр первого заданного типа (см. <see cref="BindingsCollection{TAppCore}.SetTransient{TTransient}(Type[])"/>).
+        /// </returns>
+        /// <exception cref="ArgumentException">Возникает, тип <paramref name="queryType"/> не наследуется от <typeparamref name="TQueryBase"/>.</exception>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        public TQueryBase Create<TQueryBase>(Type queryType, Action<TQueryBase> onCreateAction) where TQueryBase : class, IComponentTransient<TAppCore>
+        {
+            if (!typeof(TQueryBase).IsAssignableFrom(queryType)) throw new ArgumentException($"Тип {nameof(queryType)} должен наследоваться от {nameof(TQueryBase)}.", nameof(queryType));
+            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
+
+            var instance = (TQueryBase)_objectProvider.GetInstances(queryType, false, true)?.FirstOrDefault();
             onCreateAction?.Invoke(instance);
             return instance;
         }
