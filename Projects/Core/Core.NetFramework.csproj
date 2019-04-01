@@ -51,7 +51,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\..\TraceStudio\SigningKeys\TraceUtils.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -126,7 +126,6 @@
     <Compile Include="Tasks\TasksManager.cs" />
     <Compile Include="Tasks\Cron.cs" />
     <Compile Include="Tasks\ITasksService.cs" />
-    <Compile Include="Types\TupleE.cs" />
     <Compile Include="Types\TypeHelpers.cs" />
     <Compile Include="Types\TypesExtensions.cs" />
     <Compile Include="Utils\ExpressionHelper.cs" />

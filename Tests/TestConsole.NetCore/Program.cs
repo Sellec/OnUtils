@@ -6,6 +6,7 @@ namespace TestConsole.NetCore
     using OnUtils.Data;
     using OnUtils.Data.EntityFramework;
     using OnUtils.Data.UnitOfWork;
+    using OnUtils.Tasks;
     using System.ComponentModel.DataAnnotations;
     using System.ComponentModel.DataAnnotations.Schema;
 
@@ -68,15 +69,23 @@ namespace TestConsole.NetCore
         static void Main(string[] args)
         {
             DataAccessManager.SetConnectionStringResolver(new res());
+            TasksManager.SetDefaultService(new OnUtils.Tasks.MomentalThreading.TasksService());
 
-            var d = new ccc();
-            var ddd = d.Repo1.Where(x => x.IdModule >= 1).ToList();
-            ddd.First().IdUserChange = 123133;
-            d.SaveChanges();
+            TasksManager.SetTask("12313", Cron.Minutely(), () => TestRun());
+
+            //var d = new ccc();
+            //var ddd = d.Repo1.Where(x => x.IdModule >= 1).ToList();
+            //ddd.First().IdUserChange = 123133;
+            //d.SaveChanges();
 
             Console.WriteLine("Hello World!");
 
             Console.ReadKey();
+        }
+
+        static void TestRun()
+        {
+            Console.WriteLine($"{DateTime.Now}");
         }
     }
 }

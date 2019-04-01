@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Projects\Data.EntityFramework\Data.EntityFramework.NetStandard.csproj" />
+    <ProjectReference Include="..\..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj" />
   </ItemGroup>
 
 </Project>

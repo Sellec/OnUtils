@@ -12,7 +12,7 @@
     <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>
     <Copyright>Copyright © Петров Дмитрий 2016 (Sellec)</Copyright>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\..\TraceStudio\SigningKeys\TraceUtils.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
     <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
