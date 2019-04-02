@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OnUtils.Application.Modules
 {
     /// <summary>
     /// Некоторые константы, связанные с модулями.
     /// </summary>
-    public static class Constants
+    public static class ModulesConstants
     {
         /// <summary>
         /// Обозначает разрешение на управление модулем.

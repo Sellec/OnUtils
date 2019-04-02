@@ -81,8 +81,8 @@ namespace OnUtils.Application.Modules
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             Permission permData = null;
-            if (!_permissions.TryGetValue(key, out permData) && key != Constants.PermissionAccessUser) return CheckPermissionResult.PermissionNotFound;
-            if (key == Constants.PermissionAccessUser && !context.IsGuest) return CheckPermissionResult.Allowed;
+            if (!_permissions.TryGetValue(key, out permData) && key != ModulesConstants.PermissionAccessUser) return CheckPermissionResult.PermissionNotFound;
+            if (key == ModulesConstants.PermissionAccessUser && !context.IsGuest) return CheckPermissionResult.Allowed;
             if (!permData.IgnoreSuperuser && context.IsSuperuser) return CheckPermissionResult.Allowed;
 
             var userperms = context.Permissions;
