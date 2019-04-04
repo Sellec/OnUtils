@@ -63,11 +63,11 @@
     <Exec Command="del &quot;$(ProjectDir)bin\$(ConfigurationName)\*.nupkg&quot;" />
   </Target>
   <Target Name="CopyPackage" AfterTargets="Pack">
-    <Exec Command="xcopy /y &quot;$(ProjectDir)bin\$(ConfigurationName)\*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;&#xD;&#xA;" />
+    <Exec Command="xcopy /y &quot;$(ProjectDir)bin\$(ConfigurationName)\*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;&#xD;&#xA;" ContinueOnError="WarnAndContinue" />
     <ItemGroup>
       <RenameFile Include="$(SolutionDir)..\Build\$(ConfigurationName)\*.symbols.nupkg" />
     </ItemGroup>
     <Message Text="Move: @(RenameFile) -&gt; @(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" Importance="High" />
-    <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" />
+    <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" ContinueOnError="WarnAndContinue" />
   </Target>
 </Project>
