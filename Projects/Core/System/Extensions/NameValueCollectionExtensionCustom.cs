@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace System
 {
     /// <summary>
     /// </summary>
-    public static class NameValueCollectionExtension
+    public static class NameValueCollectionExtensionCustom
     {
         /// <summary>
         /// Проверяет, существует ли указанный ключ в коллекции.
@@ -17,7 +14,7 @@ namespace System
         /// <param name="collection"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public static bool HasKey(this System.Collections.Specialized.NameValueCollection collection, string key)
+        public static bool HasKey(this NameValueCollection collection, string key)
         {
             var d = collection.AllKeys.Contains(key);
 

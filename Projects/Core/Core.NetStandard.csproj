@@ -60,6 +60,7 @@
     <Compile Remove="Properties\AssemblyInfo.cs" />
     <Compile Remove="Properties\Resources.Designer.cs" />
     <Compile Remove="System\Extensions\NameValueCollectionExtension.cs" />
+    <Compile Remove="System\Extensions\NameValueCollectionExtensionCustom.cs" />
   </ItemGroup>
 
   <ItemGroup>
