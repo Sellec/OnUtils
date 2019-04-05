@@ -127,6 +127,14 @@ namespace OnUtils.Architecture.AppCore
             }
         }
 
+        /// <summary>
+        /// Возвращает состояние ядра.
+        /// </summary>
+        public CoreComponentState GetState()
+        {
+            return _started ? CoreComponentState.Started : (_stopped ? CoreComponentState.Stopped : CoreComponentState.None);
+        }
+
         #region Привязка типов
         private void BindingsApply(BindingsCollection<TAppCore> collection)
         {

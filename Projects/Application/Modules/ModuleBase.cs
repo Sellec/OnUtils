@@ -82,7 +82,7 @@ namespace OnUtils.Application.Modules
 
             Permission permData = null;
             if (!_permissions.TryGetValue(key, out permData) && key != ModulesConstants.PermissionAccessUser) return CheckPermissionResult.PermissionNotFound;
-            if (key == ModulesConstants.PermissionAccessUser && !context.IsGuest) return CheckPermissionResult.Allowed;
+            if (key == ModulesConstants.PermissionAccessUser) return context.IsGuest ? CheckPermissionResult.Denied : CheckPermissionResult.Allowed;
             if (!permData.IgnoreSuperuser && context.IsSuperuser) return CheckPermissionResult.Allowed;
 
             var userperms = context.Permissions;
