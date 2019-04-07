@@ -56,7 +56,7 @@ namespace OnUtils.Application.Modules
         public void RegisterPermission(Guid key, string caption, string description = null, bool ignoreSuperuser = false)
         {
             if (string.IsNullOrEmpty(caption)) throw new ArgumentNullException(nameof(caption));
-            _permissions[key] = new Permission() { Caption = caption, Description = description, IgnoreSuperuser = ignoreSuperuser };
+            _permissions[key] = new Permission() { Caption = caption, Description = description, IgnoreSuperuser = ignoreSuperuser, Key = key };
         }
 
         /// <summary>
