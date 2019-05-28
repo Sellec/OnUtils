@@ -24,7 +24,7 @@
   <files>
     <file src="lib\" target="lib" />
     <file src="tools\" target="tools" />
-    <file src="content\" target="content" />
+    <!-- <file src="content\" target="content" /> -->
     <file src="src\**\*.cs" target="src" />
   </files>
 </package>
