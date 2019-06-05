@@ -110,7 +110,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// </summary>
         public IQuery<TEntity> AsNoTracking()
         {
-            return new QueryInternal<TEntity>((IQuery<TEntity>)_asNoTracking.MakeGenericMethod(typeof(TEntity)).Invoke(null,new object[] { DBQuery }), Repository);
+            return new QueryInternal<TEntity>((IQueryable<TEntity>)_asNoTracking.MakeGenericMethod(typeof(TEntity)).Invoke(null,new object[] { DBQuery }), Repository);
         }
 
         /// <summary>
