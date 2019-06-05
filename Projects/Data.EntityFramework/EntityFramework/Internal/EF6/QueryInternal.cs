@@ -81,6 +81,8 @@ namespace OnUtils.Data.EntityFramework.Internal
 
     class QueryInternal<TEntity> : QueryInternal, IQuery<TEntity>, IOrderedQueryable<TEntity>
     {
+        private static System.Reflection.MethodInfo _asNoTracking = typeof(QueryableExtensions).GetMethods().Where(x => x.Name == nameof(QueryableExtensions.AsNoTracking) && x.IsGenericMethod).First();
+
         public QueryInternal(DbQuery query, IRepository repo) : base(query, repo)
         {
         }
@@ -108,7 +110,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// </summary>
         public IQuery<TEntity> AsNoTracking()
         {
-            return new QueryInternal<TEntity>(QueryableExtensions.AsNoTracking(DBQuery as IQueryable) as DbQuery, Repository);
+            return new QueryInternal<TEntity>((IQuery<TEntity>)_asNoTracking.MakeGenericMethod(typeof(TEntity)).Invoke(null,new object[] { DBQuery }), Repository);
         }
 
         /// <summary>
