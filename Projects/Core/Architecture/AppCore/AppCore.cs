@@ -314,12 +314,15 @@ namespace OnUtils.Architecture.AppCore
                     return new
                     {
                         assembly,
-                        Instances = assemblyStartupTypes.Select(x => new
-                        {
-                            Instance = Activator.CreateInstance(x.Type),
-                            x.ConfigureBindings,
-                            x.ExecuteStart
-                        }).ToList()
+                        Instances = assemblyStartupTypes.
+                            Select(x => new
+                            {
+                                Instance = Activator.CreateInstance(x.Type),
+                                x.ConfigureBindings,
+                                x.ExecuteStart
+                            }).
+                            OrderBy(x => x.GetType().FullName).
+                            ToList()
                     };
                 }).
                 Where(x => x.Instances.Count > 0).
