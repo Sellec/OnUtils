@@ -46,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsole.NetCore", "..\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework", "..\Tests\TestConsole.NetFramework\TestConsole.NetFramework.csproj", "{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

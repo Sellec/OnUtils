@@ -181,153 +181,12 @@ namespace OnUtils.Architecture.AppCore
 
             var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089" };
 
-            var instances = AppDomain.CurrentDomain.
-                GetAssemblies().
-                Where(assembly => !assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
-                SelectMany(assembly =>
-            {
-                var assemblyStartupTypes = assembly.
-                    GetTypes().
-                    Where(type =>
-                    {
-                        if (!type.IsClass || type.IsAbstract) return false;
-
-                        if (type.IsGenericType && type.IsGenericTypeDefinition)
-                        {
-                            var d = currentType;
-                            if (type.GetInterfaces().Any(interfaceType => interfaceType.IsGenericType && (interfaceType.GetGenericTypeDefinition() == typeof(IConfigureBindings<>) || interfaceType.GetGenericTypeDefinition() == typeof(IExecuteStart<>))))
-                            {
-                                var arguments = type.GetGenericArguments();
-                                if (arguments.Length == 1 && arguments[0].IsGenericParameter)
-                                {
-                                    var constraints = arguments[0].GetGenericParameterConstraints();
-                                    if (constraints.Length == 1 && constraints[0].IsGenericType)
-                                    {
-                                        var inheritedType = Types.TypeHelpers.ExtractGenericType(currentType, constraints[0].GetGenericTypeDefinition());
-                                        if (inheritedType != null) return true;
-                                    }
-                                }
-                            }
-                            return false;
-                        }
-
-                        if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
-                        {
-                            var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                            if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
-                        }
-                        if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
-                        {
-                            var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                            if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
-                        }
-                        return false;
-                    }).
-                    Where(x => x.GetConstructor(new Type[] { }) != null).
-                    Select(type =>
-                    {
-                        if (type.IsGenericType && type.IsGenericTypeDefinition)
-                        {
-                            var d = currentType;
-                            if (type.GetInterfaces().Any(interfaceType => interfaceType.IsGenericType && (interfaceType.GetGenericTypeDefinition() == typeof(IConfigureBindings<>) || interfaceType.GetGenericTypeDefinition() == typeof(IExecuteStart<>))))
-                            {
-                                var arguments = type.GetGenericArguments();
-                                if (arguments.Length == 1 && arguments[0].IsGenericParameter)
-                                {
-                                    var constraints = arguments[0].GetGenericParameterConstraints();
-                                    if (constraints.Length == 1 && constraints[0].IsGenericType)
-                                    {
-                                        var inheritedType = Types.TypeHelpers.ExtractGenericType(currentType, constraints[0].GetGenericTypeDefinition());
-                                        if (inheritedType != null)
-                                        {
-                                            type = type.MakeGenericType(inheritedType.GetGenericArguments()[0]);
-
-                                            MethodInfo methodConfigureBindings2 = null;
-                                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
-                                            {
-                                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
-                                                {
-                                                    methodConfigureBindings2 = interfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
-                                                }
-                                            }
-
-                                            MethodInfo methodExecuteStart2 = null;
-                                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
-                                            {
-                                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
-                                                {
-                                                    methodExecuteStart2 = interfaceType.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
-                                                }
-                                            }
-
-                                            return new
-                                            {
-                                                Type = type,
-                                                ConfigureBindings = methodConfigureBindings2,
-                                                ExecuteStart = methodExecuteStart2
-                                            };
-
-                                            //return new
-                                            //{
-                                            //    Type = type,
-                                            //    ConfigureBindingsMethod = extractedInterfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings)),
-                                            //    ExecuteStartMethod = extractedInterfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings)),
-                                            //};
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        MethodInfo methodConfigureBindings = null;
-                        if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
-                        {
-                            var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                            if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
-                            {
-                                methodConfigureBindings = interfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
-                            }
-                        }
-
-                        MethodInfo methodExecuteStart = null;
-                        if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
-                        {
-                            var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                            if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
-                            {
-                                methodExecuteStart = interfaceType.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
-                            }
-                        }
-
-                        return new
-                        {
-                            Type = type,
-                            ConfigureBindings = methodConfigureBindings,
-                            ExecuteStart = methodExecuteStart
-                        };
-                    }).
-                    Where(x => x.ConfigureBindings != null || x.ExecuteStart != null).
-                    ToList();
-
-                return assemblyStartupTypes.Select(x => new
-                {
-                    Instance = Activator.CreateInstance(x.Type),
-                    x.ConfigureBindings,
-                    x.ExecuteStart
-                }).ToList();
-            }).
-                ToList();
-
-            int i = 0;
             var instances2 = AppDomain.CurrentDomain.
                 GetAssemblies().
                 Where(assembly => !assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
-                Select(x => new { Assembly = x, Number = i++ }).
-                SelectMany(a =>
+                Select(assembly =>
                 {
-                    var assemblyStartupTypes = a.Assembly.
+                    var assemblyStartupTypes = assembly.
                         GetTypes().
                         Where(type =>
                         {
@@ -405,8 +264,6 @@ namespace OnUtils.Architecture.AppCore
 
                                                 return new
                                                 {
-                                                    a.Number,
-                                                    a.Assembly,
                                                     Type = type,
                                                     ConfigureBindings = methodConfigureBindings2,
                                                     ExecuteStart = methodExecuteStart2
@@ -446,8 +303,6 @@ namespace OnUtils.Architecture.AppCore
 
                             return new
                             {
-                                a.Number,
-                                a.Assembly,
                                 Type = type,
                                 ConfigureBindings = methodConfigureBindings,
                                 ExecuteStart = methodExecuteStart
@@ -456,28 +311,31 @@ namespace OnUtils.Architecture.AppCore
                         Where(x => x.ConfigureBindings != null || x.ExecuteStart != null).
                         ToList();
 
-                    return assemblyStartupTypes.Select(x => new
+                    return new
                     {
-                        x.Number,
-                        x.Assembly,
-                        Instance = Activator.CreateInstance(x.Type),
-                        x.ConfigureBindings,
-                        x.ExecuteStart
-                    }).ToList();
+                        assembly,
+                        Instances = assemblyStartupTypes.Select(x => new
+                        {
+                            Instance = Activator.CreateInstance(x.Type),
+                            x.ConfigureBindings,
+                            x.ExecuteStart
+                        }).ToList()
+                    };
                 }).
-                ToList();
+                Where(x => x.Instances.Count > 0).
+                ToDictionary(x => x.assembly, x => x.Instances);
 
-            var assemblies = instances2.Select(x => x.Assembly).Distinct().ToList();
-            for (int j = 0; j < assemblies.Count; j++)
+            var assembliesSorted = instances2.Keys.ToList();
+            for (int j = 0; j < assembliesSorted.Count - 1; j++)
             {
-                var ass = assemblies[j];
+                var ass = assembliesSorted[j];
                 var assReferenced = ass.GetReferencedAssemblies();
                 var isMove = false;
                 foreach (var assRef in assReferenced)
                 {
-                    for (int k = j + 1; k < assemblies.Count; k++)
+                    for (int k = j + 1; k < assembliesSorted.Count; k++)
                     {
-                        if (assemblies[k].GetName() == assRef)
+                        if (assembliesSorted[k].GetName().FullName == assRef.FullName)
                         {
                             isMove = true;
                             break;
@@ -488,29 +346,13 @@ namespace OnUtils.Architecture.AppCore
 
                 if (isMove)
                 {
-                    assemblies.RemoveAt(j);
-                    assemblies.Add(ass);
+                    assembliesSorted.RemoveAt(j);
+                    assembliesSorted.Add(ass);
                     j = j - 1;
                 }
             }
-            
 
-            var thisType = GetType();
-            while (thisType != typeof(object))
-            {
-                var thisTypeAssembly = thisType.Assembly;
-
-                var thisTypeAssemblyAutoStart = instances.Where(x => x.Instance.GetType().Assembly == thisTypeAssembly).ToList();
-                thisTypeAssemblyAutoStart.OrderByDescending(x => x.Instance.GetType().FullName).ForEach(x =>
-                {
-                    instances.Remove(x);
-                    instances.Insert(0, x);
-                });
-
-                thisType = thisType.BaseType;
-            }
-
-            return instances.Select(x => new Tuple<object, MethodInfo, MethodInfo>(x.Instance, x.ConfigureBindings, x.ExecuteStart)).ToList();
+            return assembliesSorted.SelectMany(x => instances2[x]).Select(x => new Tuple<object, MethodInfo, MethodInfo>(x.Instance, x.ConfigureBindings, x.ExecuteStart)).ToList();
         }
 
         #endregion

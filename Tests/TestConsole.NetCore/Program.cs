@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace TestConsole.NetCore
 {
@@ -61,8 +60,6 @@ namespace TestConsole.NetCore
             return "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
         }
     }
-
-
 
     class Program
     {
