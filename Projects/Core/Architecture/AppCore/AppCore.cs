@@ -467,6 +467,34 @@ namespace OnUtils.Architecture.AppCore
                 }).
                 ToList();
 
+            var assemblies = instances2.Select(x => x.Assembly).Distinct().ToList();
+            for (int j = 0; j < assemblies.Count; j++)
+            {
+                var ass = assemblies[j];
+                var assReferenced = ass.GetReferencedAssemblies();
+                var isMove = false;
+                foreach (var assRef in assReferenced)
+                {
+                    for (int k = j + 1; k < assemblies.Count; k++)
+                    {
+                        if (assemblies[k].GetName() == assRef)
+                        {
+                            isMove = true;
+                            break;
+                        }
+                    }
+                    if (isMove) break;
+                }
+
+                if (isMove)
+                {
+                    assemblies.RemoveAt(j);
+                    assemblies.Add(ass);
+                    j = j - 1;
+                }
+            }
+            
+
             var thisType = GetType();
             while (thisType != typeof(object))
             {
