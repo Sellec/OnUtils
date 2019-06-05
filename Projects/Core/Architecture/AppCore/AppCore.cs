@@ -309,6 +309,7 @@ namespace OnUtils.Architecture.AppCore
                             };
                         }).
                         Where(x => x.ConfigureBindings != null || x.ExecuteStart != null).
+                        OrderBy(x => x.Type.FullName).
                         ToList();
 
                     return new
@@ -321,7 +322,6 @@ namespace OnUtils.Architecture.AppCore
                                 x.ConfigureBindings,
                                 x.ExecuteStart
                             }).
-                            OrderBy(x => x.GetType().FullName).
                             ToList()
                     };
                 }).
