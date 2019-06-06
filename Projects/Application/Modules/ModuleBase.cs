@@ -85,16 +85,9 @@ namespace OnUtils.Application.Modules
             if (key == ModulesConstants.PermissionAccessUser) return context.IsGuest ? CheckPermissionResult.Denied : CheckPermissionResult.Allowed;
             if (!permData.IgnoreSuperuser && context.IsSuperuser) return CheckPermissionResult.Allowed;
 
-            var userperms = context.Permissions;
-            if (userperms == null || !userperms.ContainsKey(ModuleID))
-            {
-                return CheckPermissionResult.Denied;
-            }
-            else
-            {
-                var usermoduleperms = userperms[ModuleID];
-                return usermoduleperms != null && usermoduleperms.Contains(key) ? CheckPermissionResult.Allowed : CheckPermissionResult.Denied;
-            }
+            PermissionsList userPermissionsInModule = null;
+            return (context.Permissions?.TryGetValue(ModuleID, out userPermissionsInModule) == true && userPermissionsInModule?.Contains(key) == true)
+                ? CheckPermissionResult.Allowed : CheckPermissionResult.Denied;
         }
         #endregion
 
