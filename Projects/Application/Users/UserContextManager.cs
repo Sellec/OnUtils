@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace OnUtils.Application.Users
 {
@@ -14,8 +15,7 @@ namespace OnUtils.Application.Users
     {
         private static IUserContext SystemUserContext { get; set; } = null;
 
-        [ThreadStatic]
-        private IUserContext _currentUserContext = null;
+        private ThreadLocal<IUserContext> _currentUserContext = new ThreadLocal<IUserContext>();
 
         #region CoreComponentBase
         /// <summary>
@@ -59,8 +59,8 @@ namespace OnUtils.Application.Users
         /// </summary>
         public virtual IUserContext GetCurrentUserContext()
         {
-            if (_currentUserContext == null) ClearCurrentUserContext();
-            return _currentUserContext;
+            if (!_currentUserContext.IsValueCreated) ClearCurrentUserContext();
+            return _currentUserContext.Value;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace OnUtils.Application.Users
         public virtual void SetCurrentUserContext(IUserContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
-            _currentUserContext = context;
+            _currentUserContext.Value = context;
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace OnUtils.Application.Users
         /// </summary>
         public virtual void ClearCurrentUserContext()
         {
-            _currentUserContext = CreateGuestUserContext();
+            _currentUserContext.Value = CreateGuestUserContext();
         }
         #endregion
     }

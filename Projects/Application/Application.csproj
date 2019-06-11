@@ -12,7 +12,7 @@
     <Company>TraceStudio</Company>
     <Product>OnUtils</Product>
     <Authors>Sellec</Authors>
-    <Version>0.1.1.5</Version>
+    <Version>0.1.1.6</Version>
     <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
     <AssemblyName>OnUtils.Application</AssemblyName>
     <RootNamespace>OnUtils.Application</RootNamespace>
