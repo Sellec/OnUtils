@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="EntityFramework\Internal\DapperColumnAttributeTypeMapper.cs" />
     <Compile Include="EntityFramework\Internal\DBHelpers.cs" />
+    <Compile Include="EntityFramework\Internal\EFCore\CommandListener.cs" />
     <Compile Include="EntityFramework\Internal\EFCore\DataService.cs" />
     <Compile Include="EntityFramework\Internal\EFCore\DBQueryProvider.cs" />
     <Compile Include="EntityFramework\Internal\EFCore\DataContextInternal.cs" />
@@ -74,6 +75,7 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.3" />
+    <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

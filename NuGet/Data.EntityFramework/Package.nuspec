@@ -26,6 +26,7 @@
         <dependency id="OnUtils" version="0.1.1" />
         <dependency id="Microsoft.EntityFrameworkCore" version="2.2.3" />
         <dependency id="Microsoft.EntityFrameworkCore.SqlServer" version="2.2.3" />
+        <dependency id="Microsoft.Extensions.DiagnosticAdapter" version="2.2.0" />
       </group>
     </dependencies>
   </metadata>

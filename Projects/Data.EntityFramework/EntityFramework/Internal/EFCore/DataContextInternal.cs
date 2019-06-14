@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using Microsoft.Extensions.DiagnosticAdapter;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
@@ -147,6 +148,9 @@ namespace OnUtils.Data.EntityFramework.Internal
             // Эта строка нужна для инициализации InternalServiveProvider в EF Core, что приводит к вызову OnConfiguring. Это нужно для совместимости с версией под NetFramework.
             if (Database.GetDbConnection() is SqlConnection conn) conn.InfoMessage += Conn_InfoMessage;
             IsReadonly = false;
+
+            var listener = this.GetService<DiagnosticSource>();
+            (listener as DiagnosticListener).SubscribeWithAdapter(new CommandListener());
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
