@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-
-using OnUtils.Data;
+﻿using System.Collections.Generic;
 
 namespace System
 {
-    #pragma warning disable
+#pragma warning disable
     /// <summary>
     /// </summary>
     public static class QueryCounterExtensions
@@ -28,7 +20,6 @@ namespace System
         public static void AddQuery(string queryText, Dictionary<string, string> parameters, TimeSpan executionTime)
         {
             if (string.IsNullOrEmpty(queryText)) throw new ArgumentNullException(nameof(queryText));
-            //if (_queryList == null) _queryList = new Collection<QueryInfo>();
 
             if (OnQueryExecuted != null) try { OnQueryExecuted(new QueryInfo() { QueryText = queryText, Parameters = parameters, ExecutionTime = executionTime }); } catch { }
         }

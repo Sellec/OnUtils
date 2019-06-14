@@ -55,7 +55,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Data\QueryCounterExtensions.cs" />
     <Compile Remove="ModuleInitializer.cs" />
     <Compile Remove="Properties\AssemblyInfo.cs" />
     <Compile Remove="Properties\Resources.Designer.cs" />
