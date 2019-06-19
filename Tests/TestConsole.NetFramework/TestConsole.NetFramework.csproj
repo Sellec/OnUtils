@@ -62,9 +62,6 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QueryExtensions\ItemBase.cs" />
-    <Compile Include="QueryExtensions\RealtyTypeItem.cs" />
-    <Compile Include="QueryExtensions\UrlTranslation.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
