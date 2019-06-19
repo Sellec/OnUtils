@@ -8,49 +8,37 @@ namespace TestConsole
     using OnUtils.Data.UnitOfWork;
     using System.ComponentModel.DataAnnotations;
     using System.ComponentModel.DataAnnotations.Schema;
+    using TestConsole.QueryExtensions;
 
-    [Table("ModuleConfig")]
-    public partial class ModuleConfig
+    [Table("Realty")]
+    public class Realty : QueryExtensions.ItemBase, QueryExtensions.IItemBaseRealtyType, IItemBaseUrlTranslation
     {
-        /// <summary>
-        /// Идентификатор модуля.
-        /// </summary>
-       //[Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int IdModule { get; set; }
+        [Key]
+        [Column("id")]
+        public override int ID
+        {
+            get;
+            set;
+        }
 
-        /// <summary>
-        /// Уникальное значение, позволяющее идентифицировать query-тип модуля. Используется полное имя query-типа.
-        /// </summary>
-        [Required]
-        [StringLength(200)]
-        public string UniqueKey { get; set; }
+        public string name { get; set; }
 
-        /// <summary>
-        /// Сериализованные в json параметры конфигурации модуля. См. <see cref="Configuration.ModuleConfiguration{TModule}"/>.
-        /// </summary>
-        public string Configuration { get; set; }
+        [NotMapped]
+        public int? IdRealtyType { get; set; }
 
-        /// <summary>
-        /// Дата последнего изменения записи в базе.
-        /// </summary>
-        public DateTime DateChange { get; set; }
-
-        /// <summary>
-        /// Идентификатор пользователя, менявшего параметры в последний раз.
-        /// </summary>
-        public int IdUserChange { get; set; }
-
+        [NotMapped]
+        public Uri Url{ get; set; }
     }
 
-    public class ccc : UnitOfWork<ModuleConfig>
+
+    public class ccc : UnitOfWork<Realty, QueryExtensions.UrlTranslation, QueryExtensions.RealtyTypeItem>
     {
         protected override void OnModelCreating(IModelAccessor modelAccessor)
         {
-            modelAccessor.UseEntityFramework(modelBuilder =>
-            {
-                modelBuilder.Entity<ModuleConfig>().HasKey(x => new { x.IdModule });
-            });
+            //modelAccessor.UseEntityFramework(modelBuilder =>
+            //{
+            //    modelBuilder.Entity<ModuleConfig>().HasKey(x => new { x.IdModule });
+            //});
         }
     }
 
@@ -58,7 +46,7 @@ namespace TestConsole
     {
         string IConnectionStringResolver.ResolveConnectionStringForDataContext(Type[] entityTypes)
         {
-            return "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
+            return "Data Source=localhost;Initial Catalog=Dombonus_OnWeb;Integrated Security=True;";
         }
     }
 
@@ -68,10 +56,26 @@ namespace TestConsole
         {
             DataAccessManager.SetConnectionStringResolver(new res());
 
-            var d = new ccc();
-            var ddd = d.Repo1.Where(x => x.IdModule >= 1).ToList();
-            ddd.First().IdUserChange = 123133;
-            d.SaveChanges();
+            Debug.DebugSQL = true;
+
+            var dbContext = new ccc();
+
+            var results = QueryExtensions.QueryBuilder.CreateQuery<Realty>(dbContext.Repo1.Where(x => x.ID == 44208), dbContext);
+
+            var d = 0;
+
+            //var ddd = from item in d.Repo1
+            //          where item.ID == 44208
+            //          select new QueryResult<Realty>()
+            //          {
+            //              Item = item
+            //          };
+
+            //var dddResult = ddd.ToList();
+
+            //var ddd = d.Repo1.Where(x => x.ID == 44208).ToList();
+            //ddd.First().IdUserChange = 123133;
+            //d.SaveChanges();
 
             Console.WriteLine("Hello World!");
 

@@ -57,7 +57,7 @@ namespace TestConsole.NetCore
     {
         string IConnectionStringResolver.ResolveConnectionStringForDataContext(Type[] entityTypes)
         {
-            return "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
+            return "Data Source=localhost;Initial Catalog=Dombonus_OnWeb;Integrated Security=True;";
         }
     }
 
