@@ -23,6 +23,11 @@ namespace TestConsole.QueryExtensions
         public int IdItem { get; set; }
 
         public int IdItemType { get; set; }
+
+        protected TItemType GetItem()
+        {
+            return (this is QueryItem<TItemType> queryItem) ? queryItem.Item : PreviousQuery?.GetItem();
+        }
     }
 
     public class QueryItem<TItemType> : QueryBase<TItemType> where TItemType : ItemBase

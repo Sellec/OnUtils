@@ -28,7 +28,11 @@ namespace TestConsole.QueryExtensions
 
     public class QueryTranslation<TItemType> : QueryBase<TItemType> where TItemType : ItemBase
     {
-        public string UrlFull { get; set; }
+        public string UrlFull
+        {
+            get => string.Empty;
+            set => ((IItemBaseUrlTranslation)GetItem()).Url = Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri) ? uri : null;
+        }
     }
 
     public interface IItemBaseUrlTranslation
