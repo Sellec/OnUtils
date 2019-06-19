@@ -16,32 +16,34 @@ namespace TestConsole.QueryExtensions
         public abstract int ID { get; set; }
     }
 
-    public class QueryBase<TItemType> where TItemType : ItemBase
+    public class QueryResult<TItemType> where TItemType : ItemBase
     {
-        public QueryBase<TItemType> PreviousQuery { get; set; }
+        public TItemType Item { get; set; }
 
         public int IdItem { get; set; }
 
         public int IdItemType { get; set; }
+
+        public QueryBase<TItemType> AdditionalQuery { get; set; }
     }
 
-    public class QueryItem<TItemType> : QueryBase<TItemType> where TItemType : ItemBase
+    public class QueryBase<TItemType> where TItemType : ItemBase
     {
-        public TItemType Item { get; set; }
+        public QueryBase<TItemType> PreviousQuery { get; set; }
     }
 
     public interface IItemTypeQueryBuilder
     {
-        IQueryable<QueryBase<TItemType>> BuildQuery<TItemType>(IQueryable<QueryBase<TItemType>> queryBase, UnitOfWorkBase unitOfWork) where TItemType : ItemBase;
+        IQueryable<QueryResult<TItemType>> BuildQuery<TItemType>(IQueryable<QueryResult<TItemType>> queryBase, UnitOfWorkBase unitOfWork) where TItemType : ItemBase;
 
-        void PrepareItem<TItemType>(QueryBase<TItemType> queryItem, ItemBase item) where TItemType : ItemBase;
+        void PrepareItem<TItemType>(QueryResult<TItemType> queryItem) where TItemType : ItemBase;
     }
 
     public class QueryBuilder
     {
-        private static IQueryable<QueryBase<TItemType>> CreateQueryItem<TItemType>(IQueryable<TItemType> queryItem, int idItemType) where TItemType : ItemBase
+        private static IQueryable<QueryResult<TItemType>> CreateQueryItem<TItemType>(IQueryable<TItemType> queryItem, int idItemType) where TItemType : ItemBase
         {
-            return queryItem.Select(x => new QueryItem<TItemType>() { Item = x, IdItem = x.ID, IdItemType = idItemType, PreviousQuery = new QueryBase<TItemType>() });
+            return queryItem.Select(x => new QueryResult<TItemType>() { Item = x, IdItem = x.ID, IdItemType = idItemType, AdditionalQuery = new QueryBase<TItemType>() });
         }
 
         public static List<TItemType> CreateQuery<TItemType>(IQueryable<TItemType> query, UnitOfWorkBase unitOfWork) where TItemType : ItemBase
@@ -56,22 +58,13 @@ namespace TestConsole.QueryExtensions
 
             var items = queryBase.ToList();
 
-            Func<QueryBase<TItemType>, QueryItem<TItemType>> func = null;
-            func = new Func<QueryBase<TItemType>, QueryItem<TItemType>>(x =>
-            {
-                if (x is QueryItem<TItemType> xFound) return xFound;
-                if (x == null) return null;
-                return func(x.PreviousQuery);
-            });
-
             var itemsList = items.
                 Select(queryItem =>
                 {
-                    var item = func(queryItem)?.Item;
-                    if (item != null)
-                        queryBuilders.ForEach(x => x.PrepareItem(queryItem, item));
+                    if (queryItem.Item != null)
+                        queryBuilders.ForEach(x => x.PrepareItem(queryItem));
 
-                    return item;
+                    return queryItem.Item;
                 }).
                 Where(x => x != null).
                 ToList();

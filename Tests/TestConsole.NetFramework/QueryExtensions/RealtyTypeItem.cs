@@ -35,23 +35,27 @@ namespace TestConsole.QueryExtensions
 
     public class RealtyTypeQueryBuilder : IItemTypeQueryBuilder
     {
-        IQueryable<QueryBase<TItemType>> IItemTypeQueryBuilder.BuildQuery<TItemType>(IQueryable<QueryBase<TItemType>> queryBase, UnitOfWorkBase unitOfWork)
+        IQueryable<QueryResult<TItemType>> IItemTypeQueryBuilder.BuildQuery<TItemType>(IQueryable<QueryResult<TItemType>> queryBase, UnitOfWorkBase unitOfWork)
         {
             if (!typeof(TItemType).GetInterfaces().Any(x => x == typeof(IItemBaseRealtyType))) return queryBase;
 
             return from sourceItem in queryBase
                    join realtyType in unitOfWork.Get<RealtyTypeItem>() on sourceItem.IdItem equals realtyType.IdRealty into realtyType_j
                    from realtyType in realtyType_j.DefaultIfEmpty()
-                   select new QueryRealtyType<TItemType>()
+                   select new QueryResult<TItemType>()
                    {
-                       PreviousQuery = sourceItem,
+                       Item = sourceItem.Item,
                        IdItem = sourceItem.IdItem,
                        IdItemType = sourceItem.IdItemType,
-                       IdRealtyType = realtyType != null ? (int?)realtyType.IdRealtyType : null
+                       AdditionalQuery = new QueryRealtyType<TItemType>()
+                       {
+                           PreviousQuery = sourceItem.AdditionalQuery,
+                           IdRealtyType = realtyType != null ? (int?)realtyType.IdRealtyType : null
+                       }
                    };
         }
 
-        void IItemTypeQueryBuilder.PrepareItem<TItemType>(QueryBase<TItemType> queryItem, ItemBase item)
+        void IItemTypeQueryBuilder.PrepareItem<TItemType>(QueryResult<TItemType> queryItem)
         {
             if (!typeof(TItemType).GetInterfaces().Any(x => x == typeof(IItemBaseRealtyType))) return;
 
@@ -63,8 +67,8 @@ namespace TestConsole.QueryExtensions
                 return func(x.PreviousQuery);
             });
 
-            var queryRealtyItem = func(queryItem);
-            if (queryRealtyItem != null) ((IItemBaseRealtyType)item).IdRealtyType = queryRealtyItem.IdRealtyType;
+            var queryRealtyItem = func(queryItem.AdditionalQuery);
+            if (queryRealtyItem != null) ((IItemBaseRealtyType)queryItem.Item).IdRealtyType = queryRealtyItem.IdRealtyType;
         }
     }
 }

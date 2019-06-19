@@ -28,7 +28,11 @@ namespace TestConsole.QueryExtensions
 
     public class QueryTranslation<TItemType> : QueryBase<TItemType> where TItemType : ItemBase
     {
-        public string UrlFull { get; set; }
+        public string UrlFull
+        {
+            get;
+            set;
+        }
     }
 
     public interface IItemBaseUrlTranslation
@@ -38,23 +42,27 @@ namespace TestConsole.QueryExtensions
 
     public class UrlTranslationQueryBuilder : IItemTypeQueryBuilder
     {
-        IQueryable<QueryBase<TItemType>> IItemTypeQueryBuilder.BuildQuery<TItemType>(IQueryable<QueryBase<TItemType>> queryBase, UnitOfWorkBase unitOfWork)
+        IQueryable<QueryResult<TItemType>> IItemTypeQueryBuilder.BuildQuery<TItemType>(IQueryable<QueryResult<TItemType>> queryBase, UnitOfWorkBase unitOfWork)
         {
             if (!typeof(TItemType).GetInterfaces().Any(x => x == typeof(IItemBaseUrlTranslation))) return queryBase;
 
             return from sourceItem in queryBase
                    join url in unitOfWork.Get<UrlTranslation>() on new { sourceItem.IdItem, sourceItem.IdItemType, IdTranslationType = 1 } equals new { url.IdItem, url.IdItemType, url.IdTranslationType } into url_j
                    from url in url_j.DefaultIfEmpty()
-                   select new QueryTranslation<TItemType>()
+                   select new QueryResult<TItemType>()
                    {
-                       PreviousQuery = sourceItem,
+                       Item = sourceItem.Item,
                        IdItem = sourceItem.IdItem,
                        IdItemType = sourceItem.IdItemType,
-                       UrlFull = url.UrlFull
+                       AdditionalQuery = new QueryTranslation<TItemType>()
+                       {
+                           PreviousQuery = sourceItem.AdditionalQuery,
+                           UrlFull = url.UrlFull
+                       }
                    };
         }
 
-        void IItemTypeQueryBuilder.PrepareItem<TItemType>(QueryBase<TItemType> queryItem, ItemBase item)
+        void IItemTypeQueryBuilder.PrepareItem<TItemType>(QueryResult<TItemType> queryItem)
         {
             if (!typeof(TItemType).GetInterfaces().Any(x => x == typeof(IItemBaseUrlTranslation))) return;
 
@@ -66,8 +74,8 @@ namespace TestConsole.QueryExtensions
                 return func(x.PreviousQuery);
             });
 
-            var queryUrlTranslation = func(queryItem);
-            if (queryUrlTranslation != null) ((IItemBaseUrlTranslation)item).Url = Uri.TryCreate(queryUrlTranslation.UrlFull, UriKind.RelativeOrAbsolute, out Uri uri) ? uri : null;
+            var queryUrlTranslation = func(queryItem.AdditionalQuery);
+            if (queryUrlTranslation != null) ((IItemBaseUrlTranslation)queryItem.Item).Url = Uri.TryCreate(queryUrlTranslation.UrlFull, UriKind.RelativeOrAbsolute, out Uri uri) ? uri : null;
         }
     }
 }
