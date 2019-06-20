@@ -9,6 +9,51 @@ namespace TestConsole
     using System.ComponentModel.DataAnnotations;
     using System.ComponentModel.DataAnnotations.Schema;
 
+    [Table("ModuleConfig")]
+    public partial class ModuleConfig
+    {
+        /// <summary>
+        /// Идентификатор модуля.
+        /// </summary>
+       //[Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int IdModule { get; set; }
+
+        /// <summary>
+        /// Уникальное значение, позволяющее идентифицировать query-тип модуля. Используется полное имя query-типа.
+        /// </summary>
+        [Required]
+        [StringLength(200)]
+        public string UniqueKey { get; set; }
+
+        /// <summary>
+        /// Сериализованные в json параметры конфигурации модуля. См. <see cref="Configuration.ModuleConfiguration{TModule}"/>.
+        /// </summary>
+        public string Configuration { get; set; }
+
+        /// <summary>
+        /// Дата последнего изменения записи в базе.
+        /// </summary>
+        public DateTime DateChange { get; set; }
+
+        /// <summary>
+        /// Идентификатор пользователя, менявшего параметры в последний раз.
+        /// </summary>
+        public int IdUserChange { get; set; }
+
+    }
+
+    public class ccc : UnitOfWork<ModuleConfig>
+    {
+        protected override void OnModelCreating(IModelAccessor modelAccessor)
+        {
+            modelAccessor.UseEntityFramework(modelBuilder =>
+            {
+                modelBuilder.Entity<ModuleConfig>().HasKey(x => new { x.IdModule });
+            });
+        }
+    }
+
     public class res : IConnectionStringResolver
     {
         string IConnectionStringResolver.ResolveConnectionStringForDataContext(Type[] entityTypes)
@@ -23,20 +68,10 @@ namespace TestConsole
         {
             DataAccessManager.SetConnectionStringResolver(new res());
 
-            var d = 0;
-
-            //var ddd = from item in d.Repo1
-            //          where item.ID == 44208
-            //          select new QueryResult<Realty>()
-            //          {
-            //              Item = item
-            //          };
-
-            //var dddResult = ddd.ToList();
-
-            //var ddd = d.Repo1.Where(x => x.ID == 44208).ToList();
-            //ddd.First().IdUserChange = 123133;
-            //d.SaveChanges();
+            var d = new ccc();
+            var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
+            ddd.First().IdUserChange = 123133;
+            d.SaveChanges();
 
             Console.WriteLine("Hello World!");
 
