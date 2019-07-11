@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OnUtils.Architecture.AppCore
+﻿namespace OnUtils.Architecture.AppCore
 {
     /// <summary>
     /// Представляет компонент, являющийся критичным для запуска ядра. Так как <see cref="ICritical"/> наследует <see cref="IAutoStart"/>, то ядро предпримет попытку инициализировать экземпляр компонента во время запуска ядра. 

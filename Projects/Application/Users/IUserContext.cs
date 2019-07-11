@@ -30,7 +30,7 @@ namespace OnUtils.Application.Users
         /// <summary>
         /// Возвращает список разрешений пользователя. 
         /// </summary>
-        PermissionsList Permissions { get; }
+        UserPermissions Permissions { get; }
         #endregion
 
 

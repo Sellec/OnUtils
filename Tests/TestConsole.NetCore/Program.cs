@@ -1,14 +1,13 @@
-﻿using System;
+﻿using OnUtils.Data;
+using OnUtils.Data.EntityFramework;
+using OnUtils.Data.UnitOfWork;
+using OnUtils.Tasks;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TestConsole.NetCore
 {
-    using OnUtils.Data;
-    using OnUtils.Data.EntityFramework;
-    using OnUtils.Data.UnitOfWork;
-    using OnUtils.Tasks;
-    using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
-
     [Table("ModuleConfig")]
     public partial class ModuleConfig
     {

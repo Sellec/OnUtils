@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
+﻿using OnUtils.Data;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-
-using OnUtils.Data;
 
 namespace System
 {
-    #pragma warning disable
+#pragma warning disable
     /// <summary>
     /// </summary>
     public static class RepositoryAndQueryExtensions
