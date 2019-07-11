@@ -12,6 +12,7 @@ namespace OnUtils.Data
         #region IDataService
         private static bool _testKnownService = true;
         private static IDataService _defaultService = null;
+        private static object _defaultServiceSyncRoot = new object();
 
         /// <summary>
         /// Устанавливает сервис <see cref="IDataService"/> в качестве основного для построения контекстов данных и репозиториев.
@@ -30,17 +31,19 @@ namespace OnUtils.Data
         /// </summary>
         public static IDataService GetDefaultService()
         {
-            if (_defaultService == null && _testKnownService)
+            lock (_defaultServiceSyncRoot)
             {
-                try
+                if (_defaultService == null && _testKnownService)
                 {
-                    _testKnownService = false;
-                    var serviceType = Type.GetType("OnUtils.Data.EntityFramework.DataService, OnUtils.Data.EntityFramework, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
-                    if (serviceType != null) SetDefaultService((IDataService)Activator.CreateInstance(serviceType));
+                    try
+                    {
+                        _testKnownService = false;
+                        var serviceType = Type.GetType("OnUtils.Data.EntityFramework.DataService, OnUtils.Data.EntityFramework, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
+                        if (serviceType != null) SetDefaultService((IDataService)Activator.CreateInstance(serviceType));
+                    }
+                    catch { }
                 }
-                catch { }
             }
-
             return _defaultService;
         }
         #endregion

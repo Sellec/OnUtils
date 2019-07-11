@@ -146,7 +146,11 @@ namespace OnUtils.Architecture.AppCore
 
         private void BindingsAutoStart()
         {
-            var typesForAutoStart = _objectProvider.GetQueryTypes().Where(type => typeof(IAutoStart).IsAssignableFrom(type) && typeof(IComponentSingleton<TAppCore>).IsAssignableFrom(type)).ToList();
+            var typesForAutoStart = _objectProvider.
+                GetQueryTypes().
+                Where(type => typeof(IAutoStart).IsAssignableFrom(type) && typeof(IComponentSingleton<TAppCore>).IsAssignableFrom(type)).
+                ToList();
+
             var thisType = GetType();
             while (thisType != typeof(object))
             {

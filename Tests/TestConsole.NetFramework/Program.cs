@@ -1,14 +1,13 @@
-﻿using System;
+﻿using OnUtils.Data;
+using OnUtils.Data.EntityFramework;
+using OnUtils.Data.UnitOfWork;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
 namespace TestConsole
 {
-    using OnUtils.Data;
-    using OnUtils.Data.EntityFramework;
-    using OnUtils.Data.UnitOfWork;
-    using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
-
     [Table("ModuleConfig")]
     public partial class ModuleConfig
     {
@@ -62,11 +61,21 @@ namespace TestConsole
         }
     }
 
+    public class app : OnUtils.Application.ApplicationCore
+    {
+        public app(string physicalApplicationPath) : base(physicalApplicationPath)
+        {
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
             DataAccessManager.SetConnectionStringResolver(new res());
+
+            var app = new app(Environment.CurrentDirectory);
+            app.Start();
 
             var d = new ccc();
             var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();

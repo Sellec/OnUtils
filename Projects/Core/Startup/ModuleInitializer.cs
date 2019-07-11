@@ -1,7 +1,7 @@
-﻿using System;
+﻿using OnUtils.Startup;
+using System;
 using System.Linq;
 using System.Reflection;
-using OnUtils.Startup;
 
 /// <summary>
 /// Used by the ModuleInit. All code inside the Initialize method is ran as soon as the assembly is loaded.

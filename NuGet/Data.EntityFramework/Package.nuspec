@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils.Data.EntityFramework</id>
-    <version>0.1.1.2</version>
+    <version>0.1.2</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -19,11 +19,11 @@
     <tags>Repository, Startup, .Net 4.0+</tags>
     <dependencies>
       <group targetFramework="net40">
-        <dependency id="OnUtils" version="0.1.1" />
+        <dependency id="OnUtils" version="0.1.2" />
         <dependency id="EntityFramework" version="6.2.0" />
       </group>
       <group targetFramework="netstandard2.0">
-        <dependency id="OnUtils" version="0.1.1" />
+        <dependency id="OnUtils" version="0.1.2" />
         <dependency id="Microsoft.EntityFrameworkCore" version="2.2.3" />
         <dependency id="Microsoft.EntityFrameworkCore.SqlServer" version="2.2.3" />
         <dependency id="Microsoft.Extensions.DiagnosticAdapter" version="2.2.0" />
