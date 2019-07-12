@@ -28,7 +28,7 @@ namespace OnUtils.Tasks.MomentalThreading
 
         private void CheckTasks()
         {
-            lock(_jobsSyncRoot)
+            lock (_jobsSyncRoot)
             {
                 var jobsListSnapshot = _jobsList.Where(job => job.ClosestOccurrence <= DateTime.Now).ToList();
                 _jobsList.RemoveAll(job => job.CronSchedule == null && job.ClosestOccurrence <= DateTime.Now);
@@ -54,7 +54,9 @@ namespace OnUtils.Tasks.MomentalThreading
         {
             lock (_jobsSyncRoot)
             {
-                if (_jobsList.Any(x => x.JobName == name)) throw new InvalidOperationException("Задача с указанным именем уже существует.");
+                if (_jobsList.Any(x => x.JobName == name))
+                    //throw new InvalidOperationException("Задача с указанным именем уже существует.");
+                    _jobsList.RemoveAll(x => x.JobName == name);
 
                 var schedule = CrontabSchedule.Parse(cronExpression);
                 _jobsList.Add(new Job()
@@ -71,7 +73,10 @@ namespace OnUtils.Tasks.MomentalThreading
         {
             lock (_jobsSyncRoot)
             {
-                if (_jobsList.Any(x => x.JobName == name)) throw new InvalidOperationException("Задача с указанным именем уже существует.");
+                if (_jobsList.Any(x => x.JobName == name))
+                    //throw new InvalidOperationException("Задача с указанным именем уже существует.");
+                    _jobsList.RemoveAll(x => x.JobName == name);
+
                 if (startTime < DateTime.Now) return;
 
                 _jobsList.Add(new Job()
