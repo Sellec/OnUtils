@@ -28,7 +28,7 @@ namespace OnUtils.Application.Users
         /// </summary>
         protected sealed override void OnStart()
         {
-            var systemUserContext = new UserContext(new DB.User() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
+            var systemUserContext = new UserContext(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
             systemUserContext.Start(AppCore);
             _systemUserContext = systemUserContext;
         }
@@ -84,7 +84,7 @@ namespace OnUtils.Application.Users
         /// </summary>
         public virtual IUserContext CreateGuestUserContext()
         {
-            return new UserContext(new DB.User() { IdUser = 0, IsSuperuser = false }, false);
+            return new UserContext(new DB.UserBase() { IdUser = 0, IsSuperuser = false }, false);
         }
 
         /// <summary>
@@ -110,12 +110,12 @@ namespace OnUtils.Application.Users
                     var context = new UserContext(res, true);
                     context.Start(AppCore);
 
-                    var permissionsResult = TryRestorePermissions(context);
+                    var permissionsResult = GetPermissions(context.IdUser);
                     if (!permissionsResult.IsSuccess)
                     {
                         return UserContextCreateResult.ErrorReadingPermissions;
                     }
-
+                    context.ApplyPermissions(permissionsResult.Result);
                     userContext = context;
                     return UserContextCreateResult.Success;
                 }
@@ -188,12 +188,15 @@ namespace OnUtils.Application.Users
         /// Пытается получить текущие разрешения для пользователя, ассоциированного с контекстом <paramref name="context"/>, и задать их контексту.
         /// </summary>
         /// <returns>Возвращает true, если удалось получить разрешения и установить их для переданного контекста.</returns>
+        /// <exception cref="ArgumentNullException">Возникает, если <paramref name="context"/> равен null.</exception>
         [ApiIrreversible]
-        public ExecutionResult TryRestorePermissions(IUserContext context)
+        public virtual ExecutionResult TryRestorePermissions(IUserContext context)
         {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
             if (context is UserContext userContext)
             {
-                var permissionsResult = GetPermissions(userContext.IdUser);
+                var permissionsResult = GetPermissions(context.IdUser);
                 if (permissionsResult.IsSuccess)
                 {
                     userContext.ApplyPermissions(permissionsResult.Result);

@@ -7,14 +7,14 @@ namespace OnUtils.Application.Users
 
     class UserContext : CoreComponentBase<ApplicationCore>, IUserContext
     {
-        private Guid _userID = Guid.Empty;
+        private int _idUser = 0;
         private bool _isAuthorized;
-        private DB.User _data;
+        private DB.UserBase _data;
         private UserPermissions _permissions;
 
-        public UserContext(DB.User data, bool isAuthorized)
+        public UserContext(DB.UserBase data, bool isAuthorized)
         {
-            _userID = GuidIdentifierGenerator.GenerateGuid(GuidType.User, data.IdUser);
+            _idUser = data.IdUser;
             _data = data;
             _isAuthorized = isAuthorized;
             _permissions = new UserPermissions();
@@ -35,7 +35,7 @@ namespace OnUtils.Application.Users
         }
         #endregion
 
-        public DB.User GetData()
+        public DB.UserBase GetData()
         {
             return _data;
         }
@@ -46,9 +46,9 @@ namespace OnUtils.Application.Users
             get => !_isAuthorized ? 0 : this._data.IdUser;
         }
 
-        Guid IUserContext.UserID
+        int IUserContext.IdUser
         {
-            get => _userID;
+            get => _idUser;
         }
 
         bool IUserContext.IsGuest

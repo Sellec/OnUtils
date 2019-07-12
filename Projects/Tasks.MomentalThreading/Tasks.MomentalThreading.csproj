@@ -12,7 +12,7 @@
     <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>0.1.1.1</Version>
+    <Version>0.1.1.2</Version>
     <PackageIconUrl>http://tracestudio.ru/favicon.ico</PackageIconUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <SignAssembly>true</SignAssembly>

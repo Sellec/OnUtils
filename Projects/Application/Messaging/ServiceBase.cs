@@ -255,7 +255,7 @@ namespace OnUtils.Application.Messaging
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Messaging.Email.ExecuteOutcoming: {0}", ex.GetMessageExtended());
+                Debug.WriteLine("Messaging.ServiceBase.ExecuteOutcoming: {0}", ex.GetMessageExtended());
                 this.RegisterServiceState(ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Отправлено - {messagesSent}. Ошибки отправки - {messagesErrors}.", ex);
             }
         }

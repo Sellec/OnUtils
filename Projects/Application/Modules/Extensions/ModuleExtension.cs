@@ -18,7 +18,9 @@ namespace OnUtils.Application.Modules.Extensions
 
         internal protected ModuleCore Module = null;
         protected object DataPostResult = null;
-    
+        public object ControllerBase = null;
+        public object ModelStateBase = null;
+
         public ModuleExtension()
         {
             var attrs = GetType().GetCustomAttributes(typeof(ModuleExtensionAttribute), true);

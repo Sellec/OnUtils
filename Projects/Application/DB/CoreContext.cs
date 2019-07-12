@@ -13,7 +13,7 @@ namespace OnUtils.Application.DB
         public IRepository<Sessions> Sessions { get; }
 
         public IRepository<UserEntity> UserEntity { get; }
-        public IRepository<User> Users { get; }
+        public IRepository<UserBase> Users { get; }
 
         public IRepository<Role> Role { get; }
         public IRepository<RoleUser> RoleUser { get; }
