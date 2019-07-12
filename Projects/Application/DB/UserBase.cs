@@ -6,7 +6,7 @@ namespace OnUtils.Application.DB
     using System.ComponentModel.DataAnnotations.Schema;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    [Table("User")]
+    [Table("UserBase")]
     [Items.ItemType(Modules.ModuleCore.ItemType)]
     public partial class UserBase : Items.ItemBase
     {
