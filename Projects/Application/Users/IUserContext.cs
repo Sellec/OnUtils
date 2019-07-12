@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace OnUtils.Application.Users
+﻿namespace OnUtils.Application.Users
 {
     /// <summary>
     /// Представляет контекст одного пользователя. 
@@ -15,7 +13,7 @@ namespace OnUtils.Application.Users
         /// Возвращает идентификатор пользователя.
         /// Равен 0, если пользователь, для которого получен контекст, является гостем системы.
         /// </summary>
-        Guid UserID { get; }
+        int IdUser { get; }
 
         /// <summary>
         /// Указывает, является ли пользователь, для которого получен контекст, гостем системы.
@@ -32,7 +30,5 @@ namespace OnUtils.Application.Users
         /// </summary>
         UserPermissions Permissions { get; }
         #endregion
-
-
     }
 }

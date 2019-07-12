@@ -308,7 +308,7 @@ namespace OnUtils.Application.Modules
 
                 moduleConfig.Configuration = configuration._valuesProvider.Save();
                 moduleConfig.DateChange = DateTime.Now;
-                moduleConfig.IdUserChange = context.GetIdUser();
+                moduleConfig.IdUserChange = context.IdUser;
 
                 db.SaveChanges();
                 scope.Commit();

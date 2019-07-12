@@ -55,7 +55,7 @@ namespace OnUtils.Application.Modules.UsersManagement
         /// <param name="permissionKey">См. <see cref="Permission.Key"/>.</param>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="permissionKey"/> является пустой строкой или null.</exception>
         /// <exception cref="InvalidOperationException">Возникает, если в модуле <typeparamref name="TModule"/> не зарегистрировано разрешение <paramref name="permissionKey"/>.</exception>
-        public List<User> GetUsersByRolePermission<TModule>(string permissionKey)
+        public List<UserBase> GetUsersByRolePermission<TModule>(string permissionKey)
             where TModule : ModuleCore<TModule>
         {
             if (string.IsNullOrEmpty(permissionKey)) throw new ArgumentNullException(nameof(permissionKey));

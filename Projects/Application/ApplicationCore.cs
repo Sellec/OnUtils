@@ -51,7 +51,7 @@ namespace OnUtils.Application
         /// <summary>
         /// Вызывается единственный раз при запуске ядра.
         /// </summary>
-        protected void OnApplicationStart()
+        protected virtual void OnApplicationStart()
         {
         }
 
@@ -129,7 +129,7 @@ namespace OnUtils.Application
 
 
         /// <summary>
-        /// Основные настройки сайта.
+        /// Основные настройки приложения.
         /// </summary>
         public CoreConfiguration Config
         {
