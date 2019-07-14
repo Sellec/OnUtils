@@ -1,15 +1,13 @@
-﻿using System;
+﻿using NCrontab;
+using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using System.Threading;
-using NCrontab;
+using System.Threading.Tasks;
 
 namespace OnUtils.Tasks.MomentalThreading
 {
-    using Data;
     using Tasks;
 
     /// <summary>
@@ -20,9 +18,11 @@ namespace OnUtils.Tasks.MomentalThreading
         private Timer _jobsTimer = null;
         private object _jobsSyncRoot = new object();
         private List<Job> _jobsList = new List<Job>();
+        private Guid _unique = Guid.NewGuid();
 
         void ITasksService.Initialize()
         {
+            Debug.WriteLine($"TasksService({_unique}): Initialize");
             _jobsTimer = new Timer(new TimerCallback(state => CheckTasks()), null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
         }
 
@@ -55,8 +55,11 @@ namespace OnUtils.Tasks.MomentalThreading
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
+                {
+                    Debug.WriteLine($"TasksService({_unique}): задача '{name}' существует");
                     //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
+                }
 
                 var schedule = CrontabSchedule.Parse(cronExpression);
                 _jobsList.Add(new Job()
@@ -74,8 +77,11 @@ namespace OnUtils.Tasks.MomentalThreading
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
+                {
+                    Debug.WriteLine($"TasksService({_unique}): задача '{name}' существует");
                     //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
+                }
 
                 if (startTime < DateTime.Now) return;
 
@@ -91,6 +97,7 @@ namespace OnUtils.Tasks.MomentalThreading
 
         void ITasksService.DeleteAllTasks()
         {
+            Debug.WriteLine($"TasksService({_unique}): DeleteAllTasks");
             lock (_jobsSyncRoot)
             {
                 _jobsList.Clear();
