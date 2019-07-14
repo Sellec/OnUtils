@@ -55,11 +55,8 @@ namespace OnUtils.Tasks.MomentalThreading
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
-                {
-                    Debug.WriteLine($"TasksService({_unique}): задача '{name}' существует");
                     //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
-                }
 
                 var schedule = CrontabSchedule.Parse(cronExpression);
                 _jobsList.Add(new Job()
@@ -77,11 +74,8 @@ namespace OnUtils.Tasks.MomentalThreading
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
-                {
-                    Debug.WriteLine($"TasksService({_unique}): задача '{name}' существует");
                     //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
-                }
 
                 if (startTime < DateTime.Now) return;
 
@@ -97,7 +91,6 @@ namespace OnUtils.Tasks.MomentalThreading
 
         void ITasksService.DeleteAllTasks()
         {
-            Debug.WriteLine($"TasksService({_unique}): DeleteAllTasks");
             lock (_jobsSyncRoot)
             {
                 _jobsList.Clear();
