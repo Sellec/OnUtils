@@ -8,9 +8,7 @@ namespace OnUtils.Application.Messaging.Connectors
     /// <summary>
     /// Представляет коннектор к сервису отправки или получения сообщений.
     /// </summary>
-    public interface IConnectorBase<TAppCoreSelfReference, TMessage> : IPoolObjectOrdered, IComponentTransient<TAppCoreSelfReference> 
-        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
-        where TMessage : MessageBase, new()
+    public interface IConnectorBase<TMessage> : IPoolObjectOrdered, IComponentTransient<ApplicationCore> where TMessage : MessageBase, new()
     {
         #region Методы
         /// <summary>
@@ -26,7 +24,7 @@ namespace OnUtils.Application.Messaging.Connectors
         /// <param name="service">Сервис отправки сообщений, которому принадлежит отправляемое сообщение <paramref name="message"/>.</param>
         /// <remarks>Дополнительные типы исключений, которые могут возникнуть во время отправки сообщения, могут быть описаны в документации коннектора.</remarks>
         [ApiIrreversible]
-        void Send(ConnectorMessage<TMessage> message, IMessagingService<TAppCoreSelfReference> service);
+        void Send(ConnectorMessage<TMessage> message, IMessagingService service);
         #endregion
 
         #region Свойства
