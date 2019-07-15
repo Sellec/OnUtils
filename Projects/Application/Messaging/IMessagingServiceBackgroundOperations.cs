@@ -5,7 +5,8 @@ namespace OnUtils.Application.Messaging
     /// <summary>
     /// Описывает сервис отправки/приема сообщений с поддержкой фоновых процессов отправки/приема.
     /// </summary>
-    public interface IMessagingServiceBackgroundOperations : IMessagingService
+    public interface IMessagingServiceBackgroundOperations<TAppCoreSelfReference> : IMessagingService<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// Обрабатывает входящие сообщения, если режим приема входящих сообщений поддерживается сервисом. См. <see cref="IMessagingService.IsSupportsIncoming"/>.

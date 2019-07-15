@@ -10,7 +10,8 @@ namespace OnUtils.Application.Modules.CoreModule
     /// Интерфейс ядра системы для управления основными функциями.
     /// </summary>
     [ModuleCore("Ядро системы")]
-    public sealed class CoreModule : ModuleCore<CoreModule>, ICritical
+    public sealed class CoreModule<TAppCoreSelfReference> : ModuleCore<TAppCoreSelfReference, CoreModule<TAppCoreSelfReference>>, ICritical
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         internal static readonly Guid PermissionConfigurationSave = "perm_configSave".GenerateGuid();
 

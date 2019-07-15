@@ -11,7 +11,8 @@ namespace OnUtils.Application.Languages
     /// <summary>
     /// Менеджер языков системы.
     /// </summary>
-    public class Manager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IUnitOfWorkAccessor<UnitOfWork<DB.Language>>
+    public class Manager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.Language>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// </summary>
@@ -104,8 +105,8 @@ namespace OnUtils.Application.Languages
 
             try
             {
-                var module = AppCore.GetModulesManager().GetModule<Modules.CoreModule.CoreModule>();
-                var cfg = module.GetConfigurationManipulator().GetEditable<Configuration.CoreConfiguration>();
+                var module = AppCore.GetModulesManager().GetModule<Modules.CoreModule.CoreModule<TAppCoreSelfReference>>();
+                var cfg = module.GetConfigurationManipulator().GetEditable<Configuration.CoreConfiguration<TAppCoreSelfReference>>();
                 cfg.IdSystemLanguage = language.IdLanguage;
 
                 switch (module.GetConfigurationManipulator().ApplyConfiguration(cfg).Item1)

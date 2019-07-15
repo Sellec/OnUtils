@@ -6,7 +6,8 @@ namespace OnUtils.Application.ServiceMonitor
     using Architecture.AppCore;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    public abstract class ServiceBase : CoreComponentBase<ApplicationCore>, IMonitoredService
+    public abstract class ServiceBase<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IMonitoredService<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         private Guid _serviceID = Guid.Empty;
         private string _serviceName = string.Empty;
@@ -51,7 +52,7 @@ namespace OnUtils.Application.ServiceMonitor
             this.ServiceStatus = status;
             this.ServiceStatusDetailed = statusDetailed;
 
-            AppCore.Get<Monitor>().RegisterServiceStateWithoutJournal(this, status, statusDetailed);
+            AppCore.Get<Monitor<TAppCoreSelfReference>>().RegisterServiceStateWithoutJournal(this, status, statusDetailed);
         }
 
         public static Guid GenerateGuidFromString(string source)

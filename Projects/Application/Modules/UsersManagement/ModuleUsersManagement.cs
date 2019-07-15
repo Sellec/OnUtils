@@ -11,7 +11,8 @@ namespace OnUtils.Application.Modules.UsersManagement
     /// Модуль управления данными пользователей и системой доступа.
     /// </summary>
     [ModuleCore("Управление пользователями и доступом")]
-    public sealed class ModuleUsersManagement : ModuleCore<ModuleUsersManagement>
+    public sealed class ModuleUsersManagement<TAppCoreSelfReference> : ModuleCore<TAppCoreSelfReference, ModuleUsersManagement<TAppCoreSelfReference>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// Возвращает список ролей, в которых есть разрешение <paramref name="permissionKey"/> в модуле <typeparamref name="TModule"/>.
@@ -20,7 +21,7 @@ namespace OnUtils.Application.Modules.UsersManagement
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="permissionKey"/> является пустой строкой или null.</exception>
         /// <exception cref="InvalidOperationException">Возникает, если в модуле <typeparamref name="TModule"/> не зарегистрировано разрешение <paramref name="permissionKey"/>.</exception>
         public List<Role> GetRolesByPermission<TModule>(string permissionKey)
-            where TModule : ModuleCore<TModule>
+            where TModule : ModuleCore<TAppCoreSelfReference, TModule>
         {
             if (string.IsNullOrEmpty(permissionKey)) throw new ArgumentNullException(nameof(permissionKey));
 
@@ -56,7 +57,7 @@ namespace OnUtils.Application.Modules.UsersManagement
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="permissionKey"/> является пустой строкой или null.</exception>
         /// <exception cref="InvalidOperationException">Возникает, если в модуле <typeparamref name="TModule"/> не зарегистрировано разрешение <paramref name="permissionKey"/>.</exception>
         public List<UserBase> GetUsersByRolePermission<TModule>(string permissionKey)
-            where TModule : ModuleCore<TModule>
+            where TModule : ModuleCore<TAppCoreSelfReference, TModule>
         {
             if (string.IsNullOrEmpty(permissionKey)) throw new ArgumentNullException(nameof(permissionKey));
 

@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace OnUtils.Application.Users
+﻿namespace OnUtils.Application.Users
 {
-    using Application.Users;
     using Architecture.AppCore;
 
-    class UserContext : CoreComponentBase<ApplicationCore>, IUserContext
+    class UserContext<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IUserContext
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         private int _idUser = 0;
         private bool _isAuthorized;

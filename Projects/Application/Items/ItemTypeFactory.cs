@@ -20,12 +20,12 @@ namespace OnUtils.Application.Items
         /// <summary>
         /// Значение, обозначающее идентификатор объектов.
         /// </summary>
-        public static readonly DB.ItemType ItemType = new DB.ItemType() { IdItemType=Modules.ModuleCore.ItemType, NameItemType = "Объект внутри категории", UniqueKey= "ItemType" };
+        public static readonly DB.ItemType ItemType = new DB.ItemType() { IdItemType=Modules.ModulesConstants.ItemType, NameItemType = "Объект внутри категории", UniqueKey= "ItemType" };
 
         /// <summary>
         /// Значение, обозначающее идентификатор категорий.
         /// </summary>
-        public static readonly DB.ItemType CategoryType = new DB.ItemType() { IdItemType = Modules.ModuleCore.CategoryType, NameItemType = "Категория объектов", UniqueKey = "CategoryType" };
+        public static readonly DB.ItemType CategoryType = new DB.ItemType() { IdItemType = Modules.ModulesConstants.CategoryType, NameItemType = "Категория объектов", UniqueKey = "CategoryType" };
 
         private static Lazy<Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>>> _itemsTypes = null;
 

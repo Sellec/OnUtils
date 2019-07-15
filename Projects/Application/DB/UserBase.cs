@@ -7,10 +7,9 @@ namespace OnUtils.Application.DB
 
 #pragma warning disable CS1591 // todo внести комментарии.
     [Table("UserBase")]
-    [Items.ItemType(Modules.ModuleCore.ItemType)]
-    public partial class UserBase : Items.ItemBase
+    public partial class UserBase
     {
-        public UserBase() : base(DeprecatedSingletonInstances.ModulesManager.GetModule<Modules.UsersManagement.ModuleUsersManagement>())
+        public UserBase()
         {
         }
 
@@ -27,37 +26,5 @@ namespace OnUtils.Application.DB
         [StringLength(200)]
         public string UniqueKey { get; set; }
 
-        #region ItemBase
-        /// <summary>
-        /// См. <see cref="IdUser"/>.
-        /// </summary>
-        public override int ID
-        {
-            get => IdUser;
-            set => IdUser = value;
-        }
-
-        /// <summary>
-        /// </summary>
-        public override string Caption
-        {
-            get => IdUser.ToString();
-            set { }
-        }
-
-        /// <summary>
-        /// Время последнего изменения на основе <see cref="DateChange"/>. 
-        /// </summary>
-        public override DateTime DateChangeBase
-        {
-            get => DateChange;
-            set => DateChange = value;
-        }
-
-        public override Uri Url
-        {
-            get => null;           
-        }
-        #endregion
     }
 }

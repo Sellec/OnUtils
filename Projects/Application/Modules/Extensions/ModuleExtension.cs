@@ -6,7 +6,8 @@ namespace OnUtils.Application.Modules.Extensions
     using Modules;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    public class ModuleExtension : CoreComponentBase<ApplicationCore>, IComponentTransient<ApplicationCore>
+    public class ModuleExtension<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentTransient<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         public      string _mModuleName;
         public      int _mModuleID = 0;
@@ -16,7 +17,7 @@ namespace OnUtils.Application.Modules.Extensions
 
         public      int ModuleID_Override = 0;
 
-        internal protected ModuleCore Module = null;
+        internal protected ModuleCore<TAppCoreSelfReference> Module = null;
         protected object DataPostResult = null;
         public object ControllerBase = null;
         public object ModelStateBase = null;
@@ -89,7 +90,7 @@ namespace OnUtils.Application.Modules.Extensions
         ////    return "Не удалось найти объект в базе!";
         ////}
 
-        public virtual Types.NestedLinkCollection getAdminMenu()
+        public virtual Types.NestedLinkCollection<TAppCoreSelfReference> getAdminMenu()
         {
             return null;
         }

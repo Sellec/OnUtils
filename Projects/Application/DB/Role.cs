@@ -6,7 +6,7 @@ namespace OnUtils.Application.DB
 
 #pragma warning disable CS1591 // todo внести комментарии.
     [Table("Role")]
-    public class Role : ItemBase
+    public class Role
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -31,19 +31,5 @@ namespace OnUtils.Application.DB
 
         [StringLength(100)]
         public string UniqueKey { get; set; }
-
-        #region ItemBase
-        public override int ID
-        {
-            get => IdRole;
-            set => IdRole = value;
-        }
-
-        public override string Caption
-        {
-            get => NameRole;
-            set => NameRole = value;
-        }
-        #endregion
     }
 }

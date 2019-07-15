@@ -11,8 +11,9 @@ namespace OnUtils.Application.Configuration
     /// Предоставляет методы для управления настройками модуля типа <typeparamref name="TModule"/>. Позволяет получить, изменить и применить измененные настройки к модулю.
     /// </summary>
     /// <seealso cref="ModuleConfiguration{TModule}"/>
-    public class ModuleConfigurationManipulator<TModule> : CoreComponentBase<ApplicationCore>, IComponentTransient<ApplicationCore>, IUnitOfWorkAccessor<CoreContext>
-        where TModule : ModuleCore<TModule>
+    public class ModuleConfigurationManipulator<TAppCoreSelfReference, TModule> : CoreComponentBase<TAppCoreSelfReference>, IComponentTransient<TAppCoreSelfReference>, IUnitOfWorkAccessor<CoreContext>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
+        where TModule : ModuleCore<TAppCoreSelfReference, TModule>
     {
         private TModule _module = null;
         internal ConfigurationValuesProvider _valuesProviderUsable = null;
@@ -44,9 +45,9 @@ namespace OnUtils.Application.Configuration
         /// То есть после изменения конфигурации путем вызова <see cref="ApplyConfiguration{TConfiguration}(TConfiguration)"/> новые значения автоматически доступны во всех ранее созданных в данном методе экземплярах конфигурации.
         /// </summary>
         /// <exception cref="InvalidOperationException">Возникает, если модуль <typeparamref name="TModule"/> не найден.</exception>
-        public TConfiguration GetUsable<TConfiguration>() where TConfiguration : ModuleConfiguration<TModule>, new()
+        public TConfiguration GetUsable<TConfiguration>() where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TModule>, new()
         {
-            if (_valuesProviderUsable == null) _valuesProviderUsable = ((ModulesManager)AppCore.GetModulesManager()).CreateValuesProviderForModule(_module);
+            if (_valuesProviderUsable == null) _valuesProviderUsable = AppCore.GetModulesManager().CreateValuesProviderForModule(_module);
 
             var configuration = new TConfiguration() { _isReadonly = true,  _valuesProvider = _valuesProviderUsable };
             return configuration;
@@ -57,9 +58,9 @@ namespace OnUtils.Application.Configuration
         /// Изменение значений настроек в возвращенном объекте не влияет на непосредственно используемые в работе приложения значения. Для применения измененных значений см. <see cref="ApplyConfiguration{TConfiguration}(TConfiguration)"/>.
         /// </summary>
         /// <exception cref="InvalidOperationException">Возникает, если модуль <typeparamref name="TModule"/> не найден.</exception>
-        public TConfiguration GetEditable<TConfiguration>() where TConfiguration : ModuleConfiguration<TModule>, new()
+        public TConfiguration GetEditable<TConfiguration>() where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TModule>, new()
         {
-            var valuesProviderUsable = ((ModulesManager)AppCore.GetModulesManager()).CreateValuesProviderForModule(_module);
+            var valuesProviderUsable = AppCore.GetModulesManager().CreateValuesProviderForModule(_module);
 
             var configuration = new TConfiguration() { _isReadonly = false, _valuesProvider = valuesProviderUsable };
             return configuration;
@@ -71,16 +72,16 @@ namespace OnUtils.Application.Configuration
         /// <returns>Возвращает кортеж из двух значений - результат сохранения и идентификатор записи журнала в случае ошибки.</returns>
         /// <seealso cref="Journaling.JournalingManager.GetJournalData(int)"/>
         public (ApplyConfigurationResult, int?) ApplyConfiguration<TConfiguration>(TConfiguration configuration)
-            where TConfiguration : ModuleConfiguration<TModule>, new()
+            where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TModule>, new()
         {
             try
             {
-                var eventArgs = new ConfigurationApplyEventArgs<TModule>(configuration);
+                var eventArgs = new ConfigurationApplyEventArgs<TAppCoreSelfReference, TModule>(configuration);
                 _module.OnConfigurationApply(eventArgs);
 
                 if (eventArgs.IsSuccess)
                 {
-                    var result = ((ModulesManager)AppCore.GetModulesManager()).ApplyModuleConfiguration(configuration, this, _module);
+                    var result = AppCore.GetModulesManager().ApplyModuleConfiguration(configuration, this, _module);
                     if (result == ApplyConfigurationResult.Success)
                     {
                         try { _module.OnConfigurationApplied(); } catch { }

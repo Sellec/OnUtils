@@ -15,7 +15,8 @@ namespace OnUtils.Application.Users
     /// Каждый поток приложения имеет ассоциированный контекст пользователя, от имени которого могут выполняться запросы и выполняться действия. 
     /// Более подробно см. <see cref="UserContextManager{TApplication}.GetCurrentUserContext"/> / <see cref="UserContextManager{TApplication}.SetCurrentUserContext(IUserContext)"/> / <see cref="UserContextManager{TApplication}.ClearCurrentUserContext"/>.
     /// </summary>
-    public class UserContextManager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IUnitOfWorkAccessor<DB.CoreContext>
+    public class UserContextManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<DB.CoreContext>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         public const string RoleUserName = "RoleUser";
         public const string RoleGuestName = "RoleGuest";
@@ -28,7 +29,7 @@ namespace OnUtils.Application.Users
         /// </summary>
         protected sealed override void OnStart()
         {
-            var systemUserContext = new UserContext(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
+            var systemUserContext = new UserContext<TAppCoreSelfReference>(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
             systemUserContext.Start(AppCore);
             _systemUserContext = systemUserContext;
         }
@@ -84,7 +85,7 @@ namespace OnUtils.Application.Users
         /// </summary>
         public virtual IUserContext CreateGuestUserContext()
         {
-            return new UserContext(new DB.UserBase() { IdUser = 0, IsSuperuser = false }, false);
+            return new UserContext<TAppCoreSelfReference>(new DB.UserBase() { IdUser = 0, IsSuperuser = false }, false);
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace OnUtils.Application.Users
                     var res = db.Users.Where(x => x.IdUser == idUser).FirstOrDefault();
                     if (res == null) return UserContextCreateResult.NotFound;
 
-                    var context = new UserContext(res, true);
+                    var context = new UserContext<TAppCoreSelfReference>(res, true);
                     context.Start(AppCore);
 
                     var permissionsResult = GetPermissions(context.IdUser);
@@ -194,7 +195,7 @@ namespace OnUtils.Application.Users
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
-            if (context is UserContext userContext)
+            if (context is UserContext<TAppCoreSelfReference> userContext)
             {
                 var permissionsResult = GetPermissions(context.IdUser);
                 if (permissionsResult.IsSuccess)

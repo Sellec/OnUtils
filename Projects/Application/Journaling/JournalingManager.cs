@@ -17,7 +17,8 @@ namespace OnUtils.Application.Journaling
     /// <summary>
     /// Представляет менеджер системных журналов. Позволяет создавать журналы, как привязанные к определенным типам, так и вручную, и регистрировать в них события.
     /// </summary>
-    public sealed class JournalingManager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IUnitOfWorkAccessor<UnitOfWork<DB.Journal, DB.JournalName>>
+    public sealed class JournalingManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.Journal, DB.JournalName>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         //Список журналов, основанных на определенном типе объектов.
         private ConcurrentDictionary<Type, ExecutionResultJournalName> _typedJournalsList = new ConcurrentDictionary<Type, ExecutionResultJournalName>();
@@ -72,7 +73,7 @@ namespace OnUtils.Application.Journaling
             catch (ArgumentNullException) { throw; }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.RegisterJournal)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterJournal)}: {ex.ToString()}");
                 return new ExecutionResultJournalName(false, $"Возникла ошибка во время регистрации журнала с именем '{name}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -113,7 +114,7 @@ namespace OnUtils.Application.Journaling
             catch (ArgumentNullException) { throw; }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.GetJournal)}(string): {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.GetJournal)}(string): {ex.ToString()}");
                 return new ExecutionResultJournalName(false, $"Возникла ошибка во время получения журнала с уникальным именем '{uniqueKey}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -136,7 +137,7 @@ namespace OnUtils.Application.Journaling
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.GetJournal)}(int): {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.GetJournal)}(int): {ex.ToString()}");
                 return new ExecutionResultJournalName(false, $"Возникла ошибка во время получения журнала с идентификатором '{IdJournal}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -160,7 +161,7 @@ namespace OnUtils.Application.Journaling
         /// <returns>Возвращает объект <see cref="ExecutionResultJournalDataList"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. В случае ошибки свойство <see cref="ExecutionResult.Message"/> содержит сообщение об ошибке.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relatedItem"/> равен null.</exception>
         [ApiIrreversible]
-        public ExecutionResultJournalDataList GetJournalForItem(ItemBase relatedItem)
+        public ExecutionResultJournalDataList GetJournalForItem(ItemBase<TAppCoreSelfReference> relatedItem)
         {
             if (relatedItem == null) throw new ArgumentNullException(nameof(relatedItem));
             var itemType = ItemTypeFactory.GetItemType(relatedItem.GetType());
@@ -179,7 +180,7 @@ namespace OnUtils.Application.Journaling
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.GetJournalForItem)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.GetJournalForItem)}: {ex.ToString()}");
                 return new ExecutionResultJournalDataList(false, $"Возникла ошибка во время получения событий. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -208,7 +209,7 @@ namespace OnUtils.Application.Journaling
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.GetJournalForItem)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.GetJournalForItem)}: {ex.ToString()}");
                 return new ExecutionResultJournalData(false, $"Возникла ошибка во время получения события. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -261,7 +262,7 @@ namespace OnUtils.Application.Journaling
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.RegisterEvent)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEvent)}: {ex.ToString()}");
                 return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{typeof(TJournalTyped).FullName}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -283,7 +284,7 @@ namespace OnUtils.Application.Journaling
         /// </returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relatedItem"/> равен null.</exception>
         [ApiIrreversible]
-        public ExecutionRegisterResult RegisterEventForItem(int IdJournal, ItemBase relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+        public ExecutionRegisterResult RegisterEventForItem(int IdJournal, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
         {
             if (relatedItem == null) throw new ArgumentNullException(nameof(relatedItem));
             var itemType = ItemTypeFactory.GetItemType(relatedItem.GetType());
@@ -308,7 +309,7 @@ namespace OnUtils.Application.Journaling
         /// </returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relatedItem"/> равен null.</exception>
         [ApiIrreversible]
-        public ExecutionRegisterResult RegisterEventForItem<TJournalTyped>(ItemBase relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+        public ExecutionRegisterResult RegisterEventForItem<TJournalTyped>(ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
         {
             if (relatedItem == null) throw new ArgumentNullException(nameof(relatedItem));
             var itemType = ItemTypeFactory.GetItemType(relatedItem.GetType());
@@ -323,7 +324,7 @@ namespace OnUtils.Application.Journaling
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.RegisterEventForItem)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEventForItem)}: {ex.ToString()}");
                 return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{typeof(TJournalTyped).FullName}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
@@ -375,7 +376,7 @@ namespace OnUtils.Application.Journaling
                         if (!string.IsNullOrEmpty(data.EventInfoDetailed)) body += $"Подробная информация: {data.EventInfoDetailed}\r\n";
                         if (!string.IsNullOrEmpty(data.ExceptionDetailed)) body += $"Исключение: {data.ExceptionDetailed}\r\n";
 
-                        AppCore.Get<Messaging.MessagingManager>().GetCriticalMessagesReceivers().ForEach(x => x.SendToAdmin(journalForCritical != null ? $"Критическая ошибка в журнале '{journalForCritical.Name}'" : "Критическая ошибка", body));
+                        AppCore.Get<Messaging.MessagingManager<TAppCoreSelfReference>>().GetCriticalMessagesReceivers().ForEach(x => x.SendToAdmin(journalForCritical != null ? $"Критическая ошибка в журнале '{journalForCritical.Name}'" : "Критическая ошибка", body));
                     }
 
                 }
@@ -384,12 +385,12 @@ namespace OnUtils.Application.Journaling
             }
             catch (HandledException ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.RegisterEvent)}: {ex.InnerException?.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEvent)}: {ex.InnerException?.ToString()}");
                 return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в журнал №{IdJournal}. {ex.Message} Смотрите информацию в системном текстовом журнале.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{typeof(JournalingManager).FullName}.{nameof(JournalingManager.RegisterEvent)}: {ex.ToString()}");
+                Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEvent)}: {ex.ToString()}");
                 return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в журнал №{IdJournal}. Смотрите информацию в системном текстовом журнале.");
             }
         }

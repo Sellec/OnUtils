@@ -13,7 +13,8 @@ namespace OnUtils.Application.Items
     /// Поддерживает атрибут <see cref="ConstructorInitializerAttribute"/> для методов класса. 
     /// </summary>
     [Serializable]
-    public abstract partial class ItemBase : IItemBase
+    public abstract partial class ItemBase<TAppCoreSelfReference> : IItemBase
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         //[NotMapped]
         //[Newtonsoft.Json.JsonIgnore]
@@ -32,7 +33,7 @@ namespace OnUtils.Application.Items
         /// Вызов конструктора с <paramref name="owner"/> = null аналогичен вызову беспараметрического конструктора.
         /// Подробнее про привязку к модулю см. <see cref="Owner"/>.
         /// </summary>
-        public ItemBase(ModuleCore owner)
+        public ItemBase(ModuleCore<TAppCoreSelfReference> owner)
         {
             this.Owner = owner;
 
@@ -121,9 +122,9 @@ namespace OnUtils.Application.Items
         /// </summary>
         [NotMapped]
         [Newtonsoft.Json.JsonIgnore]
-        public ModuleCore OwnerModule
+        public ModuleCore<TAppCoreSelfReference> OwnerModule
         {
-            get => Owner as ModuleCore;
+            get => Owner as ModuleCore<TAppCoreSelfReference>;
         }
 
         #endregion
@@ -143,7 +144,9 @@ namespace OnUtils.Application.Items
     /// Параметр-тип <typeparam name="TModuleType"/> позволяет беспараметрическому конструктору автоматически 
     /// найти объект модуля (обращением к <see cref="ModulesManager.GetModule{TModule}(bool)"/>) и задать в <see cref="ItemBase.Owner"/>.
     /// </summary>
-    public abstract class ItemBase<TModuleType> : ItemBase where TModuleType : ModuleCore
+    public abstract class ItemBase<TAppCoreSelfReference, TModuleType> : ItemBase<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
+        where TModuleType : ModuleCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// </summary>
@@ -159,7 +162,7 @@ namespace OnUtils.Application.Items
 
         private static TModuleType GetModule()
         {
-            var module = DeprecatedSingletonInstances.ModulesManager.GetModule<TModuleType>();
+            var module = DeprecatedSingletonInstances.Get<TAppCoreSelfReference>().GetModule<TModuleType>();
             return module;
         }
     }

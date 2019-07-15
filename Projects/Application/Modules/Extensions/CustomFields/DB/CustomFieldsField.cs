@@ -7,7 +7,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields.DB
 
 #pragma warning disable CS1591 // todo внести комментарии.
     [Table("CustomFieldsField")]
-    public class CustomFieldsField : Items.ItemBase, Field.IField
+    public class CustomFieldsField : Field.IField
     {
         private bool _IsMultipleValues = false;
         private Field.FieldValueType _IdValueType = Field.FieldValueType.Default;
@@ -100,27 +100,6 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields.DB
                 if (FieldType.ForcedIdValueType.HasValue) _IdValueType = FieldType.ForcedIdValueType.Value;
             }
         }
-
-        #region Items.ItemBase
-        public override int ID
-        {
-            get => IdField;
-            set => IdField = value;
-        }
-
-        public override string Caption
-        {
-            get => name;
-            set => name = value;
-        }
-
-        public override DateTime DateChangeBase
-        {
-            get => DateChange.FromTimestamp();
-            set => DateChange = value.Timestamp();
-        }
-
-        #endregion
 
         [ForeignKey("IdField")]
         public Field.ValueVariantCollection data

@@ -26,14 +26,6 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields.Data
 
         #region IField
         /// <summary>
-        /// См. <see cref="Field.IField.DateChangeBase"/> 
-        /// </summary>
-        public DateTime DateChangeBase
-        {
-            get => _field.DateChangeBase;
-        }
-
-        /// <summary>
         /// См. <see cref="Field.IField.alias"/> 
         /// </summary>
         public string alias

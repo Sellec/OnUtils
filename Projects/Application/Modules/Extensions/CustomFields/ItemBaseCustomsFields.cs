@@ -12,7 +12,8 @@ namespace OnUtils.Application.Items
     using OnUtils.Items;
 
     [System.Diagnostics.DebuggerDisplay("ItemBase: id={ID}")]
-    public abstract partial class ItemBase
+    public abstract partial class ItemBase<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         [Newtonsoft.Json.JsonIgnore]
         internal DefaultSchemeWData _fields = null;

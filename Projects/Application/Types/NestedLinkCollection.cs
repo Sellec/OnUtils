@@ -7,7 +7,8 @@ namespace OnUtils.Application.Types
     /// <summary>
     /// Содержимое <see cref="NestedLinkCollection"/> в уплощенной форме - без вложенной иерархии.
     /// </summary>
-    public class NestedListCollectionSimplified : System.Collections.ObjectModel.Collection<KeyValuePair<Items.ItemBase, string>>
+    public class NestedListCollectionSimplified<TAppCoreSelfReference> : System.Collections.ObjectModel.Collection<KeyValuePair<Items.ItemBase<TAppCoreSelfReference>, string>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
 
     }
@@ -15,7 +16,8 @@ namespace OnUtils.Application.Types
     /// <summary>
     /// Содержит ссылки и группы ссылок с неограниченной вложенностью.
     /// </summary>
-    public class NestedLinkCollection : List<Items.ItemBase>
+    public class NestedLinkCollection<TAppCoreSelfReference> : List<Items.ItemBase<TAppCoreSelfReference>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// Инициализирует пустой список.
@@ -26,32 +28,32 @@ namespace OnUtils.Application.Types
         /// <summary>
         /// Инициализирует список со значениями из <paramref name="source"/>.
         /// </summary>
-        public NestedLinkCollection(params Items.ItemBase[] source) : base(source)
+        public NestedLinkCollection(params Items.ItemBase<TAppCoreSelfReference>[] source) : base(source)
         { }
 
         /// <summary>
         /// Инициализирует список со значениями из <paramref name="source"/>.
         /// </summary>
-        public NestedLinkCollection(IEnumerable<Items.ItemBase> source) : base(source)
+        public NestedLinkCollection(IEnumerable<Items.ItemBase<TAppCoreSelfReference>> source) : base(source)
         { }
 
-        public NestedListCollectionSimplified GetSimplifiedHierarchy(string separator = " -> ")
+        public NestedListCollectionSimplified<TAppCoreSelfReference> GetSimplifiedHierarchy(string separator = " -> ")
         {
-            var items = new NestedListCollectionSimplified();
+            var items = new NestedListCollectionSimplified<TAppCoreSelfReference>();
 
-            Action<string, string, IEnumerable<Items.ItemBase>> action = null;
+            Action<string, string, IEnumerable<Items.ItemBase<TAppCoreSelfReference>>> action = null;
             action = (parent, _separator, source) =>
             {
                 if (source != null)
                     foreach (var item in source)
                     {
-                        if (item is NestedLinkGroup)
+                        if (item is NestedLinkGroup<TAppCoreSelfReference>)
                         {
-                            var group = item as NestedLinkGroup;
-                            items.Add(new KeyValuePair<Items.ItemBase, string>(group.SourceItem, parent + item.Caption));
+                            var group = item as NestedLinkGroup<TAppCoreSelfReference>;
+                            items.Add(new KeyValuePair<Items.ItemBase<TAppCoreSelfReference>, string>(group.SourceItem, parent + item.Caption));
                             action(item.Caption + _separator, _separator, group.Links);
                         }
-                        else items.Add(new KeyValuePair<Items.ItemBase, string>(item, parent + item.Caption));
+                        else items.Add(new KeyValuePair<Items.ItemBase<TAppCoreSelfReference>, string>(item, parent + item.Caption));
                     }
             };
 
@@ -63,19 +65,19 @@ namespace OnUtils.Application.Types
         /// <summary>
         /// Возвращает список элементов, отфильтрованных при помощи пользовательского фильтра <paramref name="itemFilter"/>.
         /// </summary>
-        public List<Items.ItemBase> FindNodes(Func<Items.ItemBase, bool> itemFilter)
+        public List<Items.ItemBase<TAppCoreSelfReference>> FindNodes(Func<Items.ItemBase<TAppCoreSelfReference>, bool> itemFilter)
         {
             if (itemFilter == null) throw new ArgumentNullException(nameof(itemFilter));
 
-            Action<List<Items.ItemBase>> action = null;
-            var filtered = new List<Items.ItemBase>();
+            Action<List<Items.ItemBase<TAppCoreSelfReference>>> action = null;
+            var filtered = new List<Items.ItemBase<TAppCoreSelfReference>>();
 
-            action = new Action<List<Items.ItemBase>>(x =>
+            action = new Action<List<Items.ItemBase<TAppCoreSelfReference>>>(x =>
             {
                 foreach (var item in x)
                 {
                     if (itemFilter(item)) filtered.AddIfNotExists(item);
-                    if (item is NestedLinkGroup) action((item as NestedLinkGroup).Links);
+                    if (item is NestedLinkGroup<TAppCoreSelfReference>) action((item as NestedLinkGroup<TAppCoreSelfReference>).Links);
                 }
             });
 
@@ -88,15 +90,16 @@ namespace OnUtils.Application.Types
     /// <summary>
     /// Коллекция ссылок, при этом сам заголовок группы тоже может быть ссылкой. Например, ссылка на категорию.
     /// </summary>
-    public class NestedLinkGroup : Items.ItemBase
+    public class NestedLinkGroup<TAppCoreSelfReference> : Items.ItemBase<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        private Items.ItemBase _groupItem = null;
+        private Items.ItemBase<TAppCoreSelfReference> _groupItem = null;
 
-        public NestedLinkGroup(string caption, params Items.ItemBase[] childs) : this(new NestedLinkSimple(caption), childs)
+        public NestedLinkGroup(string caption, params Items.ItemBase<TAppCoreSelfReference>[] childs) : this(new NestedLinkSimple<TAppCoreSelfReference>(caption), childs)
         {
         }
 
-        public NestedLinkGroup(Items.ItemBase groupItem, params Items.ItemBase[] childs)
+        public NestedLinkGroup(Items.ItemBase<TAppCoreSelfReference> groupItem, params Items.ItemBase<TAppCoreSelfReference>[] childs)
         {
             if (groupItem == null) throw new ArgumentNullException(nameof(groupItem));
             _groupItem = groupItem;
@@ -106,7 +109,7 @@ namespace OnUtils.Application.Types
         /// <summary>
         /// Вложенные ссылки.
         /// </summary>
-        public List<Items.ItemBase> Links { get; } = new List<Items.ItemBase>();
+        public List<Items.ItemBase<TAppCoreSelfReference>> Links { get; } = new List<Items.ItemBase<TAppCoreSelfReference>>();
 
         public override int ID
         {
@@ -131,7 +134,7 @@ namespace OnUtils.Application.Types
             get => _groupItem.Url;
         }
 
-        public Items.ItemBase SourceItem
+        public Items.ItemBase<TAppCoreSelfReference> SourceItem
         {
             get => _groupItem;
         }
@@ -140,7 +143,8 @@ namespace OnUtils.Application.Types
     /// <summary>
     /// Простая ссылка.
     /// </summary>
-    public class NestedLinkSimple : Items.ItemBase
+    public class NestedLinkSimple<TAppCoreSelfReference> : Items.ItemBase<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         public NestedLinkSimple(string caption, Uri url = null)
         {

@@ -61,7 +61,7 @@ namespace TestConsole
         }
     }
 
-    public class app : OnUtils.Application.ApplicationCore
+    public class app : OnUtils.Application.ApplicationCore<app>
     {
         public app(string physicalApplicationPath) : base(physicalApplicationPath)
         {

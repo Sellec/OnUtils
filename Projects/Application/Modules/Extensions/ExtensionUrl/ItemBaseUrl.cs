@@ -6,7 +6,8 @@ namespace OnUtils.Application.Items
     using Modules.Extensions.ExtensionUrl;
     using OnUtils.Items;
 
-    public abstract partial class ItemBase
+    public abstract partial class ItemBase<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         [Newtonsoft.Json.JsonIgnore]
         internal Uri _routingUrlMain = null;

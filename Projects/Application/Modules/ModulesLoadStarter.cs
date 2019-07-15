@@ -2,7 +2,8 @@
 {
     using Architecture.AppCore;
 
-    class ModulesLoadStarter : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IAutoStart
+    class ModulesLoadStarter<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         public ModulesLoadStarter()
         {

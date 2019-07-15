@@ -9,9 +9,10 @@ namespace OnUtils.Application.Configuration
     /// </summary>
     /// <typeparam name="TModule">Должен быть query-типом модуля, зарегистрированным в привязках типов.</typeparam>
     /// <seealso cref="AppCore{TAppCore}.GetQueryTypes"/>
-    /// <seealso cref="ModuleConfigurationManipulator{TModule}"/>
-    public class ModuleConfiguration<TModule>
-        where TModule : Modules.ModuleCore<TModule>
+    /// <seealso cref="ModuleConfigurationManipulator{TAppCoreSelfReference, TModule}"/>
+    public class ModuleConfiguration<TAppCoreSelfReference, TModule>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
+        where TModule : Modules.ModuleCore<TAppCoreSelfReference, TModule>
     {
         internal bool _isReadonly = false;
         internal ConfigurationValuesProvider _valuesProvider = new ConfigurationValuesProvider();

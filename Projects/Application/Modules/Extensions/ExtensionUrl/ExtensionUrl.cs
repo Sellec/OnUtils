@@ -12,7 +12,8 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
 
 #pragma warning disable CS1591 // todo внести комментарии.
     [ModuleExtension("ExtensionUrls")]
-    public abstract class ExtensionUrl : ModuleExtension
+    public abstract class ExtensionUrl<TAppCoreSelfReference> : ModuleExtension<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         private readonly object _syncRoot = new object();
 
@@ -25,9 +26,9 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
             Task.Delay(60000).ContinueWith(t => TimerCallback());
         }
 
-        public void PrepareItems<T>(IEnumerable<T> items, int IdItemType = 0) where T : Items.ItemBase
+        public void PrepareItems<T>(IEnumerable<T> items, int IdItemType = 0) where T : Items.ItemBase<TAppCoreSelfReference>
         {
-            if (IdItemType == 0) IdItemType = ModuleCore.ItemType;
+            if (IdItemType == 0) IdItemType = ModuleCore<TAppCoreSelfReference>.ItemType;
 
             if (items != null && items.Count() > 0)
             {
@@ -42,7 +43,7 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
         {
             public DateTime DateCreated { get; } = DateTime.Now;
 
-            public Dictionary<ItemBase, Type> Objects = new Dictionary<ItemBase, Type>();
+            public Dictionary<ItemBase<TAppCoreSelfReference>, Type> Objects = new Dictionary<ItemBase<TAppCoreSelfReference>, Type>();
         }
 
         private ConcurrentQueue<TimerData> _linksListsQueue = new ConcurrentQueue<TimerData>();
@@ -118,14 +119,14 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
         #endregion
 
         [Newtonsoft.Json.JsonIgnore]
-        private ConcurrentDictionary<Type, ConcurrentDictionary<ItemBase, int>> _defferedObjects = new ConcurrentDictionary<Type, ConcurrentDictionary<ItemBase, int>>();
+        private ConcurrentDictionary<Type, ConcurrentDictionary<ItemBase<TAppCoreSelfReference>, int>> _defferedObjects = new ConcurrentDictionary<Type, ConcurrentDictionary<ItemBase<TAppCoreSelfReference>, int>>();
 
-        public void RegisterToQuery<TItem>(TItem obj) where TItem : ItemBase
+        public void RegisterToQuery<TItem>(TItem obj) where TItem : ItemBase<TAppCoreSelfReference>
         {
             try
             {
                 var objType = obj.GetType();
-                var list = _defferedObjects.GetOrAdd(objType, t => new ConcurrentDictionary<ItemBase, int>());
+                var list = _defferedObjects.GetOrAdd(objType, t => new ConcurrentDictionary<ItemBase<TAppCoreSelfReference>, int>());
 
                 list[obj] = 0;
                 TimerClearDeffered.Objects[obj] = objType;
@@ -137,15 +138,15 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
         {
             if (_defferedObjects.ContainsKey(type))
             {
-                Dictionary<ItemBase, int> items = null;
+                Dictionary<ItemBase<TAppCoreSelfReference>, int> items = null;
                 lock (_syncRoot)
                 {
                     for (int i = 0; i < 3; i++)
                     {
                         try
                         {
-                            var newCollection = new ConcurrentDictionary<ItemBase, int>();
-                            ConcurrentDictionary<ItemBase, int> oldCollection = null;
+                            var newCollection = new ConcurrentDictionary<ItemBase<TAppCoreSelfReference>, int>();
+                            ConcurrentDictionary<ItemBase<TAppCoreSelfReference>, int> oldCollection = null;
 
                             _defferedObjects.AddOrUpdate(type, newCollection, (key, old) =>
                             {
@@ -184,12 +185,12 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
             }
         }
 
-        internal Dictionary<ItemBase, Tuple<Uri, UrlSourceType>> GetForQuery(int IdItemType, Type type, IEnumerable<ItemBase> items)
+        internal Dictionary<ItemBase<TAppCoreSelfReference>, Tuple<Uri, UrlSourceType>> GetForQuery(int IdItemType, Type type, IEnumerable<ItemBase<TAppCoreSelfReference>> items)
         {
             var absoluteUrl = GetBaseUrlForAbsolute();
             var itemsSet = items.GroupBy(x => x.OwnerModule, x => x).SelectMany(gr_ =>
             {
-                var itemsModule = gr_.ToDictionary<ItemBase, ItemBase, Tuple<Uri, UrlSourceType>>(x => x, x => null);
+                var itemsModule = gr_.ToDictionary<ItemBase<TAppCoreSelfReference>, ItemBase<TAppCoreSelfReference>, Tuple <Uri, UrlSourceType>>(x => x, x => null);
 
                 if (gr_.Key != null)
                 {
@@ -203,7 +204,7 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
                     }
                     else
                     {
-                        var itemsEmpty = new System.Collections.ObjectModel.Collection<ItemBase>();
+                        var itemsEmpty = new System.Collections.ObjectModel.Collection<ItemBase<TAppCoreSelfReference>>();
 
                         foreach (var x in keys)
                         {
@@ -234,7 +235,7 @@ namespace OnUtils.Application.Modules.Extensions.ExtensionUrl
             return itemsResult;
         }
 
-        protected abstract ExecutionResult<Dictionary<int, string>> GetUrl(ModuleCore module, IEnumerable<int> idItemList, int idItemType);
+        protected abstract ExecutionResult<Dictionary<int, string>> GetUrl(ModuleCore<TAppCoreSelfReference> module, IEnumerable<int> idItemList, int idItemType);
 
         protected abstract Uri GetBaseUrlForAbsolute();
         #endregion

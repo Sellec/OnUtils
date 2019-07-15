@@ -6,7 +6,8 @@
     /// <summary>
     /// Описывает сервис отправки/приема сообщений.
     /// </summary>
-    public interface IMessagingService : IPoolObject, ServiceMonitor.IMonitoredService, IComponentSingleton<ApplicationCore>, IAutoStart
+    public interface IMessagingService<TAppCoreSelfReference> : IPoolObject, ServiceMonitor.IMonitoredService<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// Указывает, что сервис поддерживает прием сообщений.

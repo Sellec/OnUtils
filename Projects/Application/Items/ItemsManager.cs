@@ -10,7 +10,8 @@ namespace OnUtils.Application.Items
     /// <summary>
     /// Менеджер, управляющий сущностями и типами сущностей.
     /// </summary>
-    public class ItemsManager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IUnitOfWorkAccessor<UnitOfWork<DB.ItemParent>>
+    public class ItemsManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.ItemParent>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         private class ParentsInternal
         {
@@ -43,7 +44,7 @@ namespace OnUtils.Application.Items
         /// <returns>Возвращает true, если сохранение прошло успешно и false, если возникла ошибка. Возвращает true, если <paramref name="relationsList"/> пуст.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="module"/> равен null.</exception>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relationsList"/> равен null.</exception>
-        public bool SaveChildToParentRelations(Modules.ModuleCore module, IEnumerable<ChildToParentRelation> relationsList, int idItemsType)
+        public bool SaveChildToParentRelations(Modules.ModuleCore<TAppCoreSelfReference> module, IEnumerable<ChildToParentRelation> relationsList, int idItemsType)
         {
             if (module == null) throw new ArgumentNullException(nameof(module));
             if (relationsList == null) throw new ArgumentNullException(nameof(relationsList));

@@ -11,7 +11,8 @@ namespace OnUtils.Application.Messaging
     using ServiceMonitor;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    public abstract class ServiceBase<TMessageType> : CoreComponentBase<ApplicationCore>, IMonitoredService, IMessagingServiceBackgroundOperations, IUnitOfWorkAccessor<UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory>>
+    public abstract class ServiceBase<TAppCoreSelfReference, TMessageType> : CoreComponentBase<TAppCoreSelfReference>, IMonitoredService<TAppCoreSelfReference>, IMessagingServiceBackgroundOperations<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TMessageType : MessageBase, new()
     {
         protected ServiceBase(string serviceName, Guid serviceID, int? idMessageType = null)
@@ -108,9 +109,9 @@ namespace OnUtils.Application.Messaging
             this.RegisterServiceState(ServiceStatus.Shutdown, "Сервис остановлен.");
         }
 
-        protected List<Connectors.IConnectorBase<TMessageType>> GetConnectors()
+        protected List<Connectors.IConnectorBase<TAppCoreSelfReference, TMessageType>> GetConnectors()
         {
-            return AppCore.Get<MessagingManager>().GetConnectorsByMessageType<TMessageType>().ToList();
+            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetConnectorsByMessageType<TMessageType>().ToList();
         }
 
         [ApiReversible]
@@ -124,11 +125,11 @@ namespace OnUtils.Application.Messaging
         #endregion
 
         #region Фоновые операции
-        void IMessagingServiceBackgroundOperations.ExecuteIncoming()
+        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteIncoming()
         {
         }
 
-        void IMessagingServiceBackgroundOperations.ExecuteOutcoming()
+        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteOutcoming()
         {
             int messagesAll = 0;
             int messagesSent = 0;
@@ -247,7 +248,7 @@ namespace OnUtils.Application.Messaging
                     this.RegisterServiceState(messagesErrors == 0 ? ServiceStatus.RunningIdeal : ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Отправлено - {messagesSent}. Ошибки отправки - {messagesErrors}.");
                 }
 
-                var service = AppCore.Get<Monitor>().GetService(ServiceID);
+                var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
                 if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
                 {
                     this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");

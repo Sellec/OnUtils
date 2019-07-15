@@ -14,15 +14,16 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
     using Scheme;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    public class ExtensionCustomsFieldsBase : ModuleExtension, IUnitOfWorkAccessor<Context>
+    public class ExtensionCustomsFieldsBase<TAppCoreSelfReference> : ModuleExtension<TAppCoreSelfReference>, IUnitOfWorkAccessor<Context>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         public class CacheCollection : IReadOnlyDictionary<SchemeItem, DefaultScheme>
         {
-            private ExtensionCustomsFieldsBase _extension = null;
+            private ExtensionCustomsFieldsBase<TAppCoreSelfReference> _extension = null;
             private IList<CustomFieldsScheme> _schemes = null;
             private Dictionary<SchemeItem, DefaultScheme> _dictionary = new Dictionary<SchemeItem, DefaultScheme>();
 
-            internal CacheCollection(ExtensionCustomsFieldsBase extension)
+            internal CacheCollection(ExtensionCustomsFieldsBase<TAppCoreSelfReference> extension)
             {
                 using (var db = extension.CreateUnitOfWork())
                 {
@@ -109,7 +110,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
             Module.RegisterPermission(PERM_EXTFIELDS_ALLOWMANAGE, "Настройка схемы полей");
 
             using (var db = this.CreateUnitOfWork())
-                db.DataContext.ExecuteQuery($"UPDATE CustomFieldsSchemeData SET IdItemType='{ModuleCore.CategoryType}' WHERE IdModule='{Module.ID}' AND IdItemType=0");
+                db.DataContext.ExecuteQuery($"UPDATE CustomFieldsSchemeData SET IdItemType='{ModuleCore<TAppCoreSelfReference>.CategoryType}' WHERE IdModule='{Module.ID}' AND IdItemType=0");
 
             Task.Delay(60000).ContinueWith(t => TimerCallback());
         }
@@ -228,8 +229,8 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
 
                 if (!norecursive)
                     foreach (var extension in this.Module.GetExtensions())
-                        if (extension is ExtensionCustomsFieldsBase && !this.Equals(extension))
-                            (extension as ExtensionCustomsFieldsBase).ClearCache(true);
+                        if (extension is ExtensionCustomsFieldsBase<TAppCoreSelfReference> && !this.Equals(extension))
+                            (extension as ExtensionCustomsFieldsBase<TAppCoreSelfReference>).ClearCache(true);
 
                 Proxy.ProxyHelper.ClearCache();
             }
@@ -252,7 +253,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
         {
             public DateTime DateCreated { get; } = DateTime.Now;
 
-            public Dictionary<Items.ItemBase, Type> Objects = new Dictionary<Items.ItemBase, Type>();
+            public Dictionary<Items.ItemBase<TAppCoreSelfReference>, Type> Objects = new Dictionary<Items.ItemBase<TAppCoreSelfReference>, Type>();
         }
 
         private ConcurrentQueue<TimerData> _linksListsQueue = new ConcurrentQueue<TimerData>();
@@ -302,10 +303,10 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
                                     foreach (var pair in objectsGroupedByType)
                                     {
                                         var objType = pair.Key;
-                                        ConcurrentBag<Items.ItemBase> list = null;
+                                        ConcurrentBag<Items.ItemBase<TAppCoreSelfReference>> list = null;
                                         if (_defferedObjects.TryGetValue(objType, out list))
                                         {
-                                            Items.ItemBase item;
+                                            Items.ItemBase<TAppCoreSelfReference> item;
                                             foreach (var obj in pair.Value)
                                             {
                                                 list.TryTake(out item);
@@ -328,12 +329,12 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
         }
         #endregion
 
-        private ConcurrentDictionary<Type, ConcurrentBag<Items.ItemBase>> _defferedObjects = new ConcurrentDictionary<Type, ConcurrentBag<Items.ItemBase>>();
+        private ConcurrentDictionary<Type, ConcurrentBag<Items.ItemBase<TAppCoreSelfReference>>> _defferedObjects = new ConcurrentDictionary<Type, ConcurrentBag<Items.ItemBase<TAppCoreSelfReference>>>();
 
-        public void RegisterToQuery<TItem>(TItem obj) where TItem : Items.ItemBase
+        public void RegisterToQuery<TItem>(TItem obj) where TItem : Items.ItemBase<TAppCoreSelfReference>
         {
             var objType = obj.GetType();
-            var list = _defferedObjects.GetOrAdd(objType, k => new ConcurrentBag<Items.ItemBase>());
+            var list = _defferedObjects.GetOrAdd(objType, k => new ConcurrentBag<Items.ItemBase<TAppCoreSelfReference>>());
 
             if (!list.Contains(obj)) list.Add(obj);
 
@@ -349,7 +350,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
                 var items = pair.Value.ToList();
 
                 int start = 0;
-                List<Items.ItemBase> subItems = null;
+                List<Items.ItemBase<TAppCoreSelfReference>> subItems = null;
 
                 do
                 {
@@ -374,7 +375,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
                     else break;
                 } while (subItems.Count() > 0);
 
-                Items.ItemBase someItem;
+                Items.ItemBase<TAppCoreSelfReference> someItem;
                 while (!pair.Value.IsEmpty) pair.Value.TryTake(out someItem);
             }
         }
@@ -382,7 +383,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
 
         private ConcurrentDictionary<object, Data.DefaultSchemeWData> _itemsData = new ConcurrentDictionary<object, Data.DefaultSchemeWData>();
 
-        public IDictionary<TItem, Data.DefaultSchemeWData> GetItemsFields<TItem>(IEnumerable<TItem> items) where TItem : Items.ItemBase
+        public IDictionary<TItem, Data.DefaultSchemeWData> GetItemsFields<TItem>(IEnumerable<TItem> items) where TItem : Items.ItemBase<TAppCoreSelfReference>
         {
             var measure = new MeasureTime();
             var measure2 = new MeasureTime();
@@ -461,7 +462,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
             }
         }
 
-        public Data.DefaultSchemeWData GetItemFields<TItem>(TItem item) where TItem : Items.ItemBase
+        public Data.DefaultSchemeWData GetItemFields<TItem>(TItem item) where TItem : Items.ItemBase<TAppCoreSelfReference>
         {
             var fields = GetItemsFields(new List<TItem>() { item });
             return fields.Select(x=>x.Value).FirstOrDefault();
@@ -490,7 +491,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
         }
 
         #region Проверка и сохранение данных
-        public void SaveItemFields<TItem>(TItem item) where TItem : Items.ItemBase
+        public void SaveItemFields<TItem>(TItem item) where TItem : Items.ItemBase<TAppCoreSelfReference>
         {
             if (item._fields != null)
             {

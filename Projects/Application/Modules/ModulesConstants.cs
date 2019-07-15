@@ -26,5 +26,9 @@ namespace OnUtils.Application.Modules
         /// Обозначает разрешение для доступа авторизованного пользователя к модулю.
         /// </summary>
         public static readonly Guid PermissionAccessUser = PermissionAccessUserString.GenerateGuid();
+
+        public const int CategoryType = 1;
+
+        public const int ItemType = 2;
     }
 }

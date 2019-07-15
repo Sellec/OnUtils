@@ -11,7 +11,8 @@ namespace OnUtils.Application.Modules
     /// <summary>
     /// Базовый класс для всех модулей. Обязателен при реализации любых модулей, т.к. при задании привязок в DI проверяется наследование именно от этого класса.
     /// </summary>
-    public abstract class ModuleCore : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>
+    public abstract class ModuleCore<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         #region Константы
         public const int CategoryType = 1;
@@ -30,7 +31,7 @@ namespace OnUtils.Application.Modules
         internal string _moduleCaption;
         internal string _moduleUrlName;
 
-        private List<Extensions.ModuleExtension> _extensions = new List<Extensions.ModuleExtension>();
+        private List<Extensions.ModuleExtension<TAppCoreSelfReference>> _extensions = new List<Extensions.ModuleExtension<TAppCoreSelfReference>>();
 
         /// <summary>
         /// Создает новый экземпляр класса.
@@ -152,7 +153,7 @@ namespace OnUtils.Application.Modules
         /// <returns>Возвращает результат проверки.</returns>
         public CheckPermissionResult CheckPermission(Guid key)
         {
-            return CheckPermission(AppCore.Get<Users.UserContextManager>().GetCurrentUserContext(), key);
+            return CheckPermission(AppCore.Get<Users.UserContextManager<TAppCoreSelfReference>>().GetCurrentUserContext(), key);
         }
 
         /// <summary>
@@ -252,7 +253,7 @@ namespace OnUtils.Application.Modules
         /// Указывает, что в модуле должно быть доступно расширение <typeparamref name="TExtension"/>.
         /// </summary>
         /// <typeparam name="TExtension"></typeparam>
-        public void RegisterExtension<TExtension>() where TExtension : Extensions.ModuleExtension
+        public void RegisterExtension<TExtension>() where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
         {
             if (!HasExtension<TExtension>())
             {
@@ -276,7 +277,7 @@ namespace OnUtils.Application.Modules
             }
         }
 
-        private bool HasExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension
+        private bool HasExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
         {
             var tt = typeof(TExtension);
             var extension = (from p in _extensions
@@ -286,7 +287,7 @@ namespace OnUtils.Application.Modules
             return (extension != null);
         }
 
-        private TExtension GetExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension
+        private TExtension GetExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
         {
             var tt = typeof(TExtension);
             var extension = (from p in _extensions
@@ -299,7 +300,7 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Возвращает список подключенных расширений.
         /// </summary>
-        public List<Extensions.ModuleExtension> GetExtensions()
+        public List<Extensions.ModuleExtension<TAppCoreSelfReference>> GetExtensions()
         {
             return _extensions;
         }
@@ -339,7 +340,7 @@ namespace OnUtils.Application.Modules
         /// <param name="SortOrder"></param>
         /// <param name="_params"></param>
         /// <returns></returns>
-        public virtual Types.NestedLinkCollection GetItems(int IdItemType, params object[] _params)
+        public virtual Types.NestedLinkCollection<TAppCoreSelfReference> GetItems(int IdItemType, params object[] _params)
         {
             return null;
         }
@@ -349,9 +350,9 @@ namespace OnUtils.Application.Modules
         /// Вызывается в случае, когда для объекта не был найден адрес в системе маршрутизации по ключу <see cref="Routing.RoutingConstants.MAINKEY"/>.
         /// </summary>
         /// <returns></returns>
-        public virtual Uri GenerateLink(Items.ItemBase item)
+        public virtual Uri GenerateLink(Items.ItemBase<TAppCoreSelfReference> item)
         {
-            throw new NotImplementedException(string.Format("Метод 'GenerateLink' класса '{0}' не определен в производном классе '{1}'", typeof(ModuleCore).FullName, this.GetType().FullName));
+            throw new NotImplementedException(string.Format("Метод 'GenerateLink' класса '{0}' не определен в производном классе '{1}'", typeof(ModuleCore<TAppCoreSelfReference>).FullName, this.GetType().FullName));
         }
 
         /// <summary>
@@ -359,7 +360,7 @@ namespace OnUtils.Application.Modules
         /// Вызывается для объектов, для которых не был найден адрес в системе маршрутизации по ключу <see cref="Routing.RoutingConstants.MAINKEY"/>.
         /// </summary>
         /// <returns></returns>
-        public virtual IReadOnlyDictionary<Items.ItemBase, Uri> GenerateLinks(IEnumerable<Items.ItemBase> items)
+        public virtual IReadOnlyDictionary<Items.ItemBase<TAppCoreSelfReference>, Uri> GenerateLinks(IEnumerable<Items.ItemBase<TAppCoreSelfReference>> items)
         {
             return items.ToDictionary(x => x, x => GenerateLink(x));
         }
@@ -377,17 +378,17 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Предоставляет доступ к расширению настраиваемых полей.
         /// </summary>
-        public Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase Fields
+        public Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference> Fields
         {
-            get => GetExtension<Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase>();
+            get => GetExtension<Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference>>();
         }
 
         /// <summary>
         /// Предоставляет доступ к расширению ЧПУ.
         /// </summary>
-        internal Modules.Extensions.ExtensionUrl.ExtensionUrl Urls
+        internal Modules.Extensions.ExtensionUrl.ExtensionUrl<TAppCoreSelfReference> Urls
         {
-            get => GetExtension<Modules.Extensions.ExtensionUrl.ExtensionUrl>();
+            get => GetExtension<Modules.Extensions.ExtensionUrl.ExtensionUrl<TAppCoreSelfReference>>();
         }
         #endregion
 
@@ -397,10 +398,11 @@ namespace OnUtils.Application.Modules
     /// Базовый класс для всех модулей. Обязателен при реализации любых модулей, т.к. при задании привязок в DI проверяется наследование именно от этого класса.
     /// </summary>
     /// <typeparam name="TSelfReference">Должен ссылаться сам на себя.</typeparam>
-    public abstract class ModuleCore<TSelfReference> : ModuleCore
-        where TSelfReference : ModuleCore<TSelfReference>
+    public abstract class ModuleCore<TAppCoreSelfReference, TSelfReference> : ModuleCore<TAppCoreSelfReference>
+        where TSelfReference : ModuleCore<TAppCoreSelfReference, TSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        internal ModuleConfigurationManipulator<TSelfReference> _configurationManipulator = null;
+        internal ModuleConfigurationManipulator<TAppCoreSelfReference, TSelfReference> _configurationManipulator = null;
 
         /// <summary>
         /// Создает новый объект модуля. 
@@ -422,7 +424,7 @@ namespace OnUtils.Application.Modules
         /// <seealso cref="ModuleConfigurationManipulator{TModule}"/>
         /// <seealso cref="GetConfigurationManipulator"/>
         public TConfiguration GetConfiguration<TConfiguration>()
-            where TConfiguration : ModuleConfiguration<TSelfReference>, new()
+            where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TSelfReference>, new()
         {
             return _configurationManipulator.GetUsable<TConfiguration>();
         }
@@ -430,7 +432,7 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Возвращает манипулятор конфигурацией, предоставляющий возможности получения и редактирования конфигурации.
         /// </summary>
-        public ModuleConfigurationManipulator<TSelfReference> GetConfigurationManipulator()
+        public ModuleConfigurationManipulator<TAppCoreSelfReference, TSelfReference> GetConfigurationManipulator()
         {
             return _configurationManipulator;
         }
@@ -441,7 +443,7 @@ namespace OnUtils.Application.Modules
         /// <param name="args">Содержит применяемые настройки модуля.</param>
         /// <seealso cref="GetConfigurationManipulator"/>
         /// <seealso cref="ModuleConfigurationManipulator{TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>
-        internal protected virtual void OnConfigurationApply(ConfigurationApplyEventArgs<TSelfReference> args)
+        internal protected virtual void OnConfigurationApply(ConfigurationApplyEventArgs<TAppCoreSelfReference, TSelfReference> args)
         {
 
         }

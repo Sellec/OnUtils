@@ -3,9 +3,10 @@
     using Architecture.AppCore;
     using Architecture.AppCore.DI;
 
-    class Startup : IConfigureBindings
+    class Startup<TAppCoreSelfReference> : IConfigureBindings<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        void IConfigureBindings<ApplicationCore>.ConfigureBindings(IBindingsCollection<ApplicationCore> bindingsCollection)
+        void IConfigureBindings<TAppCoreSelfReference>.ConfigureBindings(IBindingsCollection<TAppCoreSelfReference> bindingsCollection)
         {
         }
     }

@@ -7,10 +7,11 @@ namespace OnUtils.Application.Configuration
     /// <summary>
     /// Предоставляет информацию о сохраняемых настройках модуля в событие <see cref="Modules.ModuleCore{TSelfReference}.OnConfigurationApply(ConfigurationApplyEventArgs{TSelfReference})"/>.
     /// </summary>
-    public class ConfigurationApplyEventArgs<TModule> : EventArgs
-        where TModule : Modules.ModuleCore<TModule>
+    public class ConfigurationApplyEventArgs<TAppCoreSelfReference, TModule> : EventArgs
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
+        where TModule : Modules.ModuleCore<TAppCoreSelfReference, TModule>
     {
-        internal ConfigurationApplyEventArgs(ModuleConfiguration<TModule> configuration)
+        internal ConfigurationApplyEventArgs(ModuleConfiguration<TAppCoreSelfReference, TModule> configuration)
         {
             Configuration = configuration;
             IsSuccess = true;
@@ -30,7 +31,7 @@ namespace OnUtils.Application.Configuration
         /// <summary>
         /// Новые настройки
         /// </summary>
-        public ModuleConfiguration<TModule> Configuration { get; }
+        public ModuleConfiguration<TAppCoreSelfReference, TModule> Configuration { get; }
 
         internal bool IsSuccess { get; set; }
 

@@ -8,7 +8,8 @@ namespace OnUtils.Application.Configuration
     /// Класс конфигурации. При создании экземпляра объекта через метод Create ядра <see cref="ApplicationCore"/> автоматически заполняется значениями настроек ядра.
     /// </summary>
 #pragma warning disable CS1591 // todo внести комментарии.
-    public class CoreConfiguration : ModuleConfiguration<Modules.CoreModule.CoreModule>
+    public class CoreConfiguration<TAppCoreSelfReference> : ModuleConfiguration<TAppCoreSelfReference, Modules.CoreModule.CoreModule<TAppCoreSelfReference>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
         /// Основной системный язык.
@@ -36,8 +37,8 @@ namespace OnUtils.Application.Configuration
         /// </summary>
         public int RoleUser
         {
-            get => Get(Users.UserContextManager.RoleUserName, 0);
-            set => Set(Users.UserContextManager.RoleUserName, value);
+            get => Get(Users.UserContextManager<TAppCoreSelfReference>.RoleUserName, 0);
+            set => Set(Users.UserContextManager<TAppCoreSelfReference>.RoleUserName, value);
         }
 
         /// <summary>
@@ -45,8 +46,8 @@ namespace OnUtils.Application.Configuration
         /// </summary>
         public int RoleGuest
         {
-            get => Get(Users.UserContextManager.RoleGuestName, 0);
-            set => Set(Users.UserContextManager.RoleGuestName, value);
+            get => Get(Users.UserContextManager<TAppCoreSelfReference>.RoleGuestName, 0);
+            set => Set(Users.UserContextManager<TAppCoreSelfReference>.RoleGuestName, value);
         }
     }
 }
