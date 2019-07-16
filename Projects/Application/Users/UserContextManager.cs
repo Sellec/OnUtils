@@ -153,8 +153,8 @@ namespace OnUtils.Application.Users
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
-                    var idRoleUser = AppCore.Config.RoleUser;
-                    var idRoleGuest = AppCore.Config.RoleGuest;
+                    var idRoleUser = AppCore.AppConfig.RoleUser;
+                    var idRoleGuest = AppCore.AppConfig.RoleGuest;
 
                     var perms2 = (from p in db.RolePermission
                                   join ru in db.RoleUser on p.IdRole equals ru.IdRole into gj

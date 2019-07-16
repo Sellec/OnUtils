@@ -285,7 +285,7 @@ namespace OnUtils.Application.Modules
 
             var context = AppCore.GetUserContextManager().GetCurrentUserContext();
 
-            var permissionCheck = module.CheckPermission(context, ModuleCore<TAppCoreSelfReference>.PermissionSaveConfiguration);
+            var permissionCheck = module.CheckPermission(context, ModulesConstants.PermissionSaveConfiguration);
             if (permissionCheck == CheckPermissionResult.Denied) return ApplyConfigurationResult.PermissionDenied;
 
             var moduleType = typeof(TModule);

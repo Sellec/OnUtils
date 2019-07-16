@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OnUtils.Application.Messaging
+﻿namespace OnUtils.Application.Messaging
 {
     /// <summary>
     /// Базовый класс сообщения. Все специфические типы сообщений сервисов должны наследоваться от него.

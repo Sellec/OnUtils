@@ -16,10 +16,6 @@ namespace OnUtils.Application.Items
     public abstract partial class ItemBase<TAppCoreSelfReference> : IItemBase
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        //[NotMapped]
-        //[Newtonsoft.Json.JsonIgnore]
-        private Uri _link = null;
-
         /// <summary>
         /// Беспараметрический конструктор, создающий сущность, НЕ привязанную к модулю. 
         /// Подробнее про привязку к модулю см. <see cref="Owner"/>.
@@ -39,33 +35,6 @@ namespace OnUtils.Application.Items
 
             MethodMarkCallerAttribute.CallMethodsInObject<ConstructorInitializerAttribute>(this);
         }
-
-        #region Методы
-        /// <summary>
-        /// Возвращает ссылку на объект, сгенерированную с учетом типа объекта.
-        /// В первую очередь пытается получить ссылку, обращаясь к методу <see cref="GenerateLinkBase"/>, который может быть перегружен у наследуемых типов. 
-        /// Если <see cref="GenerateLinkBase"/> возвращает null, то пытается обратиться к методу <see cref="ModuleCore.GenerateLink(ItemBase)"/> владельца <see cref="Owner"/>, если владелец задан.
-        /// Если предыдущие попытки не увенчались успехом, возвращает null.
-        ///
-        /// После первого обращения значение ссылки кешируется во внутреннем свойстве и при последующих обращениях не вызывает регенерации, 
-        /// если не задано свойство <paramref name="ignoreCache"/>.
-        /// </summary>
-        /// <param name="ignoreCache">Если равно true, ссылка генерируется при каждом обращении к методу.</param>
-        public Uri GenerateLink(bool ignoreCache = false)
-        {
-            if (_link != null && !ignoreCache) return _link;
-            if (Owner != null) _link = OwnerModule.GenerateLink(this);
-            return _link;
-        }
-
-        /// <summary>
-        /// См. <see cref="GenerateLink(bool)"/>. 
-        /// </summary>
-        protected virtual Uri GenerateLinkBase()
-        {
-            return null;
-        }
-        #endregion
 
         #region Свойства
         /// <summary>

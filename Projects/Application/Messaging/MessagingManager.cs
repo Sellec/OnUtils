@@ -197,7 +197,7 @@ namespace OnUtils.Application.Messaging
 
                 _activeConnectors = new List<IComponentTransient<TAppCoreSelfReference>>();
 
-                var connectorsSettings = AppCore.Config.ConnectorsSettings;
+                var connectorsSettings = AppCore.AppConfig.ConnectorsSettings;
                 if (connectorsSettings != null)
                 {
                     var types = AppCore.

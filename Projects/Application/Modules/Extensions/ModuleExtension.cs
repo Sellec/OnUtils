@@ -90,11 +90,6 @@ namespace OnUtils.Application.Modules.Extensions
         ////    return "Не удалось найти объект в базе!";
         ////}
 
-        public virtual Types.NestedLinkCollection<TAppCoreSelfReference> getAdminMenu()
-        {
-            return null;
-        }
-
         protected int GetModuleID()
         {
             return this.ModuleID_Override > 0 ? this.ModuleID_Override : this.Module.ID;

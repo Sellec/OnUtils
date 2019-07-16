@@ -76,7 +76,7 @@ namespace OnUtils.Application.Languages
             {
                 using (var db = this.CreateUnitOfWork())
                 {
-                    var id = AppCore.Config.IdSystemLanguage;
+                    var id = AppCore.AppConfig.IdSystemLanguage;
                     var query = from Language in db.Repo1
                                 where Language.IsDefault != 0 || Language.IdLanguage == id
                                 orderby (Language.IdLanguage == id ? 1 : 0) descending
@@ -150,7 +150,7 @@ namespace OnUtils.Application.Languages
             {
                 using (var db = this.CreateUnitOfWork())
                 {
-                    var id = AppCore.Config.IdSystemLanguage;
+                    var id = AppCore.AppConfig.IdSystemLanguage;
                     var query = from Language in db.Repo1
                                 where Language.IsDefault != 0 || Language.IdLanguage == id
                                 orderby (Language.IdLanguage == id ? 1 : 0) descending

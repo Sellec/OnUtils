@@ -118,21 +118,19 @@ namespace OnUtils.Application
         /// </summary>
         public T ConfigurationOptionGet<T>(string name, T defaultValue = default(T))
         {
-            if (Config.ContainsKey(name))
+            if (AppConfig.ContainsKey(name))
             {
-                return Config.Get<T>(name, defaultValue);
+                return AppConfig.Get<T>(name, defaultValue);
             }
             return defaultValue;
         }
         #endregion
 
         #region Свойства
-
-
         /// <summary>
         /// Основные настройки приложения.
         /// </summary>
-        public CoreConfiguration<TAppCoreSelfReference> Config
+        public CoreConfiguration<TAppCoreSelfReference> AppConfig
         {
             get
             {
@@ -145,7 +143,6 @@ namespace OnUtils.Application
         /// Возвращает рабочую директорию приложения. 
         /// </summary>
         public string ApplicationWorkingFolder { get; private set; }
-
         #endregion
     }
 }

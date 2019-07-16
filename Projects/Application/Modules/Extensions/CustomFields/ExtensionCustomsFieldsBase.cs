@@ -110,7 +110,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
             Module.RegisterPermission(PERM_EXTFIELDS_ALLOWMANAGE, "Настройка схемы полей");
 
             using (var db = this.CreateUnitOfWork())
-                db.DataContext.ExecuteQuery($"UPDATE CustomFieldsSchemeData SET IdItemType='{ModuleCore<TAppCoreSelfReference>.CategoryType}' WHERE IdModule='{Module.ID}' AND IdItemType=0");
+                db.DataContext.ExecuteQuery($"UPDATE CustomFieldsSchemeData SET IdItemType='{ModulesConstants.CategoryType}' WHERE IdModule='{Module.ID}' AND IdItemType=0");
 
             Task.Delay(60000).ContinueWith(t => TimerCallback());
         }

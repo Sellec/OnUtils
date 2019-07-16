@@ -14,17 +14,6 @@ namespace OnUtils.Application.Modules
     public abstract class ModuleCore<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        #region Константы
-        public const int CategoryType = 1;
-        public const int ItemType = 2;
-
-        /// <summary>
-        /// Обозначает ключ разрешения для сохранения настроек модуля.
-        /// </summary>
-        public static readonly Guid PermissionSaveConfiguration = "perm_configSave".GenerateGuid();
-
-        #endregion
-
         private Dictionary<Guid, Permission> _permissions = new Dictionary<Guid, Permission>();
         private Guid _moduleBaseID = Guid.Empty;
         internal int _moduleId;
@@ -204,11 +193,11 @@ namespace OnUtils.Application.Modules
         /// Возвращает url-доступное название модуля. Не может быть пустым.
         /// Порядок определения значения свойства следующий:
         /// 1) Если задано - <see cref="ModuleCoreAttribute.DefaultUrlName"/>;
-        /// 2) Если задано - <see cref="ModuleConfiguration{TModule}.UrlName"/>;
+        /// 2) Если задано - <see cref="ModuleConfiguration{TAppCoreSelfReference, TModule}.UrlName"/>;
         /// 3) Если предыдущие пункты не вернули значения - используется <see cref="UniqueName"/>.
         /// </summary>
         /// <seealso cref="ModuleCoreAttribute.DefaultUrlName"/>
-        /// <seealso cref="ModuleConfiguration{TModule}.UrlName"/>
+        /// <seealso cref="ModuleConfiguration{TAppCoreSelfReference, TModule}.UrlName"/>
         public virtual string UrlName
         {
             get => _moduleUrlName;
@@ -287,7 +276,7 @@ namespace OnUtils.Application.Modules
             return (extension != null);
         }
 
-        private TExtension GetExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
+        protected TExtension GetExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
         {
             var tt = typeof(TExtension);
             var extension = (from p in _extensions
@@ -334,38 +323,6 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Возвращает список идентификатор=название указанного типа для текущего модуля. Например, это может быть список категорий.
-        /// </summary>
-        /// <param name="IdItemType"></param>
-        /// <param name="SortOrder"></param>
-        /// <param name="_params"></param>
-        /// <returns></returns>
-        public virtual Types.NestedLinkCollection<TAppCoreSelfReference> GetItems(int IdItemType, params object[] _params)
-        {
-            return null;
-        }
-
-        /// <summary>
-        /// Возвращает ссылку для переданного объекта.
-        /// Вызывается в случае, когда для объекта не был найден адрес в системе маршрутизации по ключу <see cref="Routing.RoutingConstants.MAINKEY"/>.
-        /// </summary>
-        /// <returns></returns>
-        public virtual Uri GenerateLink(Items.ItemBase<TAppCoreSelfReference> item)
-        {
-            throw new NotImplementedException(string.Format("Метод 'GenerateLink' класса '{0}' не определен в производном классе '{1}'", typeof(ModuleCore<TAppCoreSelfReference>).FullName, this.GetType().FullName));
-        }
-
-        /// <summary>
-        /// Возвращает ссылку для переданного объекта.
-        /// Вызывается для объектов, для которых не был найден адрес в системе маршрутизации по ключу <see cref="Routing.RoutingConstants.MAINKEY"/>.
-        /// </summary>
-        /// <returns></returns>
-        public virtual IReadOnlyDictionary<Items.ItemBase<TAppCoreSelfReference>, Uri> GenerateLinks(IEnumerable<Items.ItemBase<TAppCoreSelfReference>> items)
-        {
-            return items.ToDictionary(x => x, x => GenerateLink(x));
-        }
-
-        /// <summary>
         /// Уничтожает и выгружает модуль.
         /// </summary>
         public virtual void Dispose()
@@ -378,17 +335,9 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Предоставляет доступ к расширению настраиваемых полей.
         /// </summary>
-        public Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference> Fields
+        public Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference> Fields
         {
-            get => GetExtension<Modules.Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference>>();
-        }
-
-        /// <summary>
-        /// Предоставляет доступ к расширению ЧПУ.
-        /// </summary>
-        internal Modules.Extensions.ExtensionUrl.ExtensionUrl<TAppCoreSelfReference> Urls
-        {
-            get => GetExtension<Modules.Extensions.ExtensionUrl.ExtensionUrl<TAppCoreSelfReference>>();
+            get => GetExtension<Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference>>();
         }
         #endregion
 
@@ -397,6 +346,7 @@ namespace OnUtils.Application.Modules
     /// <summary>
     /// Базовый класс для всех модулей. Обязателен при реализации любых модулей, т.к. при задании привязок в DI проверяется наследование именно от этого класса.
     /// </summary>
+    /// <typeparam name="TAppCoreSelfReference">См. описание <see cref="ApplicationCore{TAppCoreSelfReference}"/>.</typeparam>
     /// <typeparam name="TSelfReference">Должен ссылаться сам на себя.</typeparam>
     public abstract class ModuleCore<TAppCoreSelfReference, TSelfReference> : ModuleCore<TAppCoreSelfReference>
         where TSelfReference : ModuleCore<TAppCoreSelfReference, TSelfReference>
@@ -421,7 +371,7 @@ namespace OnUtils.Application.Modules
         /// Все объекты конфигурации, созданные путем вызова этого метода, манипулируют одним набором значений. 
         /// </summary>
         /// <exception cref="InvalidOperationException">Возникает, если модуль не зарегистрирован.</exception>
-        /// <seealso cref="ModuleConfigurationManipulator{TModule}"/>
+        /// <seealso cref="ModuleConfigurationManipulator{TAppCoreSelfReference, TModule}"/>
         /// <seealso cref="GetConfigurationManipulator"/>
         public TConfiguration GetConfiguration<TConfiguration>()
             where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TSelfReference>, new()
@@ -438,11 +388,11 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Вызывается при сохранении настроек модуля. Если для <paramref name="args"/> был вызван <see cref="ConfigurationApplyEventArgs{TModule}.SetFailed(int)"/>, то <see cref="ModuleConfigurationManipulator{TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/> вернет <see cref="ApplyConfigurationResult.Failed"/>.
+        /// Вызывается при сохранении настроек модуля. Если для <paramref name="args"/> был вызван <see cref="ConfigurationApplyEventArgs{TAppCoreSelfReference, TModule}.SetFailed(int)"/>, то <see cref="ModuleConfigurationManipulator{TAppCoreSelfReference, TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/> вернет <see cref="ApplyConfigurationResult.Failed"/>.
         /// </summary>
         /// <param name="args">Содержит применяемые настройки модуля.</param>
         /// <seealso cref="GetConfigurationManipulator"/>
-        /// <seealso cref="ModuleConfigurationManipulator{TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>
+        /// <seealso cref="ModuleConfigurationManipulator{TAppCoreSelfReference, TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>
         internal protected virtual void OnConfigurationApply(ConfigurationApplyEventArgs<TAppCoreSelfReference, TSelfReference> args)
         {
 
@@ -452,7 +402,7 @@ namespace OnUtils.Application.Modules
         /// Вызывается после успешного сохранения и применения настроек модуля.
         /// </summary>
         /// <seealso cref="GetConfigurationManipulator"/>
-        /// <seealso cref="ModuleConfigurationManipulator{TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>
+        /// <seealso cref="ModuleConfigurationManipulator{TAppCoreSelfReference, TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>
         internal protected virtual void OnConfigurationApplied()
         {
 
@@ -461,7 +411,7 @@ namespace OnUtils.Application.Modules
 
         internal override void InitModule()
         {
-            RegisterPermission(PermissionSaveConfiguration, "Сохранение настроек модуля");
+            RegisterPermission(ModulesConstants.PermissionSaveConfiguration, "Сохранение настроек модуля");
             RegisterPermission(ModulesConstants.PermissionManage, "Управление модулем");
 
             InitModuleCustom();
@@ -472,11 +422,11 @@ namespace OnUtils.Application.Modules
         /// Возвращает url-доступное название модуля. Не может быть пустым.
         /// Порядок определения значения свойства следующий:
         /// 1) Если задано - <see cref="ModuleCoreAttribute.DefaultUrlName"/>;
-        /// 2) Если задано - <see cref="ModuleConfiguration{TModule}.UrlName"/>;
-        /// 3) Если предыдущие пункты не вернули значения - используется <see cref="ModuleCore.UniqueName"/>.
+        /// 2) Если задано - <see cref="ModuleConfiguration{TAppCoreSelfReference, TModule}.UrlName"/>;
+        /// 3) Если предыдущие пункты не вернули значения - используется <see cref="ModuleCore{TAppCoreSelfReference}.UniqueName"/>.
         /// </summary>
         /// <seealso cref="ModuleCoreAttribute.DefaultUrlName"/>
-        /// <seealso cref="ModuleConfiguration{TModule}.UrlName"/>
+        /// <seealso cref="ModuleConfiguration{TAppCoreSelfReference, TModule}.UrlName"/>
         public sealed override string UrlName
         {
             get

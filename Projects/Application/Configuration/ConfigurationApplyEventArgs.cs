@@ -5,7 +5,7 @@ namespace OnUtils.Application.Configuration
     using Journaling;
 
     /// <summary>
-    /// Предоставляет информацию о сохраняемых настройках модуля в событие <see cref="Modules.ModuleCore{TSelfReference}.OnConfigurationApply(ConfigurationApplyEventArgs{TSelfReference})"/>.
+    /// Предоставляет информацию о сохраняемых настройках модуля в событие <see cref="Modules.ModuleCore{TAppCoreSelfReference, TSelfReference}.OnConfigurationApply(ConfigurationApplyEventArgs{TAppCoreSelfReference, TSelfReference})"/>.
     /// </summary>
     public class ConfigurationApplyEventArgs<TAppCoreSelfReference, TModule> : EventArgs
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
@@ -21,7 +21,7 @@ namespace OnUtils.Application.Configuration
         /// Указывает, что сохранение настроек должно быть прервано. 
         /// </summary>
         /// <param name="idJournalData">Идентификатор записи в журнале с информацией об ошибке.</param>
-        /// <seealso cref="JournalingManager.GetJournalData(int)"/>
+        /// <seealso cref="JournalingManager{TAppCoreSelfReference}.GetJournalData(int)"/>
         public void SetFailed(int idJournalData)
         {
             IsSuccess = false;
