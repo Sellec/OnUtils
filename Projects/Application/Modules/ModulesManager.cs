@@ -17,20 +17,21 @@ namespace OnUtils.Application.Modules
     /// Система разделена на модули с определенным функционалом, к модулям могут быть привязаны операции, доступные пользователю извне (для внешних запросов).
     /// Права доступа регистрируются на модуль.
     /// </summary>
-    public class ModulesManager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IAutoStart, IUnitOfWorkAccessor<CoreContext>
+    public class ModulesManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart, IUnitOfWorkAccessor<CoreContext>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         class InstanceActivatedHandlerImpl : IInstanceActivatedHandler
         {
-            private readonly ModulesManager _manager;
+            private readonly ModulesManager<TAppCoreSelfReference> _manager;
 
-            public InstanceActivatedHandlerImpl(ModulesManager manager)
+            public InstanceActivatedHandlerImpl(ModulesManager<TAppCoreSelfReference> manager)
             {
                 _manager = manager;
             }
 
             void IInstanceActivatedHandler.OnInstanceActivated<TRequestedType>(object instance)
             {
-                if (instance is ModuleCore moduleCandidate)
+                if (instance is ModuleCore<TAppCoreSelfReference> moduleCandidate)
                 {
                     _manager.GetType().GetMethod(nameof(LoadModule), BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(typeof(TRequestedType)).Invoke(_manager, new object[] { instance });
                 }
@@ -39,7 +40,7 @@ namespace OnUtils.Application.Modules
 
         private readonly bool _isStartModulesOnManagerStart = true;
         private readonly object _syncRoot = new object();
-        private List<Tuple<Type, ModuleCore>> _modules = new List<Tuple<Type, ModuleCore>>();
+        private List<Tuple<Type, ModuleCore<TAppCoreSelfReference>>> _modules = new List<Tuple<Type, ModuleCore<TAppCoreSelfReference>>>();
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace OnUtils.Application.Modules
         /// </summary>
         public ModulesManager()
         {
-            DeprecatedSingletonInstances.ModulesManager = this;
+            DeprecatedSingletonInstances.Set<TAppCoreSelfReference>(this);
             _isStartModulesOnManagerStart = false;
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl(this);
         }
@@ -76,12 +77,12 @@ namespace OnUtils.Application.Modules
         {
             lock (_syncRoot)
             {
-                var moduleCoreType = typeof(ModuleCore);
+                var moduleCoreType = typeof(ModuleCore<TAppCoreSelfReference>);
 
                 // Сначала ищем список модулей.
                 var filteredTypesList = AppCore.GetQueryTypes().Where(FilterModuleTypes);
-                if (!filteredTypesList.IsNullOrEmpty() && filteredTypesList.Any(type => !typeof(ModuleCore).IsAssignableFrom(type)))
-                    throw new ApplicationStartException(ApplicationStartStep.BindingsAutoStartCritical, typeof(ModulesManager), new ArgumentException());
+                if (!filteredTypesList.IsNullOrEmpty() && filteredTypesList.Any(type => !typeof(ModuleCore<TAppCoreSelfReference>).IsAssignableFrom(type)))
+                    throw new ApplicationStartException(ApplicationStartStep.BindingsAutoStartCritical, typeof(ModulesManager<TAppCoreSelfReference>), new ArgumentException());
 
                 // todo добавить журналирование this.RegisterEvent(Journaling.EventType.Info, "Первичная загрузка списка модулей", $"Найдены следующие привязки модулей:\r\n - {string.Join(";\r\n - ", modulesTypesList.Keys.Select(x => x.FullName))}.");
 
@@ -89,7 +90,7 @@ namespace OnUtils.Application.Modules
                 {
                     try
                     {
-                        var moduleInstance = AppCore.Get<ModuleCore>(moduleType);
+                        var moduleInstance = AppCore.Get<ModuleCore<TAppCoreSelfReference>>(moduleType);
                     }
                     catch (Exception ex)
                     {
@@ -107,7 +108,7 @@ namespace OnUtils.Application.Modules
         /// </summary>
         protected bool FilterModuleTypes(Type typeFromDI)
         {
-            var moduleCoreType = typeof(ModuleCore);
+            var moduleCoreType = typeof(ModuleCore<TAppCoreSelfReference>);
             return moduleCoreType.IsAssignableFrom(typeFromDI) && typeFromDI.GetCustomAttribute< ModuleCoreAttribute>() != null;
         }
 
@@ -116,13 +117,14 @@ namespace OnUtils.Application.Modules
             GetType().GetMethod(nameof(LoadModuleCustom), BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(typeof(TModuleType)).Invoke(this, new object[] { module });
         }
 
-        private void LoadModuleCustom<TModuleType>(TModuleType module) where TModuleType : ModuleCore<TModuleType>
+        private void LoadModuleCustom<TModuleType>(TModuleType module)
+            where TModuleType : ModuleCore<TAppCoreSelfReference, TModuleType>
         {
             var moduleType = typeof(TModuleType);
             var moduleCoreAttribute = moduleType.GetCustomAttribute<ModuleCoreAttribute>();
 
-            var moduleRegisterHandlerTypes = AppCore.GetQueryTypes().Where(x => typeof(IModuleRegisteredHandler).IsAssignableFrom(x)).ToList();
-            var moduleRegisterHandlers = moduleRegisterHandlerTypes.Select(x => AppCore.Get<IModuleRegisteredHandler>(x)).ToList();
+            var moduleRegisterHandlerTypes = AppCore.GetQueryTypes().Where(x => typeof(IModuleRegisteredHandler<TAppCoreSelfReference>).IsAssignableFrom(x)).ToList();
+            var moduleRegisterHandlers = moduleRegisterHandlerTypes.Select(x => AppCore.Get<IModuleRegisteredHandler<TAppCoreSelfReference>>(x)).ToList();
 
             using (var db = this.CreateUnitOfWork())
             {
@@ -138,11 +140,11 @@ namespace OnUtils.Application.Modules
                 module._moduleCaption = moduleCoreAttribute.Caption;
                 module._moduleUrlName = moduleCoreAttribute.DefaultUrlName;
 
-                var configurationManipulator = new ModuleConfigurationManipulator<TModuleType>(module, CreateValuesProviderForModule(module));
+                var configurationManipulator = new ModuleConfigurationManipulator<TAppCoreSelfReference, TModuleType>(module, CreateValuesProviderForModule(module));
                 configurationManipulator.Start(AppCore);
                 module._configurationManipulator = configurationManipulator;
 
-                var cfg = configurationManipulator.GetUsable<ModuleConfiguration<TModuleType>>();
+                var cfg = configurationManipulator.GetUsable<ModuleConfiguration<TAppCoreSelfReference, TModuleType>>();
 
                 if (!string.IsNullOrEmpty(cfg.UrlName)) module._moduleUrlName = cfg.UrlName;
                 module.InitModule();
@@ -150,9 +152,9 @@ namespace OnUtils.Application.Modules
 
                 _modules.RemoveAll(x => x.Item1 == typeof(TModuleType));
                 LoadModuleCallModuleStart(module);
-                _modules.Add(new Tuple<Type, ModuleCore>(typeof(TModuleType), module));
+                _modules.Add(new Tuple<Type, ModuleCore<TAppCoreSelfReference>>(typeof(TModuleType), module));
 
-                AppCore.Get<JournalingManager>().RegisterJournalTyped<TModuleType>("Журнал событий модуля '" + module.Caption + "'");
+                AppCore.Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped<TModuleType>("Журнал событий модуля '" + module.Caption + "'");
 
                 this.RegisterEvent(
                      EventType.Info,
@@ -166,7 +168,7 @@ namespace OnUtils.Application.Modules
         /// Может быть использован для вызова метода <see cref="ModuleBase{TApplication}.OnModuleStart"/> в других реализациях менеджера модулей. 
         /// Метод <see cref="ModuleBase{TApplication}.OnModuleStart"/> будет вызван только для новых модулей, т.е. модулей, отсутствующих в списке уже инициализированных.
         /// </summary>
-        protected void LoadModuleCallModuleStart(ModuleCore module)
+        protected void LoadModuleCallModuleStart(ModuleCore<TAppCoreSelfReference> module)
         {
             if (!_modules.Any(x => x.Item2 == module))
             {
@@ -179,7 +181,7 @@ namespace OnUtils.Application.Modules
         /// </summary>
         /// <typeparam name="TModule">Тип модуля. Это должен быть query-тип из привязок типов (см. описание <see cref="ApplicationBase{TSelfReference}"/>).</typeparam>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
-        public TModule GetModule<TModule>(bool isSearchNested = true) where TModule : ModuleCore
+        public TModule GetModule<TModule>(bool isSearchNested = true) where TModule : ModuleCore<TAppCoreSelfReference>
         {
             lock (_syncRoot)
             {
@@ -190,12 +192,12 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Возращает список модулей, зарегистрированных в системе.
         /// </summary>
-        public List<ModuleCore> GetModules()
+        public List<ModuleCore<TAppCoreSelfReference>> GetModules()
         {
             lock (_syncRoot)
             {
                 var module = _modules.
-                    Select(x => (ModuleCore)x.Item2).
+                    Select(x => (ModuleCore<TAppCoreSelfReference>)x.Item2).
                     ToList();
 
                 return module;
@@ -206,7 +208,7 @@ namespace OnUtils.Application.Modules
         /// Возвращает модуль с url-доступным именем <paramref name="urlName"/> (см. <see cref="ModuleCore.UrlName"/>).
         /// </summary>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
-        public ModuleCore GetModule(string urlName)
+        public ModuleCore<TAppCoreSelfReference> GetModule(string urlName)
         {
             lock (_syncRoot)
             {
@@ -214,12 +216,10 @@ namespace OnUtils.Application.Modules
                 var module =
                     _modules.
                     Select(x => x.Item2).
-                    OfType<ModuleCore>().
                     Where(x => !string.IsNullOrEmpty(x._moduleUrlName) && x._moduleUrlName.Equals(urlName, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault() ??
                     _modules.
                     Select(x => x.Item2).
-                    OfType<ModuleCore>().
                     Where(x => !string.IsNullOrEmpty(x.UrlName) && x.UrlName.Equals(urlName, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault();
 
@@ -232,13 +232,12 @@ namespace OnUtils.Application.Modules
         /// </summary>
         /// <param name="moduleID">Идентификатор модуля.</param>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
-        public ModuleCore GetModule(int moduleID)
+        public ModuleCore<TAppCoreSelfReference> GetModule(int moduleID)
         {
             lock (_syncRoot)
             {
                 var module = _modules.
                     Select(x => x.Item2).
-                    OfType<ModuleCore>().
                     Where(x => x.IdModule == moduleID).
                     FirstOrDefault();
 
@@ -251,13 +250,12 @@ namespace OnUtils.Application.Modules
         /// </summary>
         /// <param name="uniqueName">Уникальное имя модуля.</param>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
-        public ModuleCore GetModule(Guid uniqueName)
+        public ModuleCore<TAppCoreSelfReference> GetModule(Guid uniqueName)
         {
             lock (_syncRoot)
             {
                 var module = _modules.
                     Select(x => x.Item2).
-                    OfType<ModuleCore>().
                     Where(x => x.UniqueName == uniqueName).
                     FirstOrDefault();
 
@@ -265,7 +263,7 @@ namespace OnUtils.Application.Modules
             }
         }
 
-        internal ConfigurationValuesProvider CreateValuesProviderForModule(ModuleCore module)
+        internal ConfigurationValuesProvider CreateValuesProviderForModule(ModuleCore<TAppCoreSelfReference> module)
         {
             var configurationValuesProvider = new ConfigurationValuesProvider();
             using (var db = new CoreContext())
@@ -279,15 +277,15 @@ namespace OnUtils.Application.Modules
             return configurationValuesProvider;
         }
 
-        internal ApplyConfigurationResult ApplyModuleConfiguration<TModule, TConfiguration>(TConfiguration configuration, ModuleConfigurationManipulator<TModule> moduleConfigurationManipulator, TModule module)
-            where TModule : ModuleCore<TModule>
-            where TConfiguration : ModuleConfiguration<TModule>, new()
+        internal ApplyConfigurationResult ApplyModuleConfiguration<TModule, TConfiguration>(TConfiguration configuration, ModuleConfigurationManipulator<TAppCoreSelfReference, TModule> moduleConfigurationManipulator, TModule module)
+            where TModule : ModuleCore<TAppCoreSelfReference, TModule>
+            where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TModule>, new()
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
             var context = AppCore.GetUserContextManager().GetCurrentUserContext();
 
-            var permissionCheck = module.CheckPermission(context, ModuleCore.PermissionSaveConfiguration);
+            var permissionCheck = module.CheckPermission(context, ModulesConstants.PermissionSaveConfiguration);
             if (permissionCheck == CheckPermissionResult.Denied) return ApplyConfigurationResult.PermissionDenied;
 
             var moduleType = typeof(TModule);

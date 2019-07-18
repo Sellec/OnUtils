@@ -61,7 +61,7 @@ namespace TestConsole
         }
     }
 
-    public class app : OnUtils.Application.ApplicationCore
+    public class app : OnUtils.Application.ApplicationCore<app>
     {
         public app(string physicalApplicationPath) : base(physicalApplicationPath)
         {
@@ -77,6 +77,7 @@ namespace TestConsole
             var app = new app(Environment.CurrentDirectory);
             app.Start();
 
+            app.Stop();
             var d = new ccc();
             var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
             ddd.First().IdUserChange = 123133;

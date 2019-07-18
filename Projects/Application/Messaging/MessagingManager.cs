@@ -14,20 +14,21 @@ namespace OnUtils.Application.Messaging
     /// <summary>
     /// Представляет менеджер, управляющий обменом сообщениями - уведомления, электронная почта, смс и прочее.
     /// </summary>
-    public class MessagingManager : CoreComponentBase<ApplicationCore>, IComponentSingleton<ApplicationCore>, IAutoStart
+    public class MessagingManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         class InstanceActivatedHandlerImpl : IInstanceActivatedHandler
         {
-            private readonly MessagingManager _manager;
+            private readonly MessagingManager<TAppCoreSelfReference> _manager;
 
-            public InstanceActivatedHandlerImpl(MessagingManager manager)
+            public InstanceActivatedHandlerImpl(MessagingManager<TAppCoreSelfReference> manager)
             {
                 _manager = manager;
             }
 
             void IInstanceActivatedHandler.OnInstanceActivated<TRequestedType>(object instance)
             {
-                if (instance is IMessagingService service)
+                if (instance is IMessagingService<TAppCoreSelfReference> service)
                 {
                     if (!_manager._services.Contains(service)) _manager._services.Add(service);
                 }
@@ -40,20 +41,20 @@ namespace OnUtils.Application.Messaging
         }
 
         private static MethodInfo _connectorCreateCall = null;
-        private static ApplicationCore _appCore = null;
+        private static ApplicationCore<TAppCoreSelfReference> _appCore = null;
         private volatile bool _incomingLock = false;
         private volatile bool _outcomingLock = false;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
-        private List<IMessagingService> _services = new List<IMessagingService>();
+        private List<IMessagingService<TAppCoreSelfReference>> _services = new List<IMessagingService<TAppCoreSelfReference>>();
 
         private object _activeConnectorsSyncRoot = new object();
-        private List<IComponentTransient<ApplicationCore>> _activeConnectors = null;
+        private List<IComponentTransient<TAppCoreSelfReference>> _activeConnectors = null;
 
         static MessagingManager()
         {
-            _connectorCreateCall = typeof(MessagingManager).GetMethod(nameof(InitConnector), BindingFlags.NonPublic | BindingFlags.Instance);
-            if (_connectorCreateCall == null) throw new TypeInitializationException(typeof(MessagingManager).FullName, new Exception($"Ошибка поиска метода '{nameof(InitConnector)}'"));
+            _connectorCreateCall = typeof(MessagingManager<TAppCoreSelfReference>).GetMethod(nameof(InitConnector), BindingFlags.NonPublic | BindingFlags.Instance);
+            if (_connectorCreateCall == null) throw new TypeInitializationException(typeof(MessagingManager<TAppCoreSelfReference>).FullName, new Exception($"Ошибка поиска метода '{nameof(InitConnector)}'"));
         }
 
         public MessagingManager()
@@ -68,25 +69,25 @@ namespace OnUtils.Application.Messaging
             AppCore.ObjectProvider.RegisterInstanceActivatedHandler(_instanceActivatedHandler);
 
             // Попытка инициализировать все сервисы отправки сообщений, наследующиеся от IMessagingService.
-            var types = AppCore.GetQueryTypes().Where(x => x.GetInterfaces().Contains(typeof(IMessagingService))).ToList();
+            var types = AppCore.GetQueryTypes().Where(x => x.GetInterfaces().Contains(typeof(IMessagingService<TAppCoreSelfReference>))).ToList();
             foreach (var type in types)
             {
                 try
                 {
-                    var instance = AppCore.Get<IMessagingService>(type);
+                    var instance = AppCore.Get<IMessagingService<TAppCoreSelfReference>>(type);
                     if (instance != null && !_services.Contains(instance)) _services.Add(instance);
                 }
                 catch { }
             }
 
-            TasksManager.SetTask(typeof(MessagingManager).FullName + "_" + nameof(PrepareIncoming) + "_minutely1", Cron.MinuteInterval(1), () => PrepareIncomingTasks());
-            TasksManager.SetTask(typeof(MessagingManager).FullName + "_" + nameof(PrepareOutcoming) + "_minutely1", Cron.MinuteInterval(1), () => PrepareOutcomingTasks());
+            TasksManager.SetTask(typeof(MessagingManager<TAppCoreSelfReference>).FullName + "_" + nameof(PrepareIncoming) + "_minutely1", Cron.MinuteInterval(1), () => PrepareIncomingTasks());
+            TasksManager.SetTask(typeof(MessagingManager<TAppCoreSelfReference>).FullName + "_" + nameof(PrepareOutcoming) + "_minutely1", Cron.MinuteInterval(1), () => PrepareOutcomingTasks());
         }
 
         protected sealed override void OnStop()
         {
-            TasksManager.RemoveTask(typeof(MessagingManager).FullName + "_" + nameof(PrepareIncoming) + "_minutely1");
-            TasksManager.RemoveTask(typeof(MessagingManager).FullName + "_" + nameof(PrepareOutcoming) + "_minutely1");
+            TasksManager.RemoveTask(typeof(MessagingManager<TAppCoreSelfReference>).FullName + "_" + nameof(PrepareIncoming) + "_minutely1");
+            TasksManager.RemoveTask(typeof(MessagingManager<TAppCoreSelfReference>).FullName + "_" + nameof(PrepareOutcoming) + "_minutely1");
         }
         #endregion
 
@@ -94,7 +95,7 @@ namespace OnUtils.Application.Messaging
         #region Отправка/получение
         public static void PrepareIncomingTasks()
         {
-            _appCore?.Get<MessagingManager>()?.PrepareIncoming();
+            _appCore?.Get<MessagingManager<TAppCoreSelfReference>>()?.PrepareIncoming();
         }
 
         public void PrepareIncoming()
@@ -105,7 +106,7 @@ namespace OnUtils.Application.Messaging
             {
                 _incomingLock = true;
 
-                foreach (var provider in _services.Where(x => x.IsSupportsIncoming && x is IMessagingServiceBackgroundOperations).Select(x => x as IMessagingServiceBackgroundOperations))
+                foreach (var provider in _services.Where(x => x.IsSupportsIncoming && x is IMessagingServiceBackgroundOperations<TAppCoreSelfReference>).Select(x => x as IMessagingServiceBackgroundOperations<TAppCoreSelfReference>))
                 {
                     try
                     {
@@ -121,7 +122,7 @@ namespace OnUtils.Application.Messaging
 
         public static void PrepareOutcomingTasks()
         {
-            _appCore?.Get<MessagingManager>()?.PrepareOutcoming();
+            _appCore?.Get<MessagingManager<TAppCoreSelfReference>>()?.PrepareOutcoming();
         }
 
         public void PrepareOutcoming()
@@ -131,7 +132,7 @@ namespace OnUtils.Application.Messaging
             try
             {
                 _outcomingLock = true;
-                foreach (var provider in _services.Where(x => x.IsSupportsOutcoming && x is IMessagingServiceBackgroundOperations).Select(x => x as IMessagingServiceBackgroundOperations))
+                foreach (var provider in _services.Where(x => x.IsSupportsOutcoming && x is IMessagingServiceBackgroundOperations<TAppCoreSelfReference>).Select(x => x as IMessagingServiceBackgroundOperations<TAppCoreSelfReference>))
                 {
                     try
                     {
@@ -149,13 +150,13 @@ namespace OnUtils.Application.Messaging
         /// <summary>
         /// Возвращает список коннекторов, поддерживающих обмен сообщениями указанного типа <typeparamref name="TMessage"/>.
         /// </summary>
-        public IEnumerable<IConnectorBase<TMessage>> GetConnectorsByMessageType<TMessage>() where TMessage : MessageBase, new()
+        public IEnumerable<IConnectorBase<TAppCoreSelfReference, TMessage>> GetConnectorsByMessageType<TMessage>() where TMessage : MessageBase, new()
         {
             lock (_activeConnectorsSyncRoot)
                 if (_activeConnectors == null)
                     UpdateConnectorsFromSettings();
 
-            return _activeConnectors.OfType<IConnectorBase<TMessage>>();
+            return _activeConnectors.OfType<IConnectorBase<TAppCoreSelfReference, TMessage>>();
         }
 
         /// <summary>
@@ -169,7 +170,7 @@ namespace OnUtils.Application.Messaging
         /// <summary>
         /// Возвращает список сервисов обмена сообщениями.
         /// </summary>
-        public IEnumerable<IMessagingService> GetMessagingServices()
+        public IEnumerable<IMessagingService<TAppCoreSelfReference>> GetMessagingServices()
         {
             return _services.ToList();
         }
@@ -194,16 +195,16 @@ namespace OnUtils.Application.Messaging
                         }
                     });
 
-                _activeConnectors = new List<IComponentTransient<ApplicationCore>>();
+                _activeConnectors = new List<IComponentTransient<TAppCoreSelfReference>>();
 
-                var connectorsSettings = AppCore.Config.ConnectorsSettings;
+                var connectorsSettings = AppCore.AppConfig.ConnectorsSettings;
                 if (connectorsSettings != null)
                 {
                     var types = AppCore.
                         GetQueryTypes().
-                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericInterface(x, typeof(IConnectorBase<>)) }).
+                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericInterface(x, typeof(IConnectorBase<,>)) }).
                         Where(x => x.Extracted != null).
-                        Select(x => new { x.Type, MessageType = x.Extracted.GetGenericArguments()[0] }).
+                        Select(x => new { x.Type, MessageType = x.Extracted.GetGenericArguments()[1] }).
                         ToList();
 
                     foreach (var setting in connectorsSettings)
@@ -217,7 +218,7 @@ namespace OnUtils.Application.Messaging
 
                         try
                         {
-                            var connector = AppCore.Create<IComponentTransient<ApplicationCore>>(connectorType.Type);
+                            var connector = AppCore.Create<IComponentTransient<TAppCoreSelfReference>>(connectorType.Type);
                             var initResult = (bool)_connectorCreateCall.MakeGenericMethod(connectorType.MessageType).Invoke(this, new object[] { connector, setting.SettingsSerialized });
                             if (!initResult)
                             {
@@ -236,7 +237,7 @@ namespace OnUtils.Application.Messaging
             }
         }
 
-        private bool InitConnector<TMessage>(IConnectorBase<TMessage> connector, string serializedSettings) where TMessage : MessageBase, new()
+        private bool InitConnector<TMessage>(IConnectorBase<TAppCoreSelfReference, TMessage> connector, string serializedSettings) where TMessage : MessageBase, new()
         {
             return connector.Init(serializedSettings);
         }

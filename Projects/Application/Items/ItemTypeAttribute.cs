@@ -20,7 +20,7 @@ namespace OnUtils.Application.Items
         /// <summary>
         /// Создает новый экземпляр атрибута с указанным типом объекта (см. <see cref="ItemTypeFactory.GetItemType(Type)"/>).
         /// </summary>
-        public ItemTypeAttribute(int IdItemType = ModuleCore.ItemType)
+        public ItemTypeAttribute(int IdItemType = ModulesConstants.ItemType)
         {
             this.IdItemType = IdItemType;
         }
@@ -56,7 +56,7 @@ namespace OnUtils.Application.Items
             var itemType = ItemTypeFactory.GetItemType(t);
             if (itemType != null) return itemType.IdItemType;
 
-            return ModuleCore.ItemType;
+            return ModulesConstants.ItemType;
         }
     }
 }

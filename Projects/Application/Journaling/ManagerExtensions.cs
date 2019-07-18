@@ -20,10 +20,10 @@ namespace OnUtils.Application
         /// <param name="nameJournal">См. <see cref="JournalName.Name"/>.</param>
         /// <returns>Возвращает объект <see cref="ExecutionResultJournalName"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. В случае ошибки свойство <see cref="ExecutionResult.Message"/> содержит сообщение об ошибке.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="nameJournal"/> представляет пустую строку или null.</exception>
-        public static ExecutionResult RegisterJournal<TApplicationComponent>(this TApplicationComponent component, string nameJournal)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult RegisterJournal<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, string nameJournal)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return component.GetAppCore().Get<JournalingManager>().RegisterJournalTyped<TApplicationComponent>(nameJournal);
+            return new ExecutionResult(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped<TApplicationComponent>(nameJournal);
         }
 
         #region RegisterEvent
@@ -35,10 +35,10 @@ namespace OnUtils.Application
         /// <param name="eventInfo">См. <see cref="Journal.EventInfo"/>.</param>
         /// <param name="eventInfoDetailed">См. <see cref="Journal.EventInfoDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult<int?> RegisterEvent<TApplicationComponent>(this TApplicationComponent component, EventType eventType, string eventInfo, string eventInfoDetailed = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult<int?> RegisterEvent<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, EventType eventType, string eventInfo, string eventInfoDetailed = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return ManagerExtensions.RegisterEvent<TApplicationComponent>(component, eventType, eventInfo, eventInfoDetailed, null);
+            return ManagerExtensions.RegisterEvent<TAppCoreSelfReference>(component, eventType, eventInfo, eventInfoDetailed, null);
         }
 
         /// <summary>
@@ -50,10 +50,10 @@ namespace OnUtils.Application
         /// <param name="eventInfoDetailed">См. <see cref="Journal.EventInfoDetailed"/>.</param>
         /// <param name="exception">См. <see cref="Journal.ExceptionDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult<int?> RegisterEvent<TApplicationComponent>(this TApplicationComponent component, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult<int?> RegisterEvent<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return ManagerExtensions.RegisterEvent<TApplicationComponent>(component, eventType, eventInfo, eventInfoDetailed, null, exception);
+            return ManagerExtensions.RegisterEvent<TAppCoreSelfReference>(component, eventType, eventInfo, eventInfoDetailed, null, exception);
         }
 
         /// <summary>
@@ -66,10 +66,10 @@ namespace OnUtils.Application
         /// <param name="eventTime">См. <see cref="Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
         /// <param name="exception">См. <see cref="Journal.ExceptionDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult<int?> RegisterEvent<TApplicationComponent>(this TApplicationComponent component, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult<int?> RegisterEvent<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return component.GetAppCore().Get<JournalingManager>().RegisterEvent<TApplicationComponent>(eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+            return new ExecutionResult<int?>(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEvent<TApplicationComponent>(eventType, eventInfo, eventInfoDetailed, eventTime, exception);
         }
         #endregion
 
@@ -83,10 +83,10 @@ namespace OnUtils.Application
         /// <param name="eventInfo">См. <see cref="Journal.EventInfo"/>.</param>
         /// <param name="eventInfoDetailed">См. <see cref="Journal.EventInfoDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult RegisterEventForItem<TApplicationComponent>(this TApplicationComponent component, ItemBase relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult RegisterEventForItem<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return ManagerExtensions.RegisterEventForItem<TApplicationComponent>(component, relatedItem, eventType, eventInfo, eventInfoDetailed, null);
+            return ManagerExtensions.RegisterEventForItem<TAppCoreSelfReference>(component, relatedItem, eventType, eventInfo, eventInfoDetailed, null);
         }
 
         /// <summary>
@@ -99,10 +99,10 @@ namespace OnUtils.Application
         /// <param name="eventInfoDetailed">См. <see cref="Journal.EventInfoDetailed"/>.</param>
         /// <param name="exception">См. <see cref="Journal.ExceptionDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult RegisterEventForItem<TApplicationComponent>(this TApplicationComponent component, ItemBase relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult RegisterEventForItem<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return ManagerExtensions.RegisterEventForItem<TApplicationComponent>(component, relatedItem, eventType, eventInfo, eventInfoDetailed, null, exception);
+            return ManagerExtensions.RegisterEventForItem<TAppCoreSelfReference>(component, relatedItem, eventType, eventInfo, eventInfoDetailed, null, exception);
         }
 
         /// <summary>
@@ -116,10 +116,10 @@ namespace OnUtils.Application
         /// <param name="eventTime">См. <see cref="Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
         /// <param name="exception">См. <see cref="Journal.ExceptionDetailed"/>.</param>
         /// <returns>Возвращает объект с результатом выполнения операции. Если во время добавления события в журнал возникла ошибка, она будет отражена в сообщении <see cref="ExecutionResult.Message"/>.</returns>
-        public static ExecutionResult RegisterEventForItem<TApplicationComponent>(this TApplicationComponent component, ItemBase relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
-            where TApplicationComponent : class, IComponentSingleton<ApplicationCore>
+        public static ExecutionResult RegisterEventForItem<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+            where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return component.GetAppCore().Get<JournalingManager>().RegisterEventForItem<TApplicationComponent>(relatedItem, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+            return new ExecutionResult(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEventForItem<TApplicationComponent>(relatedItem, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
         }
         #endregion
     }

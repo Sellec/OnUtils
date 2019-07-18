@@ -10,9 +10,10 @@ namespace OnUtils.Application
     /// <summary>
     /// Ядро приложения.
     /// </summary>
-    public abstract class ApplicationCore : AppCore<ApplicationCore> 
+    public abstract class ApplicationCore<TAppCoreSelfReference> : AppCore<TAppCoreSelfReference> 
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        private CoreConfiguration _configurationAccessor = null;
+        private CoreConfiguration<TAppCoreSelfReference> _configurationAccessor = null;
 
         /// <summary>
         /// </summary>
@@ -41,11 +42,20 @@ namespace OnUtils.Application
         {
             OnApplicationStartBase();
             OnApplicationStart();
+
+            ApplicationCoreHolder.Set((TAppCoreSelfReference)this);
         }
 
         private void OnApplicationStartBase()
         {
 
+        }
+
+        /// <summary>
+        /// </summary>
+        protected sealed override void OnStop()
+        {
+            ApplicationCoreHolder.Remove((TAppCoreSelfReference)this);
         }
 
         /// <summary>
@@ -65,23 +75,23 @@ namespace OnUtils.Application
         /// <summary>
         /// См. <see cref="AppCore{TAppCore}.OnBindingsRequired(IBindingsCollection{TAppCore})"/>.
         /// </summary>
-        protected override void OnBindingsRequired(IBindingsCollection<ApplicationCore> bindingsCollection)
+        protected override void OnBindingsRequired(IBindingsCollection<TAppCoreSelfReference> bindingsCollection)
         {
-            bindingsCollection.SetSingleton<ApplicationLauncher>();
-            bindingsCollection.SetSingleton<Items.ItemsManager>();
-            bindingsCollection.SetSingleton<Journaling.JournalingManager>();
-            bindingsCollection.SetSingleton<Messaging.MessagingManager>();
-            bindingsCollection.SetSingleton<Languages.Manager>();
-            bindingsCollection.SetSingleton<Modules.ModulesManager>();
-            bindingsCollection.SetSingleton<Modules.ModulesLoadStarter>();
-            bindingsCollection.SetSingleton<ServiceMonitor.Monitor>();
-            bindingsCollection.SetSingleton<Users.UserContextManager>();
+            bindingsCollection.SetSingleton<ApplicationLauncher<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Items.ItemsManager<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Journaling.JournalingManager<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Messaging.MessagingManager<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Languages.Manager<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Modules.ModulesManager<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Modules.ModulesLoadStarter<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<ServiceMonitor.Monitor<TAppCoreSelfReference>>();
+            bindingsCollection.SetSingleton<Users.UserContextManager<TAppCoreSelfReference>>();
         }
 
         /// <summary>
         /// См. <see cref="AppCore{TAppCore}.OnInstanceActivated{TRequestedType}(IComponent{TAppCore})"/>.
         /// </summary>
-        protected override void OnInstanceActivated<TRequestedType>(IComponent<ApplicationCore> instance)
+        protected override void OnInstanceActivated<TRequestedType>(IComponent<TAppCoreSelfReference> instance)
         {
          
         }
@@ -91,22 +101,22 @@ namespace OnUtils.Application
         /// <summary>
         /// Возвращает менеджер модулей для приложения.
         /// </summary>
-        public ModulesManager GetModulesManager()
+        public ModulesManager<TAppCoreSelfReference> GetModulesManager()
         {
-            return Get<ModulesManager>();
+            return Get<ModulesManager<TAppCoreSelfReference>>();
         }
 
         /// <summary>
         /// Возвращает менеджер контекстов пользователя для приложения.
         /// </summary>
-        public Users.UserContextManager GetUserContextManager()
+        public Users.UserContextManager<TAppCoreSelfReference> GetUserContextManager()
         {
-            return Get<Users.UserContextManager>();
+            return Get<Users.UserContextManager<TAppCoreSelfReference>>();
         }
 
-        private Modules.CoreModule.CoreModule GetCoreModule()
+        private Modules.CoreModule.CoreModule<TAppCoreSelfReference> GetCoreModule()
         {
-            return GetModulesManager().GetModule<Modules.CoreModule.CoreModule>();
+            return GetModulesManager().GetModule<Modules.CoreModule.CoreModule<TAppCoreSelfReference>>();
         }
 
         #endregion
@@ -117,25 +127,23 @@ namespace OnUtils.Application
         /// </summary>
         public T ConfigurationOptionGet<T>(string name, T defaultValue = default(T))
         {
-            if (Config.ContainsKey(name))
+            if (AppConfig.ContainsKey(name))
             {
-                return Config.Get<T>(name, defaultValue);
+                return AppConfig.Get<T>(name, defaultValue);
             }
             return defaultValue;
         }
         #endregion
 
         #region Свойства
-
-
         /// <summary>
         /// Основные настройки приложения.
         /// </summary>
-        public CoreConfiguration Config
+        public CoreConfiguration<TAppCoreSelfReference> AppConfig
         {
             get
             {
-                if (_configurationAccessor == null) _configurationAccessor = GetCoreModule().GetConfiguration<CoreConfiguration>();
+                if (_configurationAccessor == null) _configurationAccessor = GetCoreModule().GetConfiguration<CoreConfiguration<TAppCoreSelfReference>>();
                 return _configurationAccessor;
             }
         }
@@ -144,7 +152,6 @@ namespace OnUtils.Application
         /// Возвращает рабочую директорию приложения. 
         /// </summary>
         public string ApplicationWorkingFolder { get; private set; }
-
         #endregion
     }
 }

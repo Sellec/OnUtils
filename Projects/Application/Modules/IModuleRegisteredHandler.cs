@@ -3,9 +3,10 @@
     using Architecture.AppCore;
 
     //todo описание
-    public interface IModuleRegisteredHandler : IComponentSingleton<ApplicationCore>
+    public interface IModuleRegisteredHandler<TAppCoreSelfReference> : IComponentSingleton<TAppCoreSelfReference>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         //todo описание
-        void OnModuleInitialized<TModule>(TModule module) where TModule : ModuleCore<TModule>;
+        void OnModuleInitialized<TModule>(TModule module) where TModule : ModuleCore<TAppCoreSelfReference, TModule>;
     }
 }

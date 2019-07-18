@@ -37,8 +37,6 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields.Field
 
         float ParameterNumeric02 { get; set; }
 
-        DateTime DateChangeBase { get; }
-
         ValueVariantCollection data { get; }
 
         /// <summary>

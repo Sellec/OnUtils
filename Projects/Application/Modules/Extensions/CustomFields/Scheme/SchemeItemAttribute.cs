@@ -17,7 +17,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields.Scheme
     {
         private static ConcurrentDictionary<Type, Tuple<MemberInfo, int>> _knownTypes = new ConcurrentDictionary<Type, Tuple<MemberInfo, int>>();
 
-        public SchemeItemAttribute(int IdItemType = ModuleCore.CategoryType)
+        public SchemeItemAttribute(int IdItemType = ModulesConstants.CategoryType)
         {
             this.IdItemType = IdItemType;
         }

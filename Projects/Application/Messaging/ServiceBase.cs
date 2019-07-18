@@ -10,10 +10,21 @@ namespace OnUtils.Application.Messaging
     using Items;
     using ServiceMonitor;
 
-#pragma warning disable CS1591 // todo внести комментарии.
-    public abstract class ServiceBase<TMessageType> : CoreComponentBase<ApplicationCore>, IMonitoredService, IMessagingServiceBackgroundOperations, IUnitOfWorkAccessor<UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory>>
+    /// <summary>
+    /// Предпочтительная базовая реализация сервиса отправки-приема сообщений для приложения.
+    /// </summary>
+    /// <typeparam name="TMessageType">Тип сообщения, с которым работает сервис.</typeparam>
+    /// <typeparam name="TAppCoreSelfReference">Тип приложения, для работы с которым предназначен сервис.</typeparam>
+    public abstract class ServiceBase<TAppCoreSelfReference, TMessageType> : CoreComponentBase<TAppCoreSelfReference>, IMonitoredService<TAppCoreSelfReference>, IMessagingServiceBackgroundOperations<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory>>
+        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TMessageType : MessageBase, new()
     {
+        /// <summary>
+        /// Создает новый экземпляр сервиса.
+        /// </summary>
+        /// <param name="serviceName">Текстовое название сервиса.</param>
+        /// <param name="serviceID">Уникальный идентификатор сервиса.</param>
+        /// <param name="idMessageType">Идентификатор типа сообщения. Если не задан, то используется автоматически присваиваемый идентификатор. Предпочтительно не задавать значение.</param>
         protected ServiceBase(string serviceName, Guid serviceID, int? idMessageType = null)
         {
             if (string.IsNullOrEmpty(serviceName)) throw new ArgumentNullException(nameof(serviceName));
@@ -30,12 +41,14 @@ namespace OnUtils.Application.Messaging
         /// </summary>
         protected sealed override void OnStart()
         {
+            this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
         }
 
         /// <summary>
         /// </summary>
         protected sealed override void OnStop()
         {
+            this.RegisterServiceState(ServiceStatus.Shutdown, "Сервис остановлен.");
         }
         #endregion
 
@@ -67,7 +80,7 @@ namespace OnUtils.Application.Messaging
                     return true;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // todo setError("Ошибка во время регистрации сообщения.", ex);
                 return false;
@@ -98,21 +111,19 @@ namespace OnUtils.Application.Messaging
         #endregion
 
         #region Методы
-        public void Init()
+        /// <summary>
+        /// Возвращает список активных коннекторов, работающих с типом сообщений сервиса.
+        /// </summary>
+        /// <seealso cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.ConnectorsSettings"/>
+        protected List<Connectors.IConnectorBase<TAppCoreSelfReference, TMessageType>> GetConnectors()
         {
-            this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
+            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetConnectorsByMessageType<TMessageType>().ToList();
         }
 
-        public void Dispose()
-        {
-            this.RegisterServiceState(ServiceStatus.Shutdown, "Сервис остановлен.");
-        }
-
-        protected List<Connectors.IConnectorBase<TMessageType>> GetConnectors()
-        {
-            return AppCore.Get<MessagingManager>().GetConnectorsByMessageType<TMessageType>().ToList();
-        }
-
+        /// <summary>
+        /// Возвращает количество неотправленных сообщений, с которыми работает сервис.
+        /// </summary>
+        /// <returns></returns>
         [ApiReversible]
         public virtual int GetOutcomingQueueLength()
         {
@@ -124,11 +135,11 @@ namespace OnUtils.Application.Messaging
         #endregion
 
         #region Фоновые операции
-        void IMessagingServiceBackgroundOperations.ExecuteIncoming()
+        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteIncoming()
         {
         }
 
-        void IMessagingServiceBackgroundOperations.ExecuteOutcoming()
+        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteOutcoming()
         {
             int messagesAll = 0;
             int messagesSent = 0;
@@ -247,7 +258,7 @@ namespace OnUtils.Application.Messaging
                     this.RegisterServiceState(messagesErrors == 0 ? ServiceStatus.RunningIdeal : ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Отправлено - {messagesSent}. Ошибки отправки - {messagesErrors}.");
                 }
 
-                var service = AppCore.Get<Monitor>().GetService(ServiceID);
+                var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
                 if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
                 {
                     this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
@@ -260,6 +271,9 @@ namespace OnUtils.Application.Messaging
             }
         }
 
+        /// <summary>
+        /// Вызывается перед началом отправки сообщений.
+        /// </summary>
         protected virtual void OnBeforeExecuteOutcoming(int messagesCount)
         {
 
