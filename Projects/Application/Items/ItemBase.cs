@@ -105,34 +105,5 @@ namespace OnUtils.Application.Items
         {
             return Caption;
         }
-
-    }
-
-    /// <summary>
-    /// Базовый класс для сущностей с привязкой к модулю.
-    /// Параметр-тип <typeparam name="TModuleType"/> позволяет беспараметрическому конструктору автоматически 
-    /// найти объект модуля (обращением к <see cref="ModulesManager.GetModule{TModule}(bool)"/>) и задать в <see cref="ItemBase.Owner"/>.
-    /// </summary>
-    public abstract class ItemBase<TAppCoreSelfReference, TModuleType> : ItemBase<TAppCoreSelfReference>
-        where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
-        where TModuleType : ModuleCore<TAppCoreSelfReference>
-    {
-        /// <summary>
-        /// </summary>
-        public ItemBase() : base(GetModule())
-        {
-        }
-
-        /// <summary>
-        /// </summary>
-        public ItemBase(TModuleType module) : base(module)
-        {
-        }
-
-        private static TModuleType GetModule()
-        {
-            var module = DeprecatedSingletonInstances.Get<TAppCoreSelfReference>().GetModule<TModuleType>();
-            return module;
-        }
     }
 }
