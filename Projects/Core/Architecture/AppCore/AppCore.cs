@@ -34,12 +34,18 @@ namespace OnUtils.Architecture.AppCore
                     }
                     _core.OnInstanceActivated<TRequestedType>(coreComponent);
                 }
+
+                if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
+                {
+                    _core._activatedSingletonInstances.Add(coreComponentSingleton);
+                }
             }
         }
 
         private bool _started = false;
         private bool _stopped = false;
         private bool _bindingsPreparing = false;
+        private List<IComponentSingleton<TAppCore>> _activatedSingletonInstances = null;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
@@ -51,6 +57,7 @@ namespace OnUtils.Architecture.AppCore
         {
             if (!typeof(TAppCore).IsAssignableFrom(this.GetType())) throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl((TAppCore)(object)this);
+            _activatedSingletonInstances = new List<IComponentSingleton<TAppCore>>();
         }
 
         /// <summary>
@@ -116,6 +123,18 @@ namespace OnUtils.Architecture.AppCore
         {
             if (_stopped) return;
             if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+
+            foreach(var componentSingleton in _activatedSingletonInstances)
+            {
+                try
+                {
+                    componentSingleton.Stop();
+                }
+                catch(Exception ex)
+                {
+                    Debug.WriteLineNoLog($"Ошибка во время остановки компонента '{componentSingleton.GetType().FullName}': {ex.Message}");
+                }
+            }
 
             try
             {

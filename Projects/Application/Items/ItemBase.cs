@@ -13,26 +13,19 @@ namespace OnUtils.Application.Items
     /// Поддерживает атрибут <see cref="ConstructorInitializerAttribute"/> для методов класса. 
     /// </summary>
     [Serializable]
-    public abstract partial class ItemBase<TAppCoreSelfReference> : IItemBase
+    public abstract partial class ItemBase<TAppCoreSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        /// <summary>
-        /// Беспараметрический конструктор, создающий сущность, НЕ привязанную к модулю. 
-        /// Подробнее про привязку к модулю см. <see cref="Owner"/>.
-        /// </summary>
-        public ItemBase() : this(null)
-        {
-        }
+        [NotMapped]
+        [Newtonsoft.Json.JsonIgnore]
+        private Lazy<ModuleCore<TAppCoreSelfReference>> _owner = null;
 
         /// <summary>
-        /// Конструктор, принимающий в качестве аргумента ссылку на модуль-владелец сущности.
-        /// Вызов конструктора с <paramref name="owner"/> = null аналогичен вызову беспараметрического конструктора.
-        /// Подробнее про привязку к модулю см. <see cref="Owner"/>.
+        /// Создает новый экземпляр сущности.
         /// </summary>
-        public ItemBase(ModuleCore<TAppCoreSelfReference> owner)
+        public ItemBase()
         {
-            this.Owner = owner;
-
+            _owner = new Lazy<ModuleCore<TAppCoreSelfReference>>(() => ApplicationCoreHolder.Get<TAppCoreSelfReference>()?.Get<ItemsManager<TAppCoreSelfReference>>()?.GetModuleForItemType(GetType()));
             MethodMarkCallerAttribute.CallMethodsInObject<ConstructorInitializerAttribute>(this);
         }
 
@@ -72,28 +65,13 @@ namespace OnUtils.Application.Items
         /// <summary>
         /// Модуль, к которому относится объект. Может быть пустым.
         /// Привязка к модулю важна для работы некоторых методов и некоторого функционала движка.
-        /// Важен для работы метода <see cref="GenerateLink(bool)"/>.
-        /// Может быть задан напрямую, может быть передан в качестве аргумента для конструктора, может быть автоматически определен в конструкторе для класса <see cref="ItemBase{TModuleType}"/> (см. описание класса).
         /// </summary>
+        /// <seealso cref="ItemsManager{TAppCoreSelfReference}.RegisterModuleItemType{TItemBase, TModule}"/>
         [NotMapped]
         [Newtonsoft.Json.JsonIgnore]
-        public object Owner
+        public virtual ModuleCore<TAppCoreSelfReference> OwnerModule
         {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Модуль, к которому относится объект. Может быть пустым.
-        /// Привязка к модулю важна для работы некоторых методов и некоторого функционала движка.
-        /// Важен для работы метода <see cref="GenerateLink(bool)"/>.
-        /// Может быть задан напрямую, может быть передан в качестве аргумента для конструктора, может быть автоматически определен в конструкторе для класса <see cref="ItemBase{TModuleType}"/> (см. описание класса).
-        /// </summary>
-        [NotMapped]
-        [Newtonsoft.Json.JsonIgnore]
-        public ModuleCore<TAppCoreSelfReference> OwnerModule
-        {
-            get => Owner as ModuleCore<TAppCoreSelfReference>;
+            get => _owner.Value;
         }
 
         #endregion

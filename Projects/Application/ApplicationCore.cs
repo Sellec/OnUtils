@@ -42,11 +42,20 @@ namespace OnUtils.Application
         {
             OnApplicationStartBase();
             OnApplicationStart();
+
+            ApplicationCoreHolder.Set((TAppCoreSelfReference)this);
         }
 
         private void OnApplicationStartBase()
         {
 
+        }
+
+        /// <summary>
+        /// </summary>
+        protected sealed override void OnStop()
+        {
+            ApplicationCoreHolder.Remove((TAppCoreSelfReference)this);
         }
 
         /// <summary>

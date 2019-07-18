@@ -10,6 +10,7 @@ namespace OnUtils.Application.Items
     using Modules.Extensions.CustomFields.Proxy;
     using Modules.Extensions.CustomFields.Scheme;
     using OnUtils.Items;
+    using Modules.Extensions.CustomFields;
 
     [System.Diagnostics.DebuggerDisplay("ItemBase: id={ID}")]
     public abstract partial class ItemBase<TAppCoreSelfReference>
@@ -24,7 +25,9 @@ namespace OnUtils.Application.Items
         [ConstructorInitializer]
         private void FieldsInitializer()
         {
-            if (_fields == null && Owner != null)
+            if (!(this is IItemBaseCustomFields)) return;
+
+            if (_fields == null && OwnerModule != null)
             {
                 if (OwnerModule.Fields != null)
                     OwnerModule.Fields.RegisterToQuery(this);
@@ -35,7 +38,9 @@ namespace OnUtils.Application.Items
         [SavedInContextEvent]
         private void FieldsSaver()
         {
-            if (_fields != null && Owner != null)
+            if (!(this is IItemBaseCustomFields)) return;
+
+            if (_fields != null && OwnerModule != null)
             {
                 if (OwnerModule.Fields != null)
                     OwnerModule.Fields.SaveItemFields(this);
@@ -55,7 +60,7 @@ namespace OnUtils.Application.Items
                 }
             }
 
-            if (_fields == null && Owner != null)
+            if (_fields == null && OwnerModule != null)
             {
                 if (OwnerModule.Fields != null)
                 {
@@ -97,10 +102,12 @@ namespace OnUtils.Application.Items
         /// </exception>
         [NotMapped]
         [Newtonsoft.Json.JsonConverter(typeof(CustomPropertyConverter))]
-        public DefaultSchemeWData Fields
+        internal protected DefaultSchemeWData FieldsBase
         {
             get
             {
+                if (!(this is IItemBaseCustomFields)) throw new InvalidOperationException($"Для доступа к расширению настраиваемых полей необходимо наследовать интерфейс '{typeof(IItemBaseCustomFields).FullName}'.");
+
                 UpdateFieldsValue();
                 return _fields;
             }
@@ -113,10 +120,12 @@ namespace OnUtils.Application.Items
         /// </summary>
         [NotMapped]
         [Newtonsoft.Json.JsonConverter(typeof(CustomPropertyConverter))]
-        public dynamic FieldsDynamic
+        protected dynamic FieldsDynamicBase
         {
             get
             {
+                if (!(this is IItemBaseCustomFields)) throw new InvalidOperationException($"Для доступа к расширению настраиваемых полей необходимо наследовать интерфейс '{typeof(IItemBaseCustomFields).FullName}'.");
+
                 UpdateFieldsValue();
                 return _fields;
             }
@@ -131,10 +140,12 @@ namespace OnUtils.Application.Items
         /// </summary>
         [NotMapped]
         [Newtonsoft.Json.JsonConverter(typeof(CustomPropertyConverter))]
-        public DefaultSchemeWData fields
+        protected DefaultSchemeWData fieldsBase
         {
             get
             {
+                if (!(this is IItemBaseCustomFields)) throw new InvalidOperationException($"Для доступа к расширению настраиваемых полей необходимо наследовать интерфейс '{typeof(IItemBaseCustomFields).FullName}'.");
+
                 UpdateFieldsValue();
                 return _fields;
             }
@@ -144,10 +155,12 @@ namespace OnUtils.Application.Items
         /// Возвращает коллекцию именованных полей со значениями для объекта. Не может быть равен null (см. <see cref="Fields"/>).
         /// </summary>
         [NotMapped]
-        public ReadOnlyDictionary<string, FieldData> fieldsNamed
+        protected ReadOnlyDictionary<string, FieldData> fieldsNamedBase
         {
             get
             {
+                if (!(this is IItemBaseCustomFields)) throw new InvalidOperationException($"Для доступа к расширению настраиваемых полей необходимо наследовать интерфейс '{typeof(IItemBaseCustomFields).FullName}'.");
+
                 UpdateFieldsValue();
                 return _fieldsNamed;
             }

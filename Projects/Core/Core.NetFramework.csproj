@@ -117,8 +117,6 @@
     <Compile Include="Exceptions\HandledException.cs" />
     <Compile Include="ExecutionResult.cs" />
     <Compile Include="Global.cs" />
-    <Compile Include="Items\IItemBase.cs" />
-    <Compile Include="Items\ItemBaseExtension.cs" />
     <Compile Include="Reflection\AssemblyNameEqualityComparer.cs" />
     <Compile Include="Reflection\LibraryEnumerator.cs" />
     <Compile Include="Reflection\LibraryEnumeratorFactory.cs" />
@@ -178,7 +176,6 @@
     <Compile Include="System\Range\DecimalRange.cs" />
     <Compile Include="System\Range\DateRange.cs" />
     <Compile Include="System\Range\IRange.cs" />
-    <Compile Include="Items\ItemOwnerModuleAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

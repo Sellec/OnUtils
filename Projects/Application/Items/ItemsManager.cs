@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace OnUtils.Application.Items
 {
     using Architecture.AppCore;
     using Data;
+    using Modules;
 
     /// <summary>
     /// Менеджер, управляющий сущностями и типами сущностей.
@@ -19,6 +22,15 @@ namespace OnUtils.Application.Items
             public int type;
             public int parent;
             public int level;
+        }
+
+        private ConcurrentDictionary<Type, Type> _itemTypeModuleType;
+
+        /// <summary>
+        /// </summary>
+        public ItemsManager()
+        {
+            _itemTypeModuleType = new ConcurrentDictionary<Type, Type>();
         }
 
         #region CoreComponentBase
@@ -44,7 +56,7 @@ namespace OnUtils.Application.Items
         /// <returns>Возвращает true, если сохранение прошло успешно и false, если возникла ошибка. Возвращает true, если <paramref name="relationsList"/> пуст.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="module"/> равен null.</exception>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relationsList"/> равен null.</exception>
-        public bool SaveChildToParentRelations(Modules.ModuleCore<TAppCoreSelfReference> module, IEnumerable<ChildToParentRelation> relationsList, int idItemsType)
+        public bool SaveChildToParentRelations(ModuleCore<TAppCoreSelfReference> module, IEnumerable<ChildToParentRelation> relationsList, int idItemsType)
         {
             if (module == null) throw new ArgumentNullException(nameof(module));
             if (relationsList == null) throw new ArgumentNullException(nameof(relationsList));
@@ -130,6 +142,84 @@ namespace OnUtils.Application.Items
                 return false;
             }
 
+        }
+
+        /// <summary>
+        /// Связывает тип объекта <typeparamref name="TItemBase"/> с модулем типа <typeparamref name="TModule"/>.
+        /// </summary>
+        /// <seealso cref="ModuleCore{TAppCoreSelfReference, TSelfReference}.QueryType"/>
+        /// <seealso cref="ItemTypeAliasAttribute"/>
+        public void RegisterModuleItemType<TItemBase, TModule>()
+            where TItemBase : ItemBase<TAppCoreSelfReference>
+            where TModule : ModuleCore<TAppCoreSelfReference>
+        {
+            var type = typeof(TItemBase);
+            var typesList = new List<Type>() { type };
+
+            while (true)
+            {
+                var aliasTypeAttribute = type.GetCustomAttribute<ItemTypeAliasAttribute>(true);
+                if (aliasTypeAttribute != null)
+                {
+                    if (typesList.Contains(aliasTypeAttribute.AliasType)) throw new InvalidOperationException($"Нижестоящий тип '{type.FullName}' ссылается на вышестоящий '{aliasTypeAttribute.AliasType}'.");
+                    if (type != aliasTypeAttribute.AliasType)
+                    {
+                        type = aliasTypeAttribute.AliasType;
+                        typesList.Add(type);
+                        continue;
+                    }
+                }
+
+                break;
+            }
+
+            _itemTypeModuleType[type] = typeof(TModule);
+        }
+
+        /// <summary>
+        /// Возвращает модуль для типа объекта <typeparamref name="TItemBase"/>.
+        /// </summary>
+        /// <param name="instance">Необязательный параметр, предназначен для удобства вызова метода с передачей ссылки на экземпляр нужного типа.</param>
+        /// <seealso cref="ModuleCore{TAppCoreSelfReference, TSelfReference}.QueryType"/>
+        /// <seealso cref="ItemTypeAliasAttribute"/>
+        public ModuleCore<TAppCoreSelfReference> GetModuleForItemType<TItemBase>(TItemBase instance = null)
+            where TItemBase : ItemBase<TAppCoreSelfReference>
+        {
+            return GetModuleForItemType(typeof(TItemBase));
+        }
+
+        /// <summary>
+        /// Возвращает модуль для типа объекта <paramref name="itemType"/>.
+        /// </summary>
+        /// <seealso cref="ModuleCore{TAppCoreSelfReference, TSelfReference}.QueryType"/>
+        /// <seealso cref="ItemTypeAliasAttribute"/>
+        /// <exception cref="ArgumentNullException">Возникает, если <paramref name="itemType"/> равен null.</exception>
+        /// <exception cref="ArgumentException">Возникает, если <paramref name="itemType"/> не наследуется от <see cref="ItemBase{TAppCoreSelfReference}"/>.</exception>
+        public ModuleCore<TAppCoreSelfReference> GetModuleForItemType(Type itemType)
+        {
+            if (itemType == null) throw new ArgumentNullException();
+            if (!typeof(ItemBase<TAppCoreSelfReference>).IsAssignableFrom(itemType)) throw new ArgumentException();
+
+            var type = itemType;
+            var typesList = new List<Type>() { type };
+
+            while (true)
+            {
+                var aliasTypeAttribute = type.GetCustomAttribute<ItemTypeAliasAttribute>(true);
+                if (aliasTypeAttribute != null)
+                {
+                    if (typesList.Contains(aliasTypeAttribute.AliasType)) throw new InvalidOperationException($"Нижестоящий тип '{type.FullName}' ссылается на вышестоящий '{aliasTypeAttribute.AliasType}'.");
+                    if (type != aliasTypeAttribute.AliasType)
+                    {
+                        type = aliasTypeAttribute.AliasType;
+                        continue;
+                    }
+                }
+
+                break;
+            }
+
+            return _itemTypeModuleType.TryGetValue(type, out var moduleType) ? AppCore.Get<ModuleCore<TAppCoreSelfReference>>(moduleType) : null;
         }
     }
 }

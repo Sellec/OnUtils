@@ -368,7 +368,7 @@ namespace OnUtils.Application.Modules.Extensions.CustomFields
 
                             foreach (var p in subItems)
                             {
-                                p._fields = p.Fields;
+                                p._fields = p.FieldsBase;
                             }
                         }
                     }
