@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace OnUtils.Application.Items
 {
-    using Modules.Extensions.CustomFields.Scheme;
+    using Modules.ItemsCustomize.Scheme;
     using Modules;
 
     /// <summary>
@@ -20,9 +20,11 @@ namespace OnUtils.Application.Items
         /// <summary>
         /// Создает новый экземпляр атрибута с указанным типом объекта (см. <see cref="ItemTypeFactory.GetItemType(Type)"/>).
         /// </summary>
-        public ItemTypeAttribute(int IdItemType = ModulesConstants.ItemType)
+        /// <exception cref="ArgumentOutOfRangeException">Возникает, если передано некорректное значение идентификатора типа объекта.</exception>
+        public ItemTypeAttribute(int idItemType)
         {
-            this.IdItemType = IdItemType;
+            if (idItemType <= 0) throw new ArgumentOutOfRangeException(nameof(idItemType), "Идентификатор типа объекта должен быть больше нуля.");
+            IdItemType = idItemType;
         }
 
         /// <summary>
@@ -56,7 +58,7 @@ namespace OnUtils.Application.Items
             var itemType = ItemTypeFactory.GetItemType(t);
             if (itemType != null) return itemType.IdItemType;
 
-            return ModulesConstants.ItemType;
+            throw new InvalidOperationException("Не удалось определить тип объекта.");
         }
     }
 }

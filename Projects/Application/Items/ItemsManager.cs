@@ -24,13 +24,13 @@ namespace OnUtils.Application.Items
             public int level;
         }
 
-        private ConcurrentDictionary<Type, Type> _itemTypeModuleType;
+        private ConcurrentDictionary<Type, Tuple<DB.ItemType, Type>> _itemTypeModuleType;
 
         /// <summary>
         /// </summary>
         public ItemsManager()
         {
-            _itemTypeModuleType = new ConcurrentDictionary<Type, Type>();
+            _itemTypeModuleType = new ConcurrentDictionary<Type, Tuple<DB.ItemType, Type>>();
         }
 
         #region CoreComponentBase
@@ -173,7 +173,18 @@ namespace OnUtils.Application.Items
                 break;
             }
 
-            _itemTypeModuleType[type] = typeof(TModule);
+            var itemType = ItemTypeFactory.GetItemType(type);
+            _itemTypeModuleType[type] = new Tuple<DB.ItemType, Type>(itemType, typeof(TModule));
+        }
+
+        /// <summary>
+        /// Возвращает список типов объектов, зарегистрированных для модуля <typeparamref name="TModule"/>.
+        /// </summary>
+        /// <seealso cref="ModuleCore{TAppCoreSelfReference, TSelfReference}.QueryType"/>
+        public List<DB.ItemType> GetModuleItemTypes<TModule>()
+            where TModule : ModuleCore<TAppCoreSelfReference>
+        {
+            return _itemTypeModuleType.Where(x => x.Value.Item2 == typeof(TModule)).Select(x => x.Value.Item1).ToList();
         }
 
         /// <summary>
@@ -219,7 +230,7 @@ namespace OnUtils.Application.Items
                 break;
             }
 
-            return _itemTypeModuleType.TryGetValue(type, out var moduleType) ? AppCore.Get<ModuleCore<TAppCoreSelfReference>>(moduleType) : null;
+            return _itemTypeModuleType.TryGetValue(type, out var moduleType) ? AppCore.Get<ModuleCore<TAppCoreSelfReference>>(moduleType.Item2) : null;
         }
     }
 }

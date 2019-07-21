@@ -24,11 +24,9 @@ namespace OnUtils.Application.DB
             return type == null ? 0 : type.IdItemType;
         }
 
-        public static explicit operator ItemType(int IdItemType)
+        public static explicit operator ItemType(int idItemType)
         {
-            if (IdItemType == Items.ItemTypeFactory.ItemType.IdItemType) return Items.ItemTypeFactory.ItemType;
-            else if (IdItemType == Items.ItemTypeFactory.CategoryType.IdItemType) return Items.ItemTypeFactory.CategoryType;
-            else return Items.ItemTypeFactory.GetItemType(IdItemType);
+            return Items.ItemTypeFactory.GetItemType(idItemType);
         }
     }
 }

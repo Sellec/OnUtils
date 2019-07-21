@@ -20,8 +20,6 @@ namespace OnUtils.Application.Modules
         internal string _moduleCaption;
         internal string _moduleUrlName;
 
-        private List<Extensions.ModuleExtension<TAppCoreSelfReference>> _extensions = new List<Extensions.ModuleExtension<TAppCoreSelfReference>>();
-
         /// <summary>
         /// Создает новый экземпляр класса.
         /// </summary>
@@ -237,91 +235,7 @@ namespace OnUtils.Application.Modules
 
         #endregion
 
-        #region Блок расширений
-        /// <summary>
-        /// Указывает, что в модуле должно быть доступно расширение <typeparamref name="TExtension"/>.
-        /// </summary>
-        /// <typeparam name="TExtension"></typeparam>
-        public void RegisterExtension<TExtension>() where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
-        {
-            if (!HasExtension<TExtension>())
-            {
-                //Type _type = null;
-
-                //LibraryEnumeratorFactory.Enumerate((assembly) =>
-                //{
-                //    if (_type == null)
-                //    {
-                //        var t = assembly.GetType(typeof(TExtension).FullName, false);
-                //        if (t != null) _type = t;
-                //    }
-                //});
-
-                var extension = AppCore.Create<TExtension>();
-                if (extension == null) throw new InvalidOperationException("Указанное расширение не зарегистрировано в привязках типов.");
-                extension.Module = this;
-                extension.Start(AppCore);
-                extension._initializeCustoms();
-                _extensions.Add(extension);
-            }
-        }
-
-        private bool HasExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
-        {
-            var tt = typeof(TExtension);
-            var extension = (from p in _extensions
-                             where (p as TExtension) != null && p.Attributes.IsAdminPart == IsForAdmin
-                             select p).FirstOrDefault();
-
-            return (extension != null);
-        }
-
-        protected TExtension GetExtension<TExtension>(bool IsForAdmin = false) where TExtension : Extensions.ModuleExtension<TAppCoreSelfReference>
-        {
-            var tt = typeof(TExtension);
-            var extension = (from p in _extensions
-                             where (p as TExtension) != null && p.Attributes.IsAdminPart == IsForAdmin
-                             select p).FirstOrDefault();
-
-            return (TExtension)extension;
-        }
-
-        /// <summary>
-        /// Возвращает список подключенных расширений.
-        /// </summary>
-        public List<Extensions.ModuleExtension<TAppCoreSelfReference>> GetExtensions()
-        {
-            return _extensions;
-        }
-
-        /////**
-        ////* Возвращает строку с текущими ошибками расширений. 
-        ////* 
-        ////* @return string
-        ////*/
-        ////protected function extensionsGetErrors()
-        ////{
-        ////    $errors = array();
-        ////    foreach ( $this.mExtensions as $k=>$v) 
-        ////    {
-        ////        if (strlen($v.Error) > 0) $errors[] = $v.Error;
-        ////    }
-
-        ////    return implode("; ", $errors);
-        ////}
-        #endregion
-
         #region Блок функций, переопределение которых может потребоваться для расширений и других модулей
-        /// <summary>
-        /// Возвращает список типов объектов, используемых в модуле.
-        /// По-умолчанию возвращает <see cref="Items.ItemTypeFactory.ItemType"/> и <see cref="Items.ItemTypeFactory.CategoryType"/>.
-        /// </summary>
-        /// <returns></returns>
-        public virtual IEnumerable<DB.ItemType> GetItemTypes()
-        {
-            return new DB.ItemType[] { Items.ItemTypeFactory.ItemType, Items.ItemTypeFactory.CategoryType };
-        }
-
         /// <summary>
         /// Уничтожает и выгружает модуль.
         /// </summary>
@@ -330,17 +244,6 @@ namespace OnUtils.Application.Modules
 
         }
         #endregion
-
-        #region Расширения
-        /// <summary>
-        /// Предоставляет доступ к расширению настраиваемых полей.
-        /// </summary>
-        public Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference> Fields
-        {
-            get => GetExtension<Extensions.CustomFields.ExtensionCustomsFieldsBase<TAppCoreSelfReference>>();
-        }
-        #endregion
-
     }
 
     /// <summary>
@@ -416,6 +319,14 @@ namespace OnUtils.Application.Modules
 
             InitModuleCustom();
             //RegisterAction("extensionsGetData");
+        }
+
+        /// <summary>
+        /// Возвращает список типов объектов, используемых в модуле.
+        /// </summary>
+        public List<DB.ItemType> GetItemTypes()
+        {
+            return AppCore.Get<Items.ItemsManager<TAppCoreSelfReference>>().GetModuleItemTypes<TSelfReference>();
         }
 
         /// <summary>

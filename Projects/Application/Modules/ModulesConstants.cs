@@ -31,9 +31,5 @@ namespace OnUtils.Application.Modules
         /// Обозначает ключ разрешения для сохранения настроек модуля.
         /// </summary>
         public static readonly Guid PermissionSaveConfiguration = "perm_configSave".GenerateGuid();
-
-        public const int CategoryType = 1;
-
-        public const int ItemType = 2;
     }
 }
