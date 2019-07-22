@@ -143,7 +143,7 @@ namespace OnUtils.Application.Items
             return r;
         }
 
-        private static ConcurrentDictionary<string, DB.ItemType> ItemTypes
+        internal static ConcurrentDictionary<string, DB.ItemType> ItemTypes
         {
             get
             {

@@ -153,6 +153,7 @@ namespace OnUtils.Application.Items
             where TItemBase : ItemBase<TAppCoreSelfReference>
             where TModule : ModuleCore<TAppCoreSelfReference>
         {
+            var module = AppCore.Get<TModule>();
             var type = typeof(TItemBase);
             var typesList = new List<Type>() { type };
 
@@ -175,6 +176,12 @@ namespace OnUtils.Application.Items
 
             var itemType = ItemTypeFactory.GetItemType(type);
             _itemTypeModuleType[type] = new Tuple<DB.ItemType, Type>(itemType, typeof(TModule));
+
+            using (var db = new DB.CoreContext())
+            {
+                var query = db.ItemParent.Where(x => x.IdItemType == itemType.IdItemType && x.IdModule == module.IdModule);
+                if (query.Count() == 0) SaveChildToParentRelations(module, new ChildToParentRelation() { IdChild = 0, IdParent = 0 }.ToEnumerable(), itemType.IdItemType);
+            }
         }
 
         /// <summary>

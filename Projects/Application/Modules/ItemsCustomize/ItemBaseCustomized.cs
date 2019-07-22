@@ -2,7 +2,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel;
 using System.Linq;
 
 namespace OnUtils.Application.Items
@@ -42,8 +41,8 @@ namespace OnUtils.Application.Items
             if (!(this is IItemCustomized)) return;
 
             var moduleLink = ModuleItemsCustomize<TAppCoreSelfReference>._moduleLink;
-            if (_fields == null && moduleLink != null)
-            { 
+            if (_fields != null && moduleLink != null)
+            {
                 moduleLink.SaveItemFields(this);
             }
         }
@@ -66,11 +65,11 @@ namespace OnUtils.Application.Items
                 moduleLink.RegisterToQuery(this);
                 moduleLink.CheckDeffered(GetType());
 
-                    if (_fields == null)
-                    {
-                        _fields = moduleLink.GetItemFields(this);
-                        if (_fields == null) _fieldsNamed = null;
-                    }
+                if (_fields == null)
+                {
+                    _fields = moduleLink.GetItemFields(this);
+                    if (_fields == null) _fieldsNamed = null;
+                }
             }
 
             if (_fields == null)
@@ -163,7 +162,5 @@ namespace OnUtils.Application.Items
                 return _fieldsNamed;
             }
         }
-
-
     }
 }

@@ -5,6 +5,8 @@ using System.Reflection;
 
 namespace OnUtils.Application.Modules.ItemsCustomize.Scheme
 {
+    using Items;
+
     /// <summary>
     /// Описывает поле или свойство, являющееся ключом для получения контейнера схемы <see cref="SchemeItem"/> для объекта. 
     /// Например, если пометить этим атрибутом свойство Category для Goods, то при поиске схемы полей для объекта Goods 
@@ -14,6 +16,7 @@ namespace OnUtils.Application.Modules.ItemsCustomize.Scheme
     public class SchemeItemAttribute : Attribute
     {
         private static ConcurrentDictionary<Type, Tuple<MemberInfo, int>> _knownTypes = new ConcurrentDictionary<Type, Tuple<MemberInfo, int>>();
+        private Lazy<int> _idItemType = null;
 
         /// <summary>
         /// Создает новый экземпляр атрибута.
@@ -22,13 +25,26 @@ namespace OnUtils.Application.Modules.ItemsCustomize.Scheme
         public SchemeItemAttribute(int idItemType)
         {
             if (idItemType <= 0) throw new ArgumentOutOfRangeException(nameof(idItemType), "Идентификатор типа объекта должен быть больше нуля.");
-            IdItemType = idItemType;
+            _idItemType = new Lazy<int>(() => idItemType);
+        }
+
+        /// <summary>
+        /// Создает новый экземпляр атрибута.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Возникает, если <paramref name="itemType"/> равен null.</exception>
+        public SchemeItemAttribute(Type itemType)
+        {
+            if (itemType == null) throw new ArgumentNullException(nameof(itemType));
+            _idItemType = new Lazy<int>(() => ItemTypeFactory.ItemTypes.Where(x => x.Key == "TYPEKEY_" + itemType.FullName).Select(x => x.Value).FirstOrDefault()?.IdItemType ?? 0);
         }
 
         /// <summary>
         /// Тип контейнера схемы.
         /// </summary>
-        public int IdItemType { get; private set; }
+        public int IdItemType
+        {
+            get => _idItemType.Value;
+        }
 
         /// <summary>
         /// Возвращает контейнер схемы для указанного объекта.
