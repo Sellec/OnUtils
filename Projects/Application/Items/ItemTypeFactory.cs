@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
+using System.ComponentModel;
 
 namespace OnUtils.Application.Items
 {
@@ -16,16 +17,6 @@ namespace OnUtils.Application.Items
         /// Значение, обозначающее, что идентификатор типа объектов не найден.
         /// </summary>
         public const DB.ItemType NotFound = null;
-
-        /// <summary>
-        /// Значение, обозначающее идентификатор объектов.
-        /// </summary>
-        public static readonly DB.ItemType ItemType = new DB.ItemType() { IdItemType=Modules.ModulesConstants.ItemType, NameItemType = "Объект внутри категории", UniqueKey= "ItemType" };
-
-        /// <summary>
-        /// Значение, обозначающее идентификатор категорий.
-        /// </summary>
-        public static readonly DB.ItemType CategoryType = new DB.ItemType() { IdItemType = Modules.ModulesConstants.CategoryType, NameItemType = "Категория объектов", UniqueKey = "CategoryType" };
 
         private static Lazy<Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>>> _itemsTypes = null;
 
@@ -78,10 +69,13 @@ namespace OnUtils.Application.Items
             var itemTypeAttribute = type.GetCustomAttribute<ItemTypeAttribute>(true);
             if (itemTypeAttribute != null) return GetItemType(itemTypeAttribute.IdItemType);
 
-
             if (t.FullName.StartsWith("System.Data.Entity.DynamicProxies.")) t = t.BaseType;
 
-            return GetOrAdd(t.Name, "TYPEKEY_" + t.FullName, true);
+            var caption = t.Name;
+            var displayName = t.GetCustomAttribute<DisplayNameAttribute>();
+            if (displayName != null && !string.IsNullOrEmpty(displayName.DisplayName)) caption = displayName.DisplayName;
+
+            return GetOrAdd(caption, "TYPEKEY_" + t.FullName, true);
         }
 
         /// <summary>
@@ -120,28 +114,36 @@ namespace OnUtils.Application.Items
 
         private static DB.ItemType GetOrAdd(string caption, string uniqueKey, bool registerIfNoFound)
         {
-            var _r = ItemTypes.Where(x => x.Value.UniqueKey == uniqueKey).Select(x => x.Value).FirstOrDefault();
-            if (_r == null)
+            var r = ItemTypes.Where(x => x.Value.UniqueKey == uniqueKey).Select(x => x.Value).FirstOrDefault();
+            if (r == null)
             {
                 using (var db = new UnitOfWork<DB.ItemType>())
                 {
-                    _r = db.Repo1.Where(x => x.UniqueKey == uniqueKey).FirstOrDefault();
-                    if (_r == null && registerIfNoFound)
+                    r = db.Repo1.Where(x => x.UniqueKey == uniqueKey).FirstOrDefault();
+                    if (r == null && registerIfNoFound)
                     {
-                        var r = new DB.ItemType() { NameItemType = caption, UniqueKey = uniqueKey };
-                        db.Repo1.AddOrUpdate(x => x.UniqueKey, r);
+                        var r_ = new DB.ItemType() { NameItemType = caption, UniqueKey = uniqueKey };
+                        db.Repo1.AddOrUpdate(x => x.UniqueKey, r_);
                         db.SaveChanges();
 
-                        _r = r;
+                        r = r_;
                     }
-                    ItemTypes[uniqueKey] = _r;
+                    ItemTypes[uniqueKey] = r;
+                }
+            }
+            else if (r.NameItemType != caption)
+            {
+                r.NameItemType = caption;
+                using (var db = new UnitOfWork<DB.ItemType>())
+                {
+                    db.Repo1.InsertOrDuplicateUpdate(r.ToEnumerable(), new UpsertField(nameof(r.NameItemType)));
                 }
             }
 
-            return _r;
+            return r;
         }
 
-        private static ConcurrentDictionary<string, DB.ItemType> ItemTypes
+        internal static ConcurrentDictionary<string, DB.ItemType> ItemTypes
         {
             get
             {

@@ -101,9 +101,9 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Используется для определения того, является ли тип <paramref name="typeFromDI"/> типом модуля. По-умолчанию возвращает только типы, наследующие <see cref="ModuleBase{TApplication}"/>. Может быть перегружен для изменения поиска типов.
+        /// Используется для определения того, является ли тип <paramref name="typeFromDI"/> типом модуля. По-умолчанию возвращает только типы, наследующие <see cref="ModuleCore{TAppCoreSelfReference, TSelfReference}"/>. Может быть перегружен для изменения поиска типов.
         /// свойство <see cref="ApplicationStartException.Step"/> будет равно <see cref="ApplicationStartStep.BindingsAutoStartCritical"/>, 
-        /// свойство <see cref="ApplicationStartException.ContextType"/> будет равно <see cref="ModulesManager"/>, 
+        /// свойство <see cref="ApplicationStartException.ContextType"/> будет равно <see cref="ModulesManager{TAppCoreSelfReference}"/>, 
         /// свойство <see cref="Exception.InnerException"/> будет содержать исключение <see cref="ArgumentException"/>.
         /// </summary>
         protected bool FilterModuleTypes(Type typeFromDI)
@@ -165,8 +165,8 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Может быть использован для вызова метода <see cref="ModuleBase{TApplication}.OnModuleStart"/> в других реализациях менеджера модулей. 
-        /// Метод <see cref="ModuleBase{TApplication}.OnModuleStart"/> будет вызван только для новых модулей, т.е. модулей, отсутствующих в списке уже инициализированных.
+        /// Может быть использован для вызова метода <see cref="ModuleCore{TAppCoreSelfReference}.OnModuleStart"/> в других реализациях менеджера модулей. 
+        /// Метод <see cref="ModuleCore{TAppCoreSelfReference}.OnModuleStart"/> будет вызван только для новых модулей, т.е. модулей, отсутствующих в списке уже инициализированных.
         /// </summary>
         protected void LoadModuleCallModuleStart(ModuleCore<TAppCoreSelfReference> module)
         {
@@ -179,7 +179,7 @@ namespace OnUtils.Application.Modules
         /// <summary>
         /// Возвращает модуль указанного типа <typeparamref name="TModule"/>, если таковой имеется среди загруженных. 
         /// </summary>
-        /// <typeparam name="TModule">Тип модуля. Это должен быть query-тип из привязок типов (см. описание <see cref="ApplicationBase{TSelfReference}"/>).</typeparam>
+        /// <typeparam name="TModule">Тип модуля. Это должен быть query-тип из привязок типов (см. описание <see cref="ApplicationCore{TAppCoreSelfReference}"/>).</typeparam>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
         public TModule GetModule<TModule>(bool isSearchNested = true) where TModule : ModuleCore<TAppCoreSelfReference>
         {
@@ -205,7 +205,7 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Возвращает модуль с url-доступным именем <paramref name="urlName"/> (см. <see cref="ModuleCore.UrlName"/>).
+        /// Возвращает модуль с url-доступным именем <paramref name="urlName"/> (см. <see cref="ModuleCore{TAppCoreSelfReference}.UrlName"/>).
         /// </summary>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
         public ModuleCore<TAppCoreSelfReference> GetModule(string urlName)
@@ -228,7 +228,7 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Возвращает модуль с идентификатором <paramref name="moduleID"/> (см. <see cref="ModuleCore.IdModule"/>). 
+        /// Возвращает модуль с идентификатором <paramref name="moduleID"/> (см. <see cref="ModuleCore{TAppCoreSelfReference}.IdModule"/>). 
         /// </summary>
         /// <param name="moduleID">Идентификатор модуля.</param>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>
@@ -246,7 +246,7 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Возвращает модуль с уникальным именем <paramref name="uniqueName"/> (см. <see cref="ModuleCore.UniqueName"/>). 
+        /// Возвращает модуль с уникальным именем <paramref name="uniqueName"/> (см. <see cref="ModuleCore{TAppCoreSelfReference}.UniqueName"/>). 
         /// </summary>
         /// <param name="uniqueName">Уникальное имя модуля.</param>
         /// <returns>Объект модуля либо null, если подходящий модуль не найден.</returns>

@@ -211,42 +211,18 @@ namespace OnUtils.Application.Messaging
                                 continue;
                             }
                         }
+
+                        if (time.Calculate(false).TotalSeconds >= 3)
+                        {
+                            db.SaveChanges();
+                            processedMessages.Clear();
+                            time.Start();
+                        }
                     }
 
                     if (processedMessages.Count > 0)
                     {
                         db.SaveChanges();
-
-                        //if (messageBody != null && messageBody.IsHandled)
-                        //{
-                        //    messageSource.Key.ExternalID = messageBody.ExternalID;
-                        //    messageSource.Key.IsHandled = true;
-                        //    messageSource.Key.IsSent = messageBody.IsSuccess;
-
-                        //    if (messageBody.IsSuccess)
-                        //    {
-                        //        messageSource.Key.DateSent = DateTime.Now;
-                        //        messagesSent++;
-                        //    }
-                        //    else if (messageBody.IsError) messagesErrors++;
-
-                        //    db.MessageQueueHistory.Add(new DB.MessageQueueHistory()
-                        //    {
-                        //        IdQueue = messageSource.Key.IdQueue,
-                        //        DateEvent = DateTime.Now,
-                        //        EventText = messageBody.IsError ? "Зафиксированы ошибки при отправке: " + (string.IsNullOrEmpty(messageBody.ErrorText) ? "Неизвестная ошибка во время отправки" : messageBody.ErrorText) : "Сообщение обработано",
-                        //        IsSuccess = messageBody.IsSuccess,
-                        //    });
-
-                        //    db.MessageQueue.AddOrUpdate(x => x.IdQueue, messageSource.Key);
-
-                        //}
-
-                        if (time.Calculate(false).TotalSeconds >= 3)
-                        {
-                            db.SaveChanges();
-                            time.Start();
-                        }
                     }
 
                     db.SaveChanges();
