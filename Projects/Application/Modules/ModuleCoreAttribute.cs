@@ -3,7 +3,7 @@
 namespace OnUtils.Application.Modules
 {
     /// <summary>
-    /// Интерфейс модуля обязательно должен быть помечен данным атрибутом, в противном случае при инициализации модуля возникает исключение <see cref="Exceptions.ModuleInitException"/>.
+    /// Модуль обязательно должен быть помечен данным атрибутом, в противном случае возникает ошибка во время привязки типов.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public class ModuleCoreAttribute : Attribute
@@ -29,10 +29,10 @@ namespace OnUtils.Application.Modules
         }
 
         /// <summary>
-        /// Url-доступное имя (см. <see cref="ModuleCore.UrlName"/>) по-умолчанию, присваиваемое модулю, если в настройках (см. <see cref="Configuration.ModuleConfiguration{TModule}.UrlName"/>) не задано значение.
+        /// Url-доступное имя (см. <see cref="ModuleCore{TAppCoreSelfReference}.UrlName"/>) по-умолчанию, присваиваемое модулю, если в настройках не задано значение.
         /// </summary>
-        /// <seealso cref="ModuleCore.UrlName"/>
-        /// <seealso cref="Configuration.ModuleConfiguration{TModule}.UrlName"/>
+        /// <seealso cref="ModuleCore{TAppCoreSelfReference}.UrlName"/>
+        /// <seealso cref="Configuration.ModuleConfiguration{TAppCoreSelfReference, TModule}.UrlName"/>
         public string DefaultUrlName
         {
             get;
