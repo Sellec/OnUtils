@@ -121,20 +121,6 @@ namespace OnUtils.Application
 
         #endregion
 
-        #region Управление настройками.
-        /// <summary>
-        /// Возвращает значение конфигурационной опции. Если значение не найдено, то возвращается <paramref name="defaultValue"/>.
-        /// </summary>
-        public T ConfigurationOptionGet<T>(string name, T defaultValue = default(T))
-        {
-            if (AppConfig.ContainsKey(name))
-            {
-                return AppConfig.Get<T>(name, defaultValue);
-            }
-            return defaultValue;
-        }
-        #endregion
-
         #region Свойства
         /// <summary>
         /// Основные настройки приложения.

@@ -21,7 +21,7 @@ namespace OnUtils.Application.Configuration
         /// <summary>
         /// Проверяет, существует ли параметр с ключом <paramref name="key"/>.
         /// </summary>
-        public bool ContainsKey(string key)
+        protected bool ContainsKey(string key)
         {
             return _valuesProvider.ContainsKey(key);
         }
@@ -34,7 +34,7 @@ namespace OnUtils.Application.Configuration
         /// Значение с ключом <paramref name="key"/> автоматически приводится к типу <typeparamref name="T"/>. 
         /// Если попытка приведения оказывается неудачной, то возвращает <paramref name="defaultValue"/>.
         /// </summary>
-        public T Get<T>(string key, T defaultValue)
+        protected T Get<T>(string key, T defaultValue)
         {
             return _valuesProvider.Get<T>(key, defaultValue);
         }
@@ -45,7 +45,7 @@ namespace OnUtils.Application.Configuration
         /// Значение с ключом <paramref name="key"/> автоматически приводится к типу <typeparamref name="T"/>. 
         /// Если попытка приведения оказывается неудачной, то возвращает значение по-умолчанию для типа <typeparamref name="T"/>.
         /// </summary>
-        public T Get<T>(string key)
+        protected T Get<T>(string key)
         {
             return Get<T>(key, default(T));
         }
@@ -54,7 +54,7 @@ namespace OnUtils.Application.Configuration
         /// Задает значение параметра с ключом <paramref name="key"/>. 
         /// </summary>
         /// <exception cref="InvalidOperationException">Возникает, если объект конфигурации относится к используемым. Подразумевается, что запрещено менять значения параметров в объектах конфигурации модуля и ядра, доступных через <see cref="ApplicationCore.Config"/> и <see cref="Modules.ModuleCore{TSelfReference}.GetConfiguration{TConfiguration}"/>. Для изменения конфигурации следует пользоваться <see cref="ModuleConfigurationManipulator{TModule}.ApplyConfiguration{TConfiguration}(TConfiguration)"/>.</exception>
-        public void Set<T>(string key, T value)
+        protected void Set<T>(string key, T value)
         {
             if (_isReadonly) throw new InvalidOperationException("Изменять значения параметров конфигурации запрещено.");
             _valuesProvider.Set(key, value);
