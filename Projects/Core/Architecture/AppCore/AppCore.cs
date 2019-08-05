@@ -202,7 +202,7 @@ namespace OnUtils.Architecture.AppCore
         {
             var currentType = this.GetType();
 
-            var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089" };
+            var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
 
             var instances2 = AppDomain.CurrentDomain.
                 GetAssemblies().
