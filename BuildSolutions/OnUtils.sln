@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TraceUtils", "TraceUtils", "{4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projects", "Projects", "{4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.NetFramework", "..\Projects\Core\Core.NetFramework.csproj", "{E72E8B9C-9668-46C6-84E6-47D9CE44AD80}"
 EndProject

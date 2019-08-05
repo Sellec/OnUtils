@@ -3,6 +3,7 @@ using OnUtils.Data.EntityFramework;
 using OnUtils.Data.UnitOfWork;
 using OnUtils.Tasks;
 using System;
+using System.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -45,6 +46,7 @@ namespace TestConsole.NetCore
     {
         protected override void OnModelCreating(IModelAccessor modelAccessor)
         {
+            //modelAccessor.ConnectionString= "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
             modelAccessor.UseEntityFrameworkCore(modelBuilder =>
             {
                 modelBuilder.Entity<ModuleConfig>().HasKey(x => new { x.IdModule });
@@ -56,7 +58,7 @@ namespace TestConsole.NetCore
     {
         string IConnectionStringResolver.ResolveConnectionStringForDataContext(Type[] entityTypes)
         {
-            return "Data Source=localhost;Initial Catalog=Dombonus_OnWeb;Integrated Security=True;";
+            return "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
         }
     }
 
@@ -64,15 +66,12 @@ namespace TestConsole.NetCore
     {
         static void Main(string[] args)
         {
-            DataAccessManager.SetConnectionStringResolver(new res());
-            TasksManager.SetDefaultService(new OnUtils.Tasks.MomentalThreading.TasksService());
+            //DataAccessManager.SetConnectionStringResolver(new res());
 
-            TasksManager.SetTask("12313", Cron.Minutely(), () => TestRun());
-
-            //var d = new ccc();
-            //var ddd = d.Repo1.Where(x => x.IdModule >= 1).ToList();
-            //ddd.First().IdUserChange = 123133;
-            //d.SaveChanges();
+            var d = new ccc();
+            var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
+            ddd.First().IdUserChange = 123133;
+            d.SaveChanges();
 
             Console.WriteLine("Hello World!");
 

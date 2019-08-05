@@ -62,13 +62,13 @@ namespace OnUtils.Data.EntityFramework.Internal
 
     static class DataContextInternalModelFactory
     {
-        private static ConcurrentDictionary<string, DbCompiledModel> _compiledModels = new ConcurrentDictionary<string, DbCompiledModel>();
+        private static ConcurrentDictionary<string, Tuple<DbCompiledModel, string>> _compiledModels = new ConcurrentDictionary<string, Tuple<DbCompiledModel, string>>();
 
-        internal static DbCompiledModel GetCompiledModel(Type[] entityTypes, Action<DbModelBuilder> callModelCreating)
+        internal static Tuple<DbCompiledModel, string> GetCompiledModel(Type[] entityTypes, Func<DbModelBuilder, string, string> callModelCreating)
         {
             var modelKey = string.Join(";", entityTypes.Select(x => x.FullName).OrderBy(x => x));
 
-            DbCompiledModel compiledModel = null;
+            Tuple<DbCompiledModel, string> compiledModel = null;
             if (!_compiledModels.TryGetValue(modelKey, out compiledModel))
             {
                 compiledModel = _compiledModels.GetOrAdd(modelKey, (key) =>
@@ -112,12 +112,17 @@ namespace OnUtils.Data.EntityFramework.Internal
                         }
                     }
 
-                    callModelCreating(modelBuilder);
+                    var connectionStringBase = GetConnectionString(entityTypes);
+                    var connectionString = callModelCreating(modelBuilder, connectionStringBase);
+                    if (string.IsNullOrEmpty(connectionString)) connectionString = connectionStringBase;
 
-                    using (var connection = new SqlConnection(GetConnectionString(entityTypes)))
+                    if (string.IsNullOrEmpty(connectionString))
+                        throw new InvalidOperationException($"Невозможно получить строку подключения. Задайте поставщик строк подключения в {nameof(DataAccessManager)}.{nameof(DataAccessManager.SetConnectionStringResolver)} или верните строку подключения через свойство {typeof(IModelAccessor).FullName}.{nameof(IModelAccessor.ConnectionString)} в методе {typeof(UnitOfWorkBase).FullName}.OnModelCreating.");
+
+                    using (var connection = new SqlConnection(connectionString))
                     {
                         var model = modelBuilder.Build(connection);
-                        return model.Compile(); ;
+                        return new Tuple<DbCompiledModel, string>(model.Compile(), connectionString);
                     }
                 });
             }
@@ -128,7 +133,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         internal static string GetConnectionString(Type[] entityTypes)
         {
             var connectionStringResolver = DataAccessManager.GetConnectionStringResolver();
-            if (connectionStringResolver == null) throw new InvalidOperationException($"Невозможно получить строку подключения. Задайте поставщик строк подключения в {nameof(DataAccessManager)}.{nameof(DataAccessManager.SetConnectionStringResolver)}.");
+            if (connectionStringResolver == null) return null;
 
             var connectionString = connectionStringResolver.ResolveConnectionStringForDataContext(entityTypes ?? new Type[0]);
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
@@ -136,7 +141,6 @@ namespace OnUtils.Data.EntityFramework.Internal
 
             return connectionStringBuilder.ToString();
         }
-
     }
 
     [DbConfigurationType(typeof(MyConfig))]
@@ -147,14 +151,15 @@ namespace OnUtils.Data.EntityFramework.Internal
         private DbCompiledModel _model = null;
         private bool _isReadonly = false;
 
-        public DataContextInternal(Action<IModelAccessor> modelAccessorDelegate, Type[] entityTypes) : this(entityTypes, DataContextInternalModelFactory.GetCompiledModel(entityTypes, modelBuilder => OnModelCreating(modelAccessorDelegate, modelBuilder)))
+        public DataContextInternal(Action<IModelAccessor> modelAccessorDelegate, Type[] entityTypes) : 
+            this(entityTypes, DataContextInternalModelFactory.GetCompiledModel(entityTypes, (modelBuilder, connectionString) => OnModelCreating(modelAccessorDelegate, modelBuilder, connectionString)))
         {
         }
 
-        private DataContextInternal(Type[] entityTypes, DbCompiledModel model)
-            : base(DataContextInternalModelFactory.GetConnectionString(entityTypes), model)
+        private DataContextInternal(Type[] entityTypes, Tuple<DbCompiledModel, string> model)
+            : base(model.Item2, model.Item1)
         {
-            _model = model;
+            _model = model.Item1;
             entityTypes.ForEach(x => RecursivelyAddEntityTypes(x));
             SetInitializer(this);
             Database.Log = Debug.SQLDebug;
@@ -162,14 +167,17 @@ namespace OnUtils.Data.EntityFramework.Internal
             IsReadonly = false;
         }
 
-        private static void OnModelCreating(Action<IModelAccessor> modelAccessorDelegate, DbModelBuilder modelBuilder)
+        private static string OnModelCreating(Action<IModelAccessor> modelAccessorDelegate, DbModelBuilder modelBuilder, string connectionString)
         {
             if (modelAccessorDelegate != null)
             {
-                var modelAccessor = new ModelAccessorInternal();
+                var modelAccessor = new ModelAccessorInternal() { ConnectionString = connectionString };
                 modelAccessorDelegate(modelAccessor);
                 modelAccessor?.ModelBuilderDelegate?.Invoke(modelBuilder);
+                connectionString = modelAccessor.ConnectionString;
             }
+
+            return connectionString;
         }
 
         private void Conn_InfoMessage(object sender, SqlInfoMessageEventArgs e)

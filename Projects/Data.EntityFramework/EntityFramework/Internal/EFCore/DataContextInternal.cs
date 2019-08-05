@@ -20,42 +20,15 @@ namespace OnUtils.Data.EntityFramework.Internal
     using Data.Errors;
     using UnitOfWork;
 
-    //class MyConfig : DbConfiguration
-    //{
-    //    public MyConfig()
-    //    {
-    //        SetManifestTokenResolver(new MyManifestTokenResolver());
-    //    }
-
-    //    public class MyManifestTokenResolver : IManifestTokenResolver
-    //    {
-    //        private readonly IManifestTokenResolver _defaultResolver = new DefaultManifestTokenResolver();
-
-    //        string IManifestTokenResolver.ResolveManifestToken(DbConnection connection)
-    //        {
-    //            var sqlConn = connection as SqlConnection;
-    //            if (sqlConn != null)
-    //            {
-    //                return "2008";
-    //            }
-    //            else
-    //            {
-    //                return _defaultResolver.ResolveManifestToken(connection);
-    //            }
-    //        }
-
-    //    }
-    //}
-
     static class DataContextInternalModelFactory
     {
-        private static ConcurrentDictionary<string, IModel> _compiledModels = new ConcurrentDictionary<string, IModel>();
+        private static ConcurrentDictionary<string, Tuple<IModel, string>> _compiledModels = new ConcurrentDictionary<string, Tuple<IModel, string>>();
 
-        internal static IModel GetCompiledModel(DbContextOptionsBuilder optionsBuilder, Type[] entityTypes, Action<ModelBuilder> callModelCreating)
+        internal static Tuple<IModel, string> GetCompiledModel(DbContextOptionsBuilder optionsBuilder, Type[] entityTypes, Func<ModelBuilder, string, string> callModelCreating)
         {
             var modelKey = string.Join(";", entityTypes.Select(x => x.FullName).OrderBy(x => x));
 
-            IModel compiledModel = null;
+            Tuple<IModel, string> compiledModel = null;
             if (!_compiledModels.TryGetValue(modelKey, out compiledModel))
             {
                 compiledModel = _compiledModels.GetOrAdd(modelKey, (key) =>
@@ -105,12 +78,17 @@ namespace OnUtils.Data.EntityFramework.Internal
                         }
                     }
 
-                    callModelCreating(modelBuilder);
+                    var connectionStringBase = GetConnectionString(entityTypes);
+                    var connectionString = callModelCreating(modelBuilder, connectionStringBase);
+                    if (string.IsNullOrEmpty(connectionString)) connectionString = connectionStringBase;
+
+                    if (string.IsNullOrEmpty(connectionString))
+                        throw new InvalidOperationException($"Невозможно получить строку подключения. Задайте поставщик строк подключения в {nameof(DataAccessManager)}.{nameof(DataAccessManager.SetConnectionStringResolver)} или верните строку подключения через свойство {typeof(IModelAccessor).FullName}.{nameof(IModelAccessor.ConnectionString)} в методе {typeof(UnitOfWorkBase).FullName}.OnModelCreating.");
 
                     // Соединение здесь не нужно, но оставляем для проверки подключенного ресолвера строк подключения для совместимости с Data.EF.NetFull.
-                    using (var connection = new SqlConnection(GetConnectionString(entityTypes)))
+                    using (var connection = new SqlConnection(connectionString))
                     {
-                        return modelBuilder.FinalizeModel();
+                        return new Tuple<IModel, string>(modelBuilder.FinalizeModel(), connectionString);
                     }
                 });
             }
@@ -121,7 +99,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         internal static string GetConnectionString(Type[] entityTypes)
         {
             var connectionStringResolver = DataAccessManager.GetConnectionStringResolver();
-            if (connectionStringResolver == null) throw new InvalidOperationException($"Невозможно получить строку подключения. Задайте поставщик строк подключения в {nameof(DataAccessManager)}.{nameof(DataAccessManager.SetConnectionStringResolver)}.");
+            if (connectionStringResolver == null) return null;
 
             var connectionString = connectionStringResolver.ResolveConnectionStringForDataContext(entityTypes ?? new Type[0]);
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
@@ -137,6 +115,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         private List<Type> _entityTypes = new List<Type>();
         private bool _isReadonly = false;
         private Action<IModelAccessor> _modelAccessorDelegate = null;
+        private string _connectionString = null;
 
         public DataContextInternal(Action<IModelAccessor> modelAccessorDelegate, Type[] entityTypes)
         {
@@ -151,9 +130,23 @@ namespace OnUtils.Data.EntityFramework.Internal
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            var model = DataContextInternalModelFactory.GetCompiledModel(optionsBuilder, _entityTypes.ToArray(), (modelBuilder, connectionString) =>
+            {
+                OnModelCreating(modelBuilder);
+
+                if (_modelAccessorDelegate != null)
+                {
+                    var modelAccessor = new ModelAccessorInternal() { ConnectionString = connectionString };
+                    _modelAccessorDelegate(modelAccessor);
+                    modelAccessor?.ModelBuilderDelegate?.Invoke(modelBuilder);
+                    connectionString = modelAccessor.ConnectionString;
+                }
+
+                return connectionString;
+            });
             optionsBuilder.
-                UseModel(DataContextInternalModelFactory.GetCompiledModel(optionsBuilder, _entityTypes.ToArray(), modelBuilder => OnModelCreating(modelBuilder))).
-                UseSqlServer(DataContextInternalModelFactory.GetConnectionString(_entityTypes.ToArray()));
+                UseModel(model.Item1).
+                UseSqlServer(model.Item2);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -186,13 +179,6 @@ namespace OnUtils.Data.EntityFramework.Internal
                         }
                     }
                 }
-            }
-
-            if (_modelAccessorDelegate != null)
-            {
-                var modelAccessor = new ModelAccessorInternal();
-                _modelAccessorDelegate(modelAccessor);
-                modelAccessor?.ModelBuilderDelegate?.Invoke(modelBuilder);
             }
         }
 

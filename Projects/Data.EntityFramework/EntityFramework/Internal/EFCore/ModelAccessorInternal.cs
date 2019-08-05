@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
@@ -10,5 +8,7 @@ namespace OnUtils.Data.EntityFramework.Internal
     class ModelAccessorInternal : IModelAccessor
     {
         internal Action<ModelBuilder> ModelBuilderDelegate { get; set; }
+
+        public string ConnectionString { get; set; }
     }
 }

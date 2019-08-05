@@ -79,10 +79,6 @@
       <Project>{8f3240c4-1a14-4e3b-85ac-c94ee406041e}</Project>
       <Name>Data.EntityFramework.NetFramework</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Projects\Tasks.Hangfire\Tasks.Hangfire.csproj">
-      <Project>{f17809fb-af26-418f-b120-c9cdcb0c9ebf}</Project>
-      <Name>Tasks.Hangfire</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EntityFramework">

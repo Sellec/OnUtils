@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils.Data.EntityFramework</id>
-    <version>0.1.2</version>
+    <version>0.1.4</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>

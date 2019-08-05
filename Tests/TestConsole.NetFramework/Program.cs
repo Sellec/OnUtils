@@ -46,6 +46,7 @@ namespace TestConsole
     {
         protected override void OnModelCreating(IModelAccessor modelAccessor)
         {
+            modelAccessor.ConnectionString= "Data Source=localhost;Initial Catalog=Test;Integrated Security=True;";
             modelAccessor.UseEntityFramework(modelBuilder =>
             {
                 modelBuilder.Entity<ModuleConfig>().HasKey(x => new { x.IdModule });
@@ -72,16 +73,17 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
-            DataAccessManager.SetConnectionStringResolver(new res());
+            //DataAccessManager.SetConnectionStringResolver(new res());
+
+            var d = new ccc();
+            var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
+            ddd.First().IdUserChange = 123133;
+            d.SaveChanges();
 
             var app = new app(Environment.CurrentDirectory);
             app.Start();
 
             app.Stop();
-            var d = new ccc();
-            var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
-            ddd.First().IdUserChange = 123133;
-            d.SaveChanges();
 
             Console.WriteLine("Hello World!");
 
