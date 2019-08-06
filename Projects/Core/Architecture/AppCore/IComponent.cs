@@ -1,6 +1,17 @@
 ﻿namespace OnUtils.Architecture.AppCore
 {
     /// <summary>
+    /// Представляет интерфейс запускаемого компонента ядра.
+    /// </summary>
+    public interface IComponentStartable<in TAppCore>
+    {
+        /// <summary>
+        /// Запускает компонент с указанием ядра-владельца.
+        /// </summary>
+        void Start(TAppCore appCore);
+    }
+
+    /// <summary>
     /// Представляет общий интерфейс компонента ядра.
     /// </summary>
     public interface IComponent<out TAppCore>

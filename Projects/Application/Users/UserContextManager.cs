@@ -30,7 +30,7 @@ namespace OnUtils.Application.Users
         protected sealed override void OnStart()
         {
             var systemUserContext = new UserContext<TAppCoreSelfReference>(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
-            systemUserContext.Start(AppCore);
+            ((IComponentStartable<TAppCoreSelfReference>)systemUserContext).Start(AppCore);
             _systemUserContext = systemUserContext;
         }
 
@@ -93,7 +93,6 @@ namespace OnUtils.Application.Users
         /// </summary>
         /// <param name="idUser">Идентификатор пользователя.</param>
         /// <param name="userContext">Содержит контекст в случае успеха.</param>
-        /// <param name="resultReason">Содержит текстовое пояснение к ответу функции.</param>
         /// <returns>Возвращает результат создания контекста.</returns>
         [ApiIrreversible]
         public UserContextCreateResult CreateUserContext(int idUser, out IUserContext userContext)
@@ -109,7 +108,7 @@ namespace OnUtils.Application.Users
                     if (res == null) return UserContextCreateResult.NotFound;
 
                     var context = new UserContext<TAppCoreSelfReference>(res, true);
-                    context.Start(AppCore);
+                    ((IComponentStartable<TAppCoreSelfReference>)context).Start(AppCore);
 
                     var permissionsResult = GetPermissions(context.IdUser);
                     if (!permissionsResult.IsSuccess)

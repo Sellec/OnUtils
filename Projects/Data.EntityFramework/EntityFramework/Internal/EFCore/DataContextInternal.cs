@@ -658,7 +658,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <summary>
         /// Применяет все изменения базы данных, произведенные в контексте.
         /// После окончания операции для каждого затронутого объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChanges"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChanges()"/>. 
         /// </summary>
         /// <returns>Количество объектов, записанных в базу данных.</returns>
         public override int SaveChanges()
@@ -684,7 +684,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <summary>
         /// Применяет все изменения базы данных, произведенные в контексте для указанного типа объектов <typeparamref name="TEntity"/>.
         /// После окончания операции для каждого затронутого объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChanges"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChanges()"/>. 
         /// </summary>
         /// <typeparam name="TEntity">Тип сущностей, для которых следует применить изменения.</typeparam>
         /// <returns>Количество объектов, записанных в базу данных.</returns>
@@ -696,7 +696,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <summary>
         /// Применяет все изменения базы данных, произведенные в контексте для указанного типа объектов <paramref name="entityType"/>.
         /// После окончания операции для каждого затронутого объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChanges"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChanges()"/>. 
         /// </summary>
         /// <param name="entityType">Тип сущностей, для которых следует применить изменения.</param>
         /// <returns>Количество объектов, записанных в базу данных.</returns>
@@ -745,7 +745,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <summary>
         /// Асинхронно применяет все изменения базы данных, произведенные в контексте.
         /// После окончания операции для каждого затронутого объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChanges"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChanges()"/>. 
         /// </summary>
         /// <returns>Задача, представляющая асинхронную операцию сохранения. Результат задачи содержит количество объектов, записанных в базу данных.</returns>
         public Task<int> SaveChangesAsync()
@@ -756,7 +756,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <summary>
         /// Асинхронно применяет все изменения базы данных, произведенные в контексте.
         /// После окончания операции для каждого сохраненного объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChanges"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChangesAsync(bool, CancellationToken)"/>. 
         /// </summary>
         /// <param name="cancellationToken">Токен System.Threading.CancellationToken, который нужно отслеживать во время ожидания выполнения задачи.</param>
         /// <returns>Задача, представляющая асинхронную операцию сохранения. Результат задачи содержит количество объектов, записанных в базу данных.</returns>

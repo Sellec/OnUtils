@@ -5,7 +5,7 @@ namespace OnUtils.Architecture.AppCore
     /// <summary>
     /// Базовая реализация компонента ядра.
     /// </summary>
-    public abstract class CoreComponentBase<TAppCore> : IComponent<TAppCore>, IDisposable
+    public abstract class CoreComponentBase<TAppCore> : IComponentStartable<TAppCore>, IComponent<TAppCore>, IDisposable
     {
         #region ICoreComponent
         private CoreComponentState _state = CoreComponentState.None;
@@ -13,7 +13,7 @@ namespace OnUtils.Architecture.AppCore
         /// <summary>
         /// Запускает компонент с указанием ядра-владельца. Запуск выполняется всего один раз.
         /// </summary>
-        public void Start(TAppCore core)
+        void IComponentStartable<TAppCore>.Start(TAppCore core)
         {
             if (_state == CoreComponentState.None)
             {
@@ -32,7 +32,7 @@ namespace OnUtils.Architecture.AppCore
         /// <summary>
         /// См. <see cref="IComponent{TAppCore}.Stop"/>.
         /// </summary>
-        public void Stop()
+        void IComponent<TAppCore>.Stop()
         {
             (this as IDisposable).Dispose();
         }

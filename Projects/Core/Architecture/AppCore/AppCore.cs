@@ -29,8 +29,7 @@ namespace OnUtils.Architecture.AppCore
                 {
                     if (!coreComponent.GetState().In(CoreComponentState.Started, CoreComponentState.Stopped))
                     {
-                        if (coreComponent is CoreComponentBase<TAppCore> coreComponentBase) coreComponentBase.Start(_core);
-                        //coreComponent.Start(_core);
+                        if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable) coreComponentStartable.Start(_core);
                     }
                     _core.OnInstanceActivated<TRequestedType>(coreComponent);
                 }

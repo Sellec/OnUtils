@@ -141,7 +141,7 @@ namespace OnUtils.Application.Modules
                 module._moduleUrlName = moduleCoreAttribute.DefaultUrlName;
 
                 var configurationManipulator = new ModuleConfigurationManipulator<TAppCoreSelfReference, TModuleType>(module, CreateValuesProviderForModule(module));
-                configurationManipulator.Start(AppCore);
+                ((IComponentStartable<TAppCoreSelfReference>)configurationManipulator).Start(AppCore);
                 module._configurationManipulator = configurationManipulator;
 
                 var cfg = configurationManipulator.GetUsable<ModuleConfiguration<TAppCoreSelfReference, TModuleType>>();
