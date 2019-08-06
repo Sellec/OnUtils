@@ -73,12 +73,13 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
-            //DataAccessManager.SetConnectionStringResolver(new res());
+            DataAccessManager.SetConnectionStringResolver(new res());
 
             var d = new ccc();
             var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
             ddd.First().IdUserChange = 123133;
             d.SaveChanges();
+
 
             var app = new app(Environment.CurrentDirectory);
             app.Start();

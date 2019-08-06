@@ -79,6 +79,10 @@
       <Project>{8f3240c4-1a14-4e3b-85ac-c94ee406041e}</Project>
       <Name>Data.EntityFramework.NetFramework</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj">
+      <Project>{7645a6bb-cca5-4ec9-abee-b0a752be82fc}</Project>
+      <Name>Tasks.MomentalThreading</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EntityFramework">

@@ -128,10 +128,21 @@ namespace OnUtils.Application.Modules
 
             using (var db = this.CreateUnitOfWork())
             {
-                var config = db.Module.Where(x => x.UniqueKey == moduleType.FullName).FirstOrDefault();
+                var fullName = moduleType.FullName;
+                if (moduleType.IsConstructedGenericType && moduleType.Assembly == typeof(ModuleCore<>).Assembly)
+                {
+                    if (moduleType.GenericTypeArguments.Length == 1)
+                    {
+                        var assemblyName = moduleType.GenericTypeArguments[0].Assembly.GetName();
+                        fullName = fullName.Replace(", Version=" + assemblyName.Version.ToString(), "");
+                        fullName = fullName.Replace(", Culture=" + (string.IsNullOrEmpty(assemblyName.CultureName) ? "neutral" : assemblyName.CultureName), "");
+                    }
+                }
+
+                var config = db.Module.Where(x => x.UniqueKey == fullName).FirstOrDefault();
                 if (config == null)
                 {
-                    config = new ModuleConfig() { UniqueKey = moduleType.FullName, DateChange = DateTime.Now };
+                    config = new ModuleConfig() { UniqueKey = fullName, DateChange = DateTime.Now };
                     db.Module.Add(config);
                     db.SaveChanges();
                 }
@@ -300,7 +311,18 @@ namespace OnUtils.Application.Modules
                 var moduleConfig = db.Module.FirstOrDefault(x => x.IdModule == module.ID);
                 if (moduleConfig == null)
                 {
-                    moduleConfig = new ModuleConfig() { UniqueKey = typeof(TModule).FullName, DateChange = DateTime.Now, IdUserChange = 0 };
+                    var fullName = typeof(TModule).FullName;
+                    if (moduleType.IsConstructedGenericType && moduleType.Assembly == typeof(ModuleCore<>).Assembly)
+                    {
+                        if (moduleType.GenericTypeArguments.Length == 1)
+                        {
+                            var assemblyName = moduleType.GenericTypeArguments[0].Assembly.GetName();
+                            fullName = fullName.Replace(", Version=" + assemblyName.Version.ToString(), "");
+                            fullName = fullName.Replace(", Culture=" + (string.IsNullOrEmpty(assemblyName.CultureName) ? "neutral" : assemblyName.CultureName), "");
+                        }
+                    }
+
+                    moduleConfig = new ModuleConfig() { UniqueKey = fullName, DateChange = DateTime.Now, IdUserChange = 0 };
                     db.Module.AddOrUpdate(moduleConfig);
                 }
 

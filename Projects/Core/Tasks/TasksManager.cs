@@ -35,6 +35,7 @@ namespace OnUtils.Tasks
             {
                 _testKnownService = false;
                 var serviceType = Type.GetType("OnUtils.Tasks.Hangfire.TasksService, OnUtils.Tasks.Hangfire, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
+                if (serviceType == null) serviceType = Type.GetType("OnUtils.Tasks.MomentalThreading.TasksService, OnUtils.Tasks.MomentalThreading, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
                 if (serviceType != null) SetDefaultService((ITasksService)Activator.CreateInstance(serviceType));
             }
 
