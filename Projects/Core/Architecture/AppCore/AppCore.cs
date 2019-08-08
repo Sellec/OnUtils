@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
@@ -36,7 +37,7 @@ namespace OnUtils.Architecture.AppCore
 
                 if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
                 {
-                    _core._activatedSingletonInstances.Add(coreComponentSingleton);
+                    _core._activatedSingletonInstances.Push(coreComponentSingleton);
                 }
             }
         }
@@ -44,7 +45,7 @@ namespace OnUtils.Architecture.AppCore
         private bool _started = false;
         private bool _stopped = false;
         private bool _bindingsPreparing = false;
-        private List<IComponentSingleton<TAppCore>> _activatedSingletonInstances = null;
+        private ConcurrentStack<IComponentSingleton<TAppCore>> _activatedSingletonInstances = null;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
@@ -56,7 +57,7 @@ namespace OnUtils.Architecture.AppCore
         {
             if (!typeof(TAppCore).IsAssignableFrom(this.GetType())) throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl((TAppCore)(object)this);
-            _activatedSingletonInstances = new List<IComponentSingleton<TAppCore>>();
+            _activatedSingletonInstances = new ConcurrentStack<IComponentSingleton<TAppCore>>();
         }
 
         /// <summary>
@@ -123,13 +124,13 @@ namespace OnUtils.Architecture.AppCore
             if (_stopped) return;
             if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
 
-            foreach(var componentSingleton in _activatedSingletonInstances)
+            while (_activatedSingletonInstances.TryPop(out var componentSingleton))
             {
                 try
                 {
                     componentSingleton.Stop();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Debug.WriteLineNoLog($"Ошибка во время остановки компонента '{componentSingleton.GetType().FullName}': {ex.Message}");
                 }
