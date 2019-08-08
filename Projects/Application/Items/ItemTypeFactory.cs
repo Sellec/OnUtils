@@ -22,18 +22,25 @@ namespace OnUtils.Application.Items
 
         private static Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>> ItemsTypesProvide()
         {
-            var types = new ConcurrentDictionary<string, DB.ItemType>();
-
-            using (var db = new UnitOfWork<DB.ItemType>())
+            try
             {
-                db.Repo1.Where(x => !string.IsNullOrEmpty(x.UniqueKey)).ForEach(x => types[x.UniqueKey] = x);
+                var types = new ConcurrentDictionary<string, DB.ItemType>();
+
+                using (var db = new UnitOfWork<DB.ItemType>())
+                {
+                    db.Repo1.Where(x => !string.IsNullOrEmpty(x.UniqueKey)).ForEach(x => types[x.UniqueKey] = x);
+                }
+
+                var expires = DateTime.Now.AddMinutes(2);
+
+                //Debug.WriteLineNoLog("ItemTypeFactory: generate new cache with {0} types, expires at {1}", types.Count, expires.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                return new Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>>(DateTime.Now.AddMinutes(2), types);
             }
-
-            var expires = DateTime.Now.AddMinutes(2);
-
-            //Debug.WriteLineNoLog("ItemTypeFactory: generate new cache with {0} types, expires at {1}", types.Count, expires.ToString("yyyy-MM-dd HH:mm:ss"));
-
-            return new Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>>(DateTime.Now.AddMinutes(2), types);
+            catch
+            {
+                return new Tuple<DateTime, ConcurrentDictionary<string, DB.ItemType>>(DateTime.Now, new ConcurrentDictionary<string, DB.ItemType>());
+            }
         }
 
         /// <summary>
