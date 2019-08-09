@@ -320,9 +320,6 @@ namespace OnUtils.Application.Modules
 
             InitModuleCustom();
             //RegisterAction("extensionsGetData");
-
-            AppCore.Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped<TSelfReference>($"Журнал событий модуля '{Caption}'");
-            this.RegisterEvent(EventType.Info, "Модуль загружен", null);
         }
 
         /// <summary>
