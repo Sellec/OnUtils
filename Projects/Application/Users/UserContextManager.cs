@@ -29,6 +29,8 @@ namespace OnUtils.Application.Users
         /// </summary>
         protected sealed override void OnStart()
         {
+            this.RegisterJournal("Менеджер контекстов пользователей");
+
             var systemUserContext = new UserContext<TAppCoreSelfReference>(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
             ((IComponentStartable<TAppCoreSelfReference>)systemUserContext).Start(AppCore);
             _systemUserContext = systemUserContext;

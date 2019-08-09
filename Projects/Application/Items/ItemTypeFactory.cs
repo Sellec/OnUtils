@@ -82,7 +82,8 @@ namespace OnUtils.Application.Items
             var displayName = t.GetCustomAttribute<DisplayNameAttribute>();
             if (displayName != null && !string.IsNullOrEmpty(displayName.DisplayName)) caption = displayName.DisplayName;
 
-            return GetOrAdd(caption, "TYPEKEY_" + t.FullName, true);
+            var fullName = Utils.TypeNameHelper.GetFullNameCleared(t);
+            return GetOrAdd(caption, "TYPEKEY_" + fullName, true);
         }
 
         /// <summary>

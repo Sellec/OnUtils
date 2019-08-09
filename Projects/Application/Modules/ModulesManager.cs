@@ -17,7 +17,12 @@ namespace OnUtils.Application.Modules
     /// Система разделена на модули с определенным функционалом, к модулям могут быть привязаны операции, доступные пользователю извне (для внешних запросов).
     /// Права доступа регистрируются на модуль.
     /// </summary>
-    public class ModulesManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart, IUnitOfWorkAccessor<CoreContext>
+    public class ModulesManager<TAppCoreSelfReference> : 
+        CoreComponentBase<TAppCoreSelfReference>, 
+        IComponentSingleton<TAppCoreSelfReference>, 
+        IAutoStart, 
+        IUnitOfWorkAccessor<CoreContext>,
+        ITypedJournalComponent<ModulesManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         class InstanceActivatedHandlerImpl : IInstanceActivatedHandler
@@ -58,6 +63,8 @@ namespace OnUtils.Application.Modules
         /// </summary>
         protected sealed override void OnStart()
         {
+            this.RegisterJournal("Менеджер модулей");
+
             AppCore.ObjectProvider.RegisterInstanceActivatedHandler(_instanceActivatedHandler);
             if (_isStartModulesOnManagerStart) StartModules();
         }
@@ -128,16 +135,7 @@ namespace OnUtils.Application.Modules
 
             using (var db = this.CreateUnitOfWork())
             {
-                var fullName = moduleType.FullName;
-                if (moduleType.IsConstructedGenericType && moduleType.Assembly == typeof(ModuleCore<>).Assembly)
-                {
-                    if (moduleType.GenericTypeArguments.Length == 1)
-                    {
-                        var assemblyName = moduleType.GenericTypeArguments[0].Assembly.GetName();
-                        fullName = fullName.Replace(", Version=" + assemblyName.Version.ToString(), "");
-                        fullName = fullName.Replace(", Culture=" + (string.IsNullOrEmpty(assemblyName.CultureName) ? "neutral" : assemblyName.CultureName), "");
-                    }
-                }
+                var fullName = Utils.TypeNameHelper.GetFullNameCleared(moduleType);
 
                 var config = db.Module.Where(x => x.UniqueKey == fullName).FirstOrDefault();
                 if (config == null)
@@ -169,7 +167,7 @@ namespace OnUtils.Application.Modules
 
                 this.RegisterEvent(
                      EventType.Info,
-                    $"Загрузка модуля '{moduleType.FullName}'",
+                    $"Загрузка модуля '{fullName}'",
                     $"Модуль загружен на основе типа '{module.GetType().FullName}' с Id={config.IdModule}."
                 );
             }
@@ -311,16 +309,7 @@ namespace OnUtils.Application.Modules
                 var moduleConfig = db.Module.FirstOrDefault(x => x.IdModule == module.ID);
                 if (moduleConfig == null)
                 {
-                    var fullName = typeof(TModule).FullName;
-                    if (moduleType.IsConstructedGenericType && moduleType.Assembly == typeof(ModuleCore<>).Assembly)
-                    {
-                        if (moduleType.GenericTypeArguments.Length == 1)
-                        {
-                            var assemblyName = moduleType.GenericTypeArguments[0].Assembly.GetName();
-                            fullName = fullName.Replace(", Version=" + assemblyName.Version.ToString(), "");
-                            fullName = fullName.Replace(", Culture=" + (string.IsNullOrEmpty(assemblyName.CultureName) ? "neutral" : assemblyName.CultureName), "");
-                        }
-                    }
+                    var fullName = Utils.TypeNameHelper.GetFullNameCleared(typeof(TModule));
 
                     moduleConfig = new ModuleConfig() { UniqueKey = fullName, DateChange = DateTime.Now, IdUserChange = 0 };
                     db.Module.AddOrUpdate(moduleConfig);

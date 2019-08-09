@@ -7,6 +7,7 @@ namespace OnUtils.Application.Modules
     using Application.Users;
     using Architecture.AppCore;
     using Configuration;
+    using Journaling;
 
     /// <summary>
     /// Базовый класс для всех модулей. Обязателен при реализации любых модулей, т.к. при задании привязок в DI проверяется наследование именно от этого класса.
@@ -251,7 +252,7 @@ namespace OnUtils.Application.Modules
     /// </summary>
     /// <typeparam name="TAppCoreSelfReference">См. описание <see cref="ApplicationCore{TAppCoreSelfReference}"/>.</typeparam>
     /// <typeparam name="TSelfReference">Должен ссылаться сам на себя.</typeparam>
-    public abstract class ModuleCore<TAppCoreSelfReference, TSelfReference> : ModuleCore<TAppCoreSelfReference>
+    public abstract class ModuleCore<TAppCoreSelfReference, TSelfReference> : ModuleCore<TAppCoreSelfReference>, ITypedJournalComponent<TSelfReference>
         where TSelfReference : ModuleCore<TAppCoreSelfReference, TSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
@@ -319,6 +320,9 @@ namespace OnUtils.Application.Modules
 
             InitModuleCustom();
             //RegisterAction("extensionsGetData");
+
+            AppCore.Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped<TSelfReference>($"Журнал событий модуля '{Caption}'");
+            this.RegisterEvent(EventType.Info, "Модуль загружен", null);
         }
 
         /// <summary>

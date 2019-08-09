@@ -1,20 +1,30 @@
 ﻿using System;
+using System.Linq;
 
 namespace OnUtils.Application
 {
+    using Application;
     using Architecture.AppCore;
-    using Items;
-    using Journaling;
-    using Journaling.DB;
-    using ExecutionResultJournalName = ExecutionResult<Journaling.DB.JournalName>;
+    using Application.Items;
+    using Application.Journaling;
+    using Application.Journaling.DB;
+    using ExecutionResultJournalName = ExecutionResult<Application.Journaling.DB.JournalName>;
 
     /// <summary>
-    /// Методы расширений для <see cref="JournalingManager"/>.
+    /// Методы расширений для <see cref="JournalingManager{TAppCoreSelfReference}"/>.
     /// </summary>
     public static class ManagerExtensions
     {
+        internal static Type GetJournalType(Type type)
+        {
+            var typeGeneric = OnUtils.Types.TypeHelpers.ExtractGenericInterface(type, typeof(ITypedJournalComponent<>));
+            if (typeGeneric != null) return typeGeneric.GetGenericArguments()[0];
+
+            return type;
+        }
+
         /// <summary>
-        /// Регистрирует новый журнал или обновляет старый на основе типа <typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новый журнал или обновляет старый на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="nameJournal">См. <see cref="JournalName.Name"/>.</param>
@@ -23,12 +33,12 @@ namespace OnUtils.Application
         public static ExecutionResult RegisterJournal<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, string nameJournal)
             where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return new ExecutionResult(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped<TApplicationComponent>(nameJournal);
+            return component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped(component.GetType(), nameJournal);
         }
 
         #region RegisterEvent
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента<typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="eventType">См. <see cref="Journal.EventType"/>.</param>
@@ -42,7 +52,7 @@ namespace OnUtils.Application
         }
 
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента <typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="eventType">См. <see cref="Journal.EventType"/>.</param>
@@ -57,7 +67,7 @@ namespace OnUtils.Application
         }
 
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента <typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="eventType">См. <see cref="Journal.EventType"/>.</param>
@@ -69,13 +79,14 @@ namespace OnUtils.Application
         public static ExecutionResult<int?> RegisterEvent<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
             where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return new ExecutionResult<int?>(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEvent<TApplicationComponent>(eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+            //return component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped(type, nameJournal);
+            return component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEvent(component.GetType(), eventType, eventInfo, eventInfoDetailed, eventTime, exception);
         }
         #endregion
 
         #region RegisterEventForItem
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента<typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="relatedItem">См. <see cref="Journal.IdRelatedItem"/> и <see cref="Journal.IdRelatedItemType"/>.</param>
@@ -90,7 +101,7 @@ namespace OnUtils.Application
         }
 
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента <typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="relatedItem">См. <see cref="Journal.IdRelatedItem"/> и <see cref="Journal.IdRelatedItemType"/>.</param>
@@ -106,7 +117,7 @@ namespace OnUtils.Application
         }
 
         /// <summary>
-        /// Регистрирует новое событие в журнале, основанном на типе компонента <typeparamref name="TApplicationComponent"/>.
+        /// Регистрирует новое событие в журнале на основе компонента <paramref name="component"/>.
         /// </summary>
         /// <param name="component">Компонент приложения (см. <see cref="IComponentSingleton{TAppCore}"/>) для которого регистрируется событие.</param>
         /// <param name="relatedItem">См. <see cref="Journal.IdRelatedItem"/> и <see cref="Journal.IdRelatedItemType"/>.</param>
@@ -119,7 +130,7 @@ namespace OnUtils.Application
         public static ExecutionResult RegisterEventForItem<TAppCoreSelfReference>(this IComponentSingleton<TAppCoreSelfReference> component, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
             where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         {
-            return new ExecutionResult(false, "test");// component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEventForItem<TApplicationComponent>(relatedItem, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+            return component.GetAppCore().Get<JournalingManager<TAppCoreSelfReference>>().RegisterEventForItem(component.GetType(), relatedItem, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
         }
         #endregion
     }
