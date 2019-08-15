@@ -17,7 +17,11 @@ namespace OnUtils.Application.Journaling
     /// <summary>
     /// Представляет менеджер системных журналов. Позволяет создавать журналы, как привязанные к определенным типам, так и вручную, и регистрировать в них события.
     /// </summary>
-    public sealed class JournalingManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.Journal, DB.JournalName>>
+    public sealed class JournalingManager<TAppCoreSelfReference> : 
+        CoreComponentBase<TAppCoreSelfReference>, 
+        IComponentSingleton<TAppCoreSelfReference>, 
+        IUnitOfWorkAccessor<UnitOfWork<DB.Journal, DB.JournalName>>,
+        ITypedJournalComponent<JournalingManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         //Список журналов, основанных на определенном типе объектов.
@@ -28,6 +32,7 @@ namespace OnUtils.Application.Journaling
         /// </summary>
         protected sealed override void OnStart()
         {
+            RegisterJournalTyped<JournalingManager<TAppCoreSelfReference>>("Менеджер журналов");
         }
 
         /// <summary>
@@ -87,7 +92,14 @@ namespace OnUtils.Application.Journaling
         [ApiIrreversible]
         public ExecutionResultJournalName RegisterJournalTyped<TJournalTyped>(string name)
         {
-            return RegisterJournal(JournalingConstants.IdSystemJournalType, name, JournalingConstants.TypedJournalsPrefix + typeof(TJournalTyped).FullName);
+            return RegisterJournalTyped(typeof(TJournalTyped), name);
+        }
+
+        internal ExecutionResultJournalName RegisterJournalTyped(Type typedType, string name)
+        {
+            typedType = ManagerExtensions.GetJournalType(typedType);
+            var fullName = Utils.TypeNameHelper.GetFullNameCleared(typedType);
+            return RegisterJournal(JournalingConstants.IdSystemJournalType, name, JournalingConstants.TypedJournalsPrefix + fullName);
         }
         #endregion
 
@@ -149,9 +161,18 @@ namespace OnUtils.Application.Journaling
         [ApiIrreversible]
         public ExecutionResultJournalName GetJournalTyped<TJournalTyped>()
         {
+            return GetJournalTyped(typeof(TJournalTyped));
+        }
+
+        internal ExecutionResultJournalName GetJournalTyped(Type typeTyped)
+        {
             return _typedJournalsList.GetOrAddWithExpiration(
-                typeof(TJournalTyped),
-                (t) => GetJournal(JournalingConstants.TypedJournalsPrefix + typeof(TJournalTyped).FullName),
+                typeTyped,
+                (t) =>
+                {
+                    var fullName = Utils.TypeNameHelper.GetFullNameCleared(typeTyped);
+                    return GetJournal(JournalingConstants.TypedJournalsPrefix + fullName);
+                },
                 TimeSpan.FromMinutes(5));
         }
 
@@ -253,9 +274,16 @@ namespace OnUtils.Application.Journaling
         [ApiIrreversible]
         public ExecutionRegisterResult RegisterEvent<TJournalTyped>(EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
         {
+            return RegisterEvent(typeof(TJournalTyped), eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+        }
+
+        internal ExecutionRegisterResult RegisterEvent(Type typedType, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+        {
+            typedType = ManagerExtensions.GetJournalType(typedType);
+
             try
             {
-                var journalResult = GetJournalTyped<TJournalTyped>();
+                var journalResult = GetJournalTyped(typedType);
                 return !journalResult.IsSuccess ?
                     new ExecutionRegisterResult(false, journalResult.Message) :
                     RegisterEventInternal(journalResult.Result.IdJournal, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
@@ -263,7 +291,8 @@ namespace OnUtils.Application.Journaling
             catch (Exception ex)
             {
                 Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEvent)}: {ex.ToString()}");
-                return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{typeof(TJournalTyped).FullName}'. Смотрите информацию в системном текстовом журнале.");
+                var fullName = Utils.TypeNameHelper.GetFullNameCleared(typedType);
+                return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{fullName}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
 
@@ -311,13 +340,19 @@ namespace OnUtils.Application.Journaling
         [ApiIrreversible]
         public ExecutionRegisterResult RegisterEventForItem<TJournalTyped>(ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
         {
+            return RegisterEventForItem(typeof(TJournalTyped), relatedItem, eventType, eventInfo, eventInfoDetailed, eventTime, exception);
+        }
+
+        internal ExecutionRegisterResult RegisterEventForItem(Type typedType, ItemBase<TAppCoreSelfReference> relatedItem, EventType eventType, string eventInfo, string eventInfoDetailed = null, DateTime? eventTime = null, Exception exception = null)
+        {
+            typedType = ManagerExtensions.GetJournalType(typedType);
             if (relatedItem == null) throw new ArgumentNullException(nameof(relatedItem));
             var itemType = ItemTypeFactory.GetItemType(relatedItem.GetType());
             if (itemType == null) return new ExecutionRegisterResult(false, "Ошибка получения данных о типе объекта.");
 
             try
             {
-                var journalResult = GetJournalTyped<TJournalTyped>();
+                var journalResult = GetJournalTyped(typedType);
                 return !journalResult.IsSuccess ? 
                     new ExecutionRegisterResult(false, journalResult.Message) : 
                     RegisterEventInternal(journalResult.Result.IdJournal, eventType, eventInfo, eventInfoDetailed, eventTime, exception, relatedItem.ID, itemType.IdItemType);
@@ -325,7 +360,8 @@ namespace OnUtils.Application.Journaling
             catch (Exception ex)
             {
                 Debug.WriteLine($"{typeof(JournalingManager<TAppCoreSelfReference>).FullName}.{nameof(JournalingManager<TAppCoreSelfReference>.RegisterEventForItem)}: {ex.ToString()}");
-                return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{typeof(TJournalTyped).FullName}'. Смотрите информацию в системном текстовом журнале.");
+                var fullName = Utils.TypeNameHelper.GetFullNameCleared(typedType);
+                return new ExecutionRegisterResult(false, $"Возникла ошибка во время регистрации события в типизированный журнал '{fullName}'. Смотрите информацию в системном текстовом журнале.");
             }
         }
 

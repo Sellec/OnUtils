@@ -8,12 +8,17 @@ namespace OnUtils.Application.Items
 {
     using Architecture.AppCore;
     using Data;
+    using Journaling;
     using Modules;
 
     /// <summary>
     /// Менеджер, управляющий сущностями и типами сущностей.
     /// </summary>
-    public class ItemsManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.ItemParent>>
+    public class ItemsManager<TAppCoreSelfReference> : 
+        CoreComponentBase<TAppCoreSelfReference>, 
+        IComponentSingleton<TAppCoreSelfReference>, 
+        IUnitOfWorkAccessor<UnitOfWork<DB.ItemParent>>,
+        ITypedJournalComponent<ItemsManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         private class ParentsInternal
@@ -138,7 +143,7 @@ namespace OnUtils.Application.Items
             }
             catch (Exception ex)
             {
-                this.RegisterEvent(Journaling.EventType.Error, "Не удалось сохранить список пар", $"Модуль: {module.GetType().FullName}\r\nСписок пар: {relationsList.Count()}\r\nТип сущностей: {idItemsType}.", null, ex);
+                this.RegisterEvent(EventType.Error, "Не удалось сохранить список пар", $"Модуль: {module.GetType().FullName}\r\nСписок пар: {relationsList.Count()}\r\nТип сущностей: {idItemsType}.", null, ex);
                 return false;
             }
 

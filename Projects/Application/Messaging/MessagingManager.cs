@@ -8,13 +8,18 @@ namespace OnUtils.Application.Messaging
     using Architecture.AppCore;
     using Architecture.AppCore.DI;
     using Connectors;
+    using Journaling;
     using OnUtils.Types;
     using Tasks;
 
     /// <summary>
     /// Представляет менеджер, управляющий обменом сообщениями - уведомления, электронная почта, смс и прочее.
     /// </summary>
-    public class MessagingManager<TAppCoreSelfReference> : CoreComponentBase<TAppCoreSelfReference>, IComponentSingleton<TAppCoreSelfReference>, IAutoStart
+    public class MessagingManager<TAppCoreSelfReference> : 
+        CoreComponentBase<TAppCoreSelfReference>, 
+        IComponentSingleton<TAppCoreSelfReference>, 
+        IAutoStart,
+        ITypedJournalComponent<MessagingManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         class InstanceActivatedHandlerImpl : IInstanceActivatedHandler
@@ -65,6 +70,8 @@ namespace OnUtils.Application.Messaging
         #region CoreComponentBase
         protected sealed override void OnStart()
         {
+            this.RegisterJournal("Менеджер сообщений");
+
             _appCore = AppCore;
             AppCore.ObjectProvider.RegisterInstanceActivatedHandler(_instanceActivatedHandler);
 
@@ -191,7 +198,7 @@ namespace OnUtils.Application.Messaging
                         }
                         catch (Exception ex)
                         {
-                            this.RegisterEvent(Journaling.EventType.Error, "Ошибка при закрытии коннектора", $"Возникла ошибка при выгрузке коннектора типа '{x.GetType().FullName}'.", null, ex);
+                            this.RegisterEvent(EventType.Error, "Ошибка при закрытии коннектора", $"Возникла ошибка при выгрузке коннектора типа '{x.GetType().FullName}'.", null, ex);
                         }
                     });
 
@@ -212,7 +219,7 @@ namespace OnUtils.Application.Messaging
                         var connectorType = types.FirstOrDefault(x => x.Type.FullName == setting.ConnectorTypeName);
                         if (connectorType == null)
                         {
-                            this.RegisterEvent(Journaling.EventType.Error, "Ошибка при поиске коннектора", $"Не найден тип коннектора из настроек - '{setting.ConnectorTypeName}'. Для стирания старых настроек следует зайти в настройку коннекторов и сделать сохранение.");
+                            this.RegisterEvent(EventType.Error, "Ошибка при поиске коннектора", $"Не найден тип коннектора из настроек - '{setting.ConnectorTypeName}'. Для стирания старых настроек следует зайти в настройку коннекторов и сделать сохранение.");
                             continue;
                         }
 
@@ -222,7 +229,7 @@ namespace OnUtils.Application.Messaging
                             var initResult = (bool)_connectorCreateCall.MakeGenericMethod(connectorType.MessageType).Invoke(this, new object[] { connector, setting.SettingsSerialized });
                             if (!initResult)
                             {
-                                this.RegisterEvent(Journaling.EventType.Error, "Отказ инициализации коннектора", $"Коннектор типа '{setting.ConnectorTypeName}' ('{connector.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
+                                this.RegisterEvent(EventType.Error, "Отказ инициализации коннектора", $"Коннектор типа '{setting.ConnectorTypeName}' ('{connector.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
                                 continue;
                             }
 
@@ -230,7 +237,7 @@ namespace OnUtils.Application.Messaging
                         }
                         catch (Exception ex)
                         {
-                            this.RegisterEvent(Journaling.EventType.Error, "Ошибка создания коннектора", $"Во время создания и инициализации коннектора типа '{setting.ConnectorTypeName}' возникла неожиданная ошибка.", null, ex.InnerException);
+                            this.RegisterEvent(EventType.Error, "Ошибка создания коннектора", $"Во время создания и инициализации коннектора типа '{setting.ConnectorTypeName}' возникла неожиданная ошибка.", null, ex.InnerException);
                         }
                     }
                 }
