@@ -424,6 +424,8 @@ namespace OnUtils.Data.EntityFramework.Internal
                             else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
                             //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
 
+                            if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
+
                             return "CAST('" + preValueStr + "' as " + castToType + ")";
                         })) + ")");
 
@@ -735,13 +737,12 @@ namespace OnUtils.Data.EntityFramework.Internal
             if (entityType == null) throw new ArgumentNullException("entityType", "Должен быть указан тип сущностей для сохранения.");
             if (IsReadonly) throw new ReadonlyModeExcepton();
 
-            var original = ChangeTracker.Entries()
-                        .Where(x => !entityType.IsAssignableFrom(x.Entity.GetType()) && x.State != EntityState.Unchanged)
-                        .GroupBy(x => x.State)
-                        .ToList();
-
-            var ents = ChangeTracker.Entries().Where(x => x.State != EntityState.Unchanged).ToList();
-
+            var original = ChangeTracker.
+                Entries().
+                Where(x => !entityType.IsAssignableFrom(x.Entity.GetType()) && x.State != EntityState.Unchanged).
+                Select(x => new { Entity = x, CurrentValues = x.CurrentValues.Clone() }).
+                GroupBy(x => x.Entity.State).
+                ToList();
 
             foreach (var entry in ChangeTracker.Entries().Where(x => !entityType.IsAssignableFrom(x.Entity.GetType())))
             {
@@ -764,7 +765,8 @@ namespace OnUtils.Data.EntityFramework.Internal
                 {
                     foreach (var entry in state)
                     {
-                        entry.State = state.Key;
+                        entry.Entity.State = state.Key;
+                        entry.Entity.CurrentValues.SetValues(entry.CurrentValues);
                     }
                 }
 

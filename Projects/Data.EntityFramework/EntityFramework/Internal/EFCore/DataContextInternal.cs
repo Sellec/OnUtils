@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
@@ -397,6 +398,8 @@ namespace OnUtils.Data.EntityFramework.Internal
                 //            else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
                 //            //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
 
+                //if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
+
                 //            return "CAST('" + preValueStr + "' as " + castToType + ")";
                 //        })) + ")");
 
@@ -573,40 +576,40 @@ namespace OnUtils.Data.EntityFramework.Internal
         #endregion
 
         #region Применение изменений
-        ///// <summary>
-        ///// Возвращает список всех измененных объектов.
-        ///// </summary>
-        ///// <returns></returns>
-        //private Dictionary<DbEntityEntry, EntityState> GetChangedEntities()
-        //{
-        //    if (IsReadonly) throw new ReadonlyModeExcepton();
+        /// <summary>
+        /// Возвращает список всех измененных объектов.
+        /// </summary>
+        /// <returns></returns>
+        private Dictionary<EntityEntry, EntityState> GetChangedEntities()
+        {
+            if (IsReadonly) throw new ReadonlyModeExcepton();
 
-        //    var entities = ChangeTracker.Entries()
-        //                    .Where(x => x.State != EntityState.Unchanged)
-        //                    .ToDictionary(x => x, x => x.State);
+            var entities = ChangeTracker.Entries()
+                            .Where(x => x.State != EntityState.Unchanged)
+                            .ToDictionary(x => x, x => x.State);
 
-        //    return entities;
-        //}
+            return entities;
+        }
 
-        ///// <summary>
-        ///// Для каждого объекта, состояние которого было изменено в результате применения изменений, вызываются методы, помеченные 
-        ///// атрибутом <see cref="Items.SavedInContextEventAttribute"/> для выполнения дополнительных действий после сохранения. 
-        ///// </summary>
-        ///// <param name="entities"></param>
-        //private void DetectSavedEntities(Dictionary<DbEntityEntry, EntityState> entities)
-        //{
-        //    if (IsReadonly) throw new ReadonlyModeExcepton();
+        /// <summary>
+        /// Для каждого объекта, состояние которого было изменено в результате применения изменений, вызываются методы, помеченные 
+        /// атрибутом <see cref="Items.SavedInContextEventAttribute"/> для выполнения дополнительных действий после сохранения. 
+        /// </summary>
+        /// <param name="entities"></param>
+        private void DetectSavedEntities(Dictionary<EntityEntry, EntityState> entities)
+        {
+            if (IsReadonly) throw new ReadonlyModeExcepton();
 
-        //    // Core.Items.MethodMarkCallerAttribute.CallMethodsInObjects<Core.Items.SavedInContextEventAttribute>(entities.Where(x => x.Value != x.Key.State));
+            // Core.Items.MethodMarkCallerAttribute.CallMethodsInObjects<Core.Items.SavedInContextEventAttribute>(entities.Where(x => x.Value != x.Key.State));
 
-        //    foreach (var pair in entities)
-        //    {
-        //        if (pair.Value != pair.Key.State)
-        //        {
-        //            Items.MethodMarkCallerAttribute.CallMethodsInObject<Items.SavedInContextEventAttribute>(pair.Key.Entity);
-        //        }
-        //    }
-        //}
+            foreach (var pair in entities)
+            {
+                if (pair.Value != pair.Key.State)
+                {
+                    Items.MethodMarkCallerAttribute.CallMethodsInObject<Items.SavedInContextEventAttribute>(pair.Key.Entity);
+                }
+            }
+        }
 
         private void PrepareEFException(Exception exSource)
         {
@@ -663,7 +666,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <returns>Количество объектов, записанных в базу данных.</returns>
         public override int SaveChanges()
         {
-            // var entities = GetChangedEntities();
+            var entities = GetChangedEntities();
             try
             {
                 return base.SaveChanges();
@@ -677,7 +680,7 @@ namespace OnUtils.Data.EntityFramework.Internal
             }
             finally
             {
-                //      DetectSavedEntities(entities);
+                DetectSavedEntities(entities);
             }
         }
 
@@ -705,20 +708,19 @@ namespace OnUtils.Data.EntityFramework.Internal
             if (entityType == null) throw new ArgumentNullException("entityType", "Должен быть указан тип сущностей для сохранения.");
             if (IsReadonly) throw new ReadonlyModeExcepton();
 
-            var original = ChangeTracker.Entries()
-                        .Where(x => !entityType.IsAssignableFrom(x.Entity.GetType()) && x.State != EntityState.Unchanged)
-                        .GroupBy(x => x.State)
-                        .ToList();
-
-            var ents = ChangeTracker.Entries().Where(x => x.State != EntityState.Unchanged).ToList();
-
+            var original = ChangeTracker.
+                Entries().
+                Where(x => !entityType.IsAssignableFrom(x.Entity.GetType()) && x.State != EntityState.Unchanged).
+                Select(x => new { Entity = x, CurrentValues = x.CurrentValues.Clone() }).
+                GroupBy(x => x.Entity.State).
+                ToList();
 
             foreach (var entry in ChangeTracker.Entries().Where(x => !entityType.IsAssignableFrom(x.Entity.GetType())))
             {
                 entry.State = EntityState.Unchanged;
             }
 
-            //    var entities = GetChangedEntities();
+            var entities = GetChangedEntities();
             try
             {
                 return base.SaveChanges();
@@ -734,11 +736,12 @@ namespace OnUtils.Data.EntityFramework.Internal
                 {
                     foreach (var entry in state)
                     {
-                        entry.State = state.Key;
+                        entry.Entity.State = state.Key;
+                        entry.Entity.CurrentValues.SetValues(entry.CurrentValues);
                     }
                 }
 
-                //      DetectSavedEntities(entities);
+                DetectSavedEntities(entities);
             }
         }
 
