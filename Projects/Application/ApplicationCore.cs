@@ -81,7 +81,6 @@ namespace OnUtils.Application
             bindingsCollection.SetSingleton<Items.ItemsManager<TAppCoreSelfReference>>();
             bindingsCollection.SetSingleton<Journaling.JournalingManager<TAppCoreSelfReference>>();
             bindingsCollection.SetSingleton<Messaging.MessagingManager<TAppCoreSelfReference>>();
-            bindingsCollection.SetSingleton<Languages.Manager<TAppCoreSelfReference>>();
             bindingsCollection.SetSingleton<Modules.ModulesManager<TAppCoreSelfReference>>();
             bindingsCollection.SetSingleton<Modules.ModulesLoadStarter<TAppCoreSelfReference>>();
             bindingsCollection.SetSingleton<ServiceMonitor.Monitor<TAppCoreSelfReference>>();

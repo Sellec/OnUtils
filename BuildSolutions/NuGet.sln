@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TraceUtils", "TraceUtils", "{4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projects", "Projects", "{4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.NetFramework", "..\Projects\Core\Core.NetFramework.csproj", "{E72E8B9C-9668-46C6-84E6-47D9CE44AD80}"
 EndProject
@@ -41,6 +41,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data.EntityFramework.NetStandard", "..\Projects\Data.EntityFramework\Data.EntityFramework.NetStandard.csproj", "{24C1BA52-EE2D-4C56-B2BA-8AEC002AF930}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Application.DB", "..\Projects\Application.DB\Application.DB.sqlproj", "{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,6 +90,12 @@ Global
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +111,7 @@ Global
 		{8F3240C4-1A14-4E3B-85AC-C94EE406041E} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{24C1BA52-EE2D-4C56-B2BA-8AEC002AF930} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EED38A6B-FD8B-4735-9632-1F78301B6F9F}

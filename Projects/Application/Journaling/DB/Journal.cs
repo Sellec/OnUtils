@@ -1,5 +1,6 @@
 ﻿namespace OnUtils.Application.Journaling.DB
 {
+    using Application.DB;
     using Items;
     using System;
     using System.ComponentModel.DataAnnotations;
@@ -25,7 +26,7 @@
         /// <summary>
         /// Тип события.
         /// </summary>
-        public Journaling.EventType EventType { get; set; }
+        public EventType EventType { get; set; }
 
         /// <summary>
         /// Основная информация о событии.
@@ -49,9 +50,14 @@
         public DateTime DateEvent { get; set; }
 
         /// <summary>
+        /// Идентификатор пользователя, создавшего запись.
+        /// </summary>
+        public int? IdUser { get; set; }
+
+        /// <summary>
         /// Идентификатор объекта, с которым связано событие. Связанный объект возможно получить, когда задано значение <see cref="IdRelatedItem"/> и <see cref="IdRelatedItemType"/>.
         /// </summary>
-        /// <seealso cref="ItemBase.ID"/>.
+        /// <seealso cref="ItemBase{TAppCoreSelfReference}.ID"/>.
         public int? IdRelatedItem { get; set; }
 
         /// <summary>

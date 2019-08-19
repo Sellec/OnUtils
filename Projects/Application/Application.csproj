@@ -12,7 +12,7 @@
     <Company>TraceStudio</Company>
     <Product>OnUtils</Product>
     <Authors>Sellec</Authors>
-    <Version>0.1.2.41</Version>
+    <Version>0.1.2.46</Version>
     <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
     <AssemblyName>OnUtils.Application</AssemblyName>
     <RootNamespace>OnUtils.Application</RootNamespace>
@@ -54,6 +54,11 @@
     <None Remove="Web.Core.csproj.vspscc" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\Build\Application.DB.dacpac" Link="DB\Application.DB.dacpac">
+      <PackagePath>contentFiles\any\any\DB;content\DB</PackagePath>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Core\Core.NetStandard.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -65,15 +70,7 @@
     <Exec Command="rmdir /Q /S &quot;$(TargetDir.TrimEnd('\\'))2&quot;" />
     <Exec Command="xcopy /y /s &quot;$(TargetDir)*&quot; &quot;$(TargetDir.TrimEnd('\\'))_2\&quot;" />
   </Target>
-  <Target Name="RemovePackage" AfterTargets="Build">
-    <Exec Command="del &quot;$(ProjectDir)bin\$(ConfigurationName)\*.nupkg&quot;" />
-  </Target>
   <Target Name="CopyPackage" AfterTargets="Pack">
-    <Exec Command="xcopy /y &quot;$(ProjectDir)bin\$(ConfigurationName)\*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;&#xD;&#xA;" ContinueOnError="WarnAndContinue" />
-    <ItemGroup>
-      <RenameFile Include="$(SolutionDir)..\Build\$(ConfigurationName)\*.symbols.nupkg" />
-    </ItemGroup>
-    <Message Text="Move: @(RenameFile) -&gt; @(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" Importance="High" />
-    <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" ContinueOnError="WarnAndContinue" />
+    <Exec Command="copy /y &quot;$(TargetDir)..\$(PackageId).$(Version).symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(PackageId).$(Version).nupkg&quot;" />
   </Target>
 </Project>

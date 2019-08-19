@@ -29,6 +29,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.NetStandard", "..\Projects\Core\Core.NetStandard.csproj", "{920CEC59-06E6-437F-BB48-124E8AD6CFBF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Application", "..\Projects\Application\Application.csproj", "{86E82704-31D0-43BA-B6CC-536C1F435393}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C} = {0FF38F5E-849A-42BE-A793-35DCFFD2C99C}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasks.Hangfire", "..\NuGet\Tasks.Hangfire\Tasks.Hangfire.csproj", "{A2728689-DDF8-40AB-9A59-FEEA8DBA4225}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -47,6 +50,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework", "..\Tests\TestConsole.NetFramework\TestConsole.NetFramework.csproj", "{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Application.DB", "..\Projects\Application.DB\Application.DB.sqlproj", "{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +104,12 @@ Global
 		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,6 +127,7 @@ Global
 		{4B28218E-9A51-4D1E-8865-C2050DD1D144} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
 		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EED38A6B-FD8B-4735-9632-1F78301B6F9F}

@@ -16,6 +16,8 @@
 /NuGet/**/*.nupkg
 /NuGet/**/*.nupkg.bak
 
+/Projects/**/*.dbmdl
+/Projects/**/*.jfm
 /Projects/**/bin
 /Projects/**/obj
 /Projects/**/obj40

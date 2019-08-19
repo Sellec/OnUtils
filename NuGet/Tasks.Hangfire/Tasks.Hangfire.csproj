@@ -108,9 +108,9 @@
     <Error Text="Created package but encountered error(s) when trying to publish it.%0aCheck the NuGet.log file for details." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Release|AnyCPU|2' " File="NuGet.log" />
     <Message Text="SUCCESS: Created package." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Debug|AnyCPU|0' " Importance="High" />
     <Message Text="SUCCESS: Published package." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Release|AnyCPU|0' " Importance="High" />
-    <Exec Command="xcopy /y &quot;$(ProjectDir)*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(ConfigurationName)\&quot;" />
+    <Exec Command="xcopy /y &quot;$(ProjectDir)*.symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\&quot;" />
     <ItemGroup>
-      <RenameFile Include="$(SolutionDir)..\Build\$(ConfigurationName)\*.symbols.nupkg" />
+      <RenameFile Include="$(SolutionDir)..\Build\*.symbols.nupkg" />
     </ItemGroup>
     <Message Text="Move: @(RenameFile) -&gt; @(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" Importance="High" />
     <Move SourceFiles="@(RenameFile)" DestinationFiles="@(RenameFile -&gt; Replace('.symbols.nupkg', '.nupkg'))" />

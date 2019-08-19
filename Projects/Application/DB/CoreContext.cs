@@ -9,9 +9,7 @@ namespace OnUtils.Application.DB
 
         public IRepository<ItemParent> ItemParent { get; }
         public IRepository<ItemType> ItemType { get; }
-        public IRepository<Language> Language { get; }
-        public IRepository<Sessions> Sessions { get; }
-
+        
         public IRepository<UserEntity> UserEntity { get; }
         public IRepository<UserBase> Users { get; }
 
