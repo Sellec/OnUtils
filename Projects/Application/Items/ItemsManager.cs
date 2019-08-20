@@ -53,15 +53,16 @@ namespace OnUtils.Application.Items
         #endregion
 
         /// <summary>
-        /// Позволяет сохранить список взаимосвязей родитель:потомок для типа сущностей <paramref name="idItemsType"/> (см. <see cref="ItemTypeFactory"/>).
+        /// Позволяет сохранить список взаимосвязей родитель:потомок для типа сущностей <paramref name="idItemType"/> (см. <see cref="ItemTypeFactory"/>).
         /// </summary>
         /// <param name="module">Модуль</param>
         /// <param name="relationsList">Список взаимосвязей</param>
-        /// <param name="idItemsType">Идентификатор типа сущности (см. <see cref="DB.ItemType.IdItemType"/>).</param>
+        /// <param name="idItemType">Идентификатор типа сущности (см. <see cref="DB.ItemType.IdItemType"/>).</param>
         /// <returns>Возвращает true, если сохранение прошло успешно и false, если возникла ошибка. Возвращает true, если <paramref name="relationsList"/> пуст.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="module"/> равен null.</exception>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="relationsList"/> равен null.</exception>
-        public bool SaveChildToParentRelations(ModuleCore<TAppCoreSelfReference> module, IEnumerable<ChildToParentRelation> relationsList, int idItemsType)
+        [ApiReversible]
+        public bool SaveChildToParentRelations(ModuleCore<TAppCoreSelfReference> module, int idItemType, IEnumerable<ChildToParentRelation> relationsList)
         {
             if (module == null) throw new ArgumentNullException(nameof(module));
             if (relationsList == null) throw new ArgumentNullException(nameof(relationsList));
@@ -76,7 +77,7 @@ namespace OnUtils.Application.Items
                 toBase.Add(new ParentsInternal()
                 {
                     item = 0,
-                    type = idItemsType,
+                    type = idItemType,
                     parent = 0,
                     level = 0,
                 });
@@ -89,7 +90,7 @@ namespace OnUtils.Application.Items
                     toBase.Add(new ParentsInternal()
                     {
                         item = pair.IdChild,
-                        type = idItemsType,
+                        type = idItemType,
                         parent = pair.IdChild,
                         level = level++,
                     });
@@ -101,7 +102,7 @@ namespace OnUtils.Application.Items
                         toBase.Add(new ParentsInternal()
                         {
                             item = pair.IdChild,
-                            type = idItemsType,
+                            type = idItemType,
                             parent = s,
                             level = level++,
                         });
@@ -132,7 +133,7 @@ namespace OnUtils.Application.Items
                         });
                     }
 
-                    db.DataContext.ExecuteQuery($"DELETE FROM ItemParent WHERE IdModule='{module.IdModule}' AND IdItemType='{idItemsType}'");//" AND IdItem IN (".implode(', ', $ids).")");
+                    db.DataContext.ExecuteQuery($"DELETE FROM ItemParent WHERE IdModule='{module.IdModule}' AND IdItemType='{idItemType}'");//" AND IdItem IN (".implode(', ', $ids).")");
                     if (toBase.Count > 0)
                     {
                         db.SaveChanges();
@@ -143,7 +144,7 @@ namespace OnUtils.Application.Items
             }
             catch (Exception ex)
             {
-                this.RegisterEvent(EventType.Error, "Не удалось сохранить список пар", $"Модуль: {module.GetType().FullName}\r\nСписок пар: {relationsList.Count()}\r\nТип сущностей: {idItemsType}.", null, ex);
+                this.RegisterEvent(EventType.Error, "Не удалось сохранить список пар", $"Модуль: {module.GetType().FullName}\r\nСписок пар: {relationsList.Count()}\r\nТип сущностей: {idItemType}.", null, ex);
                 return false;
             }
 
@@ -185,7 +186,7 @@ namespace OnUtils.Application.Items
             using (var db = new DB.CoreContext())
             {
                 var query = db.ItemParent.Where(x => x.IdItemType == itemType.IdItemType && x.IdModule == module.IdModule);
-                if (query.Count() == 0) SaveChildToParentRelations(module, new ChildToParentRelation() { IdChild = 0, IdParent = 0 }.ToEnumerable(), itemType.IdItemType);
+                if (query.Count() == 0) SaveChildToParentRelations(module, itemType.IdItemType, new ChildToParentRelation() { IdChild = 0, IdParent = 0 }.ToEnumerable());
             }
         }
 

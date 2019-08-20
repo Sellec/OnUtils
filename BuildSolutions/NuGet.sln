@@ -27,6 +27,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.NetStandard", "..\Projects\Core\Core.NetStandard.csproj", "{920CEC59-06E6-437F-BB48-124E8AD6CFBF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Application", "..\Projects\Application\Application.csproj", "{86E82704-31D0-43BA-B6CC-536C1F435393}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0FF38F5E-849A-42BE-A793-35DCFFD2C99C} = {0FF38F5E-849A-42BE-A793-35DCFFD2C99C}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tasks.Hangfire", "..\NuGet\Tasks.Hangfire\Tasks.Hangfire.csproj", "{A2728689-DDF8-40AB-9A59-FEEA8DBA4225}"
 	ProjectSection(ProjectDependencies) = postProject
