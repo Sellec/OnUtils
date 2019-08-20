@@ -12,7 +12,7 @@
     <Company>TraceStudio</Company>
     <Product>OnUtils</Product>
     <Authors>Sellec</Authors>
-    <Version>0.1.2.47</Version>
+    <Version>0.1.2.48</Version>
     <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
     <AssemblyName>OnUtils.Application</AssemblyName>
     <RootNamespace>OnUtils.Application</RootNamespace>
@@ -56,6 +56,7 @@
   <ItemGroup>
     <Content Include="..\..\Build\Application.DB.dacpac" Link="DB\Application.DB.dacpac">
       <PackagePath>contentFiles\any\any\DB;content\DB</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
   </ItemGroup>
   <ItemGroup>
