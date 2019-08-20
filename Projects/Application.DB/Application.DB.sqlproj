@@ -112,6 +112,9 @@
   <ItemGroup>
     <None Include="Сравнение схем.scmp" />
   </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="Application.DB.refactorlog" />
+  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>copy /y "$(ProjectDir)$(OutputPath)$(TargetName).dacpac" "$(ProjectDir)..\..\Build\"</PostBuildEvent>
   </PropertyGroup>

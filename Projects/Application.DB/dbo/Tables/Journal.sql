@@ -6,8 +6,10 @@
     [EventInfoDetailed] NVARCHAR (MAX) NULL,
     [ExceptionDetailed] NVARCHAR (MAX) NULL,
     [DateEvent]         DATETIME       NOT NULL,
+    [IdUser] INT NULL DEFAULT -1, 
     [IdRelatedItem]     INT            NULL,
     [IdRelatedItemType] NCHAR (10)     NULL,
-    CONSTRAINT [PK_Journal] PRIMARY KEY CLUSTERED ([IdJournalData] ASC)
+    CONSTRAINT [PK_Journal] PRIMARY KEY CLUSTERED ([IdJournalData] ASC), 
+    CONSTRAINT [FK_Journal_UserBase] FOREIGN KEY ([IdUser]) REFERENCES [dbo].[UserBase] ([IdUser]) ON DELETE SET NULL
 );
 

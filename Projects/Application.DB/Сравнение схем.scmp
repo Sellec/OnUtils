@@ -8,9 +8,10 @@
     </ProjectBasedModelProvider>
   </SourceModelProvider>
   <TargetModelProvider>
-    <ConnectionBasedModelProvider>
-      <ConnectionString>Data Source=localhost;Initial Catalog=Test;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Connect Timeout=60;Encrypt=False;TrustServerCertificate=True</ConnectionString>
-    </ConnectionBasedModelProvider>
+    <ProjectBasedModelProvider>
+      <ProjectGuid>{0ff38f5e-849a-42be-a793-35dcffd2c99c}</ProjectGuid>
+      <Name>Application.DB</Name>
+    </ProjectBasedModelProvider>
   </TargetModelProvider>
   <SchemaCompareSettingsService>
     <SchemaCompareSettingsService>
