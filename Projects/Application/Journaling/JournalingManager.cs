@@ -379,7 +379,8 @@ namespace OnUtils.Application.Journaling
                     if (pos >= 0) exceptionDetailed = exceptionDetailed.Substring(0, pos);
                 }
 
-                var currentContext = AppCore.GetUserContextManager().GetCurrentUserContext();
+                var idUser = AppCore.GetUserContextManager().GetCurrentUserContext()?.IdUser;
+                if (idUser == 0) idUser = null;
 
                 var data = new DB.Journal()
                 {
@@ -389,7 +390,7 @@ namespace OnUtils.Application.Journaling
                     EventInfoDetailed = eventInfoDetailed,
                     ExceptionDetailed = exceptionDetailed,
                     DateEvent = eventTime ?? DateTime.Now,
-                    IdUser = currentContext?.IdUser
+                    IdUser = idUser
                 };
 
                 using (var db = this.CreateUnitOfWork())

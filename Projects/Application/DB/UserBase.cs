@@ -14,7 +14,7 @@ namespace OnUtils.Application.DB
         }
 
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int IdUser { get; set; }
 
         public bool IsSuperuser { get; set; }

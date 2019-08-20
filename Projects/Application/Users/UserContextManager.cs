@@ -31,7 +31,35 @@ namespace OnUtils.Application.Users
         {
             this.RegisterJournal("Менеджер контекстов пользователей");
 
-            var systemUserContext = new UserContext<TAppCoreSelfReference>(new DB.UserBase() { IdUser = int.MaxValue - 1, IsSuperuser = true }, true);
+            DB.UserBase systemUser = null;
+            try
+            {
+                DB.UserBase systemUser2 = null;
+
+                using (var db = new DB.CoreContext())
+                using (var scope = db.CreateScope(TransactionScopeOption.RequiresNew))
+                {
+                    var user = db.Users.Where(x => x.IdUser == int.MaxValue - 1).FirstOrDefault();
+                    if (user == null)
+                    {
+                        var userNew = new DB.UserBase() { IdUser = int.MaxValue - 1, DateChange = DateTime.Now, IdUserChange = 0, IsSuperuser = true, UniqueKey = "System" };
+                        db.Users.Add(userNew);
+                        db.SaveChanges();
+                        user = userNew;
+                        scope.Commit();
+                    }
+                    systemUser2 = user;
+                }
+
+                systemUser = systemUser2;
+            }
+            catch (Exception ex)
+            {
+                this.RegisterEvent(Journaling.EventType.CriticalError, "Не удалось получить системного пользователя", null, ex);
+                throw new HandledException("Ошибка запуска менеджера контекстов пользователей. Не удалось получить системного пользователя.", ex);
+            }
+
+            var systemUserContext = new UserContext<TAppCoreSelfReference>(systemUser, true);
             ((IComponentStartable<TAppCoreSelfReference>)systemUserContext).Start(AppCore);
             _systemUserContext = systemUserContext;
         }

@@ -64,7 +64,22 @@ namespace OnUtils.Application.ServiceMonitor
             }
         }
 
-        public abstract void RunService();
+        public void RunService()
+        {
+            var storedUserContext = AppCore.GetUserContextManager().GetCurrentUserContext();
+
+            try
+            {
+                AppCore.GetUserContextManager().SetCurrentUserContext(AppCore.GetUserContextManager().GetSystemUserContext());
+                OnRunService();
+            }
+            finally
+            {
+                AppCore.GetUserContextManager().SetCurrentUserContext(storedUserContext);
+            }
+        }
+
+        protected abstract void OnRunService();
 
         #region Свойства
         public Guid ServiceID
