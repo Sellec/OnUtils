@@ -25,7 +25,7 @@ namespace OnUtils.Application.DB
         public string UniqueKey { get; set; }
 
         /// <summary>
-        /// Сериализованные в json параметры конфигурации модуля. См. <see cref="Configuration.ModuleConfiguration{TModule}"/>.
+        /// Сериализованные в json параметры конфигурации модуля. См. <see cref="Configuration.ModuleConfiguration{TAppCoreSelfReference, TModule}"/>.
         /// </summary>
         public string Configuration { get; set; }
 

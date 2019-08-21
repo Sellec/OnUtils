@@ -6,21 +6,22 @@ using System.Transactions;
 
 namespace OnUtils.Application.Journaling
 {
+    using Application.DB;
     using Architecture.AppCore;
     using Data;
     using Items;
     using ExecutionRegisterResult = ExecutionResult<int?>;
-    using ExecutionResultJournalData = ExecutionResult<DB.Journal>;
-    using ExecutionResultJournalDataList = ExecutionResult<List<DB.Journal>>;
-    using ExecutionResultJournalName = ExecutionResult<DB.JournalName>;
+    using ExecutionResultJournalData = ExecutionResult<Model.JournalData>;
+    using ExecutionResultJournalDataList = ExecutionResult<List<Model.JournalData>>;
+    using ExecutionResultJournalName = ExecutionResult<Model.JournalInfo>;
 
     /// <summary>
     /// Представляет менеджер системных журналов. Позволяет создавать журналы, как привязанные к определенным типам, так и вручную, и регистрировать в них события.
     /// </summary>
-    public sealed class JournalingManager<TAppCoreSelfReference> : 
-        CoreComponentBase<TAppCoreSelfReference>, 
-        IComponentSingleton<TAppCoreSelfReference>, 
-        IUnitOfWorkAccessor<UnitOfWork<DB.Journal, DB.JournalName>>,
+    public sealed class JournalingManager<TAppCoreSelfReference> :
+        CoreComponentBase<TAppCoreSelfReference>,
+        IComponentSingleton<TAppCoreSelfReference>,
+        IUnitOfWorkAccessor<DB.DataContext>,
         ITypedJournalComponent<JournalingManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
@@ -32,6 +33,7 @@ namespace OnUtils.Application.Journaling
         /// </summary>
         protected sealed override void OnStart()
         {
+            DatabaseAccessor = AppCore.Get<DB.JournalingManagerDatabaseAccessor<TAppCoreSelfReference>>();
             RegisterJournalTyped<JournalingManager<TAppCoreSelfReference>>("Менеджер журналов");
         }
 
@@ -46,9 +48,9 @@ namespace OnUtils.Application.Journaling
         /// <summary>
         /// Регистрирует новый журнал или обновляет старый по ключу <paramref name="uniqueKey"/> (если передан).
         /// </summary>
-        /// <param name="idType">См. <see cref="DB.JournalName.IdJournalType"/>.</param>
-        /// <param name="name">См. <see cref="DB.JournalName.Name"/>.</param>
-        /// <param name="uniqueKey">См. <see cref="DB.JournalName.UniqueKey"/>.</param>
+        /// <param name="idType">См. <see cref="DB.JournalNameDAO.IdJournalType"/>.</param>
+        /// <param name="name">См. <see cref="DB.JournalNameDAO.Name"/>.</param>
+        /// <param name="uniqueKey">См. <see cref="DB.JournalNameDAO.UniqueKey"/>.</param>
         /// <returns>Возвращает объект <see cref="ExecutionResultJournalName"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. В случае ошибки свойство <see cref="ExecutionResult.Message"/> содержит сообщение об ошибке.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="name"/> представляет пустую строку или null.</exception>
         [ApiIrreversible]
@@ -58,7 +60,7 @@ namespace OnUtils.Application.Journaling
             {
                 if (string.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
 
-                var data = new DB.JournalName()
+                var data = new DB.JournalNameDAO()
                 {
                     IdJournalType = idType,
                     Name = name,
@@ -68,12 +70,14 @@ namespace OnUtils.Application.Journaling
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.RequiresNew))
                 {
-                    db.Repo2.AddOrUpdate(x => x.UniqueKey, data);
+                    db.JournalName.AddOrUpdate(x => x.UniqueKey, data);
                     db.SaveChanges();
                     scope.Commit();
                 }
 
-                return new ExecutionResultJournalName(true, null, data);
+                var info = new Model.JournalInfo();
+                Model.JournalInfo.Fill(info, data);
+                return new ExecutionResultJournalName(true, null, info);
             }
             catch (ArgumentNullException) { throw; }
             catch (Exception ex)
@@ -86,7 +90,7 @@ namespace OnUtils.Application.Journaling
         /// <summary>
         /// Регистрирует новый журнал или обновляет старый на основе типа <typeparamref name="TJournalTyped"/>.
         /// </summary>
-        /// <param name="name">См. <see cref="DB.JournalName.Name"/>.</param>
+        /// <param name="name">См. <see cref="DB.JournalNameDAO.Name"/>.</param>
         /// <returns>Возвращает объект <see cref="ExecutionResultJournalName"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. В случае ошибки свойство <see cref="ExecutionResult.Message"/> содержит сообщение об ошибке.</returns>
         /// <exception cref="ArgumentNullException">Возникает, если <paramref name="name"/> представляет пустую строку или null.</exception>
         [ApiIrreversible]
@@ -119,8 +123,10 @@ namespace OnUtils.Application.Journaling
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
-                    var data = db.Repo2.Where(x => x.UniqueKey == uniqueKey).FirstOrDefault();
-                    return new ExecutionResultJournalName(data != null, data != null ? null : "Журнал с указанным уникальным ключом не найден.", data);
+                    var data = db.JournalName.Where(x => x.UniqueKey == uniqueKey).FirstOrDefault();
+                    var info = new Model.JournalInfo();
+                    Model.JournalInfo.Fill(info, data);
+                    return new ExecutionResultJournalName(data != null, data != null ? null : "Журнал с указанным уникальным ключом не найден.", info);
                 }
             }
             catch (ArgumentNullException) { throw; }
@@ -143,8 +149,10 @@ namespace OnUtils.Application.Journaling
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
-                    var data = db.Repo2.Where(x => x.IdJournal == IdJournal).FirstOrDefault();
-                    return new ExecutionResultJournalName(data != null, data != null ? null : "Журнал с указанным уникальным идентификатором не найден.", data);
+                    var data = db.JournalName.Where(x => x.IdJournal == IdJournal).FirstOrDefault();
+                    var info = new Model.JournalInfo();
+                    Model.JournalInfo.Fill(info, data);
+                    return new ExecutionResultJournalName(data != null, data != null ? null : "Журнал с указанным уникальным идентификатором не найден.", info);
                 }
             }
             catch (Exception ex)
@@ -193,8 +201,8 @@ namespace OnUtils.Application.Journaling
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
-                    var query = db.Repo1.Where(x => x.IdRelatedItem == relatedItem.ID && x.IdRelatedItemType == itemType.IdItemType);
-                    var data = query.ToList();
+                    var query = DatabaseAccessor.CreateQueryJournalData(db).Where(x => x.JournalData.IdRelatedItem == relatedItem.ID && x.JournalData.IdRelatedItemType == itemType.IdItemType);
+                    var data = DatabaseAccessor.FetchQueryJournalData(query);
 
                     return new ExecutionResultJournalDataList(true, null, data);
                 }
@@ -222,8 +230,8 @@ namespace OnUtils.Application.Journaling
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
-                    var query = db.Repo1.Where(x => x.IdJournalData == idJournalData);
-                    var data = query.FirstOrDefault();
+                    var query = DatabaseAccessor.CreateQueryJournalData(db).Where(x => x.JournalData.IdJournalData == idJournalData);
+                    var data = DatabaseAccessor.FetchQueryJournalData(query).FirstOrDefault();
 
                     return new ExecutionResultJournalData(true, null, data);
                 }
@@ -234,19 +242,18 @@ namespace OnUtils.Application.Journaling
                 return new ExecutionResultJournalData(false, $"Возникла ошибка во время получения события. Смотрите информацию в системном текстовом журнале.");
             }
         }
-
         #endregion
 
         #region Записать в журнал
         /// <summary>
         /// Регистрирует новое событие в журнале <paramref name="IdJournal"/>.
         /// </summary>
-        /// <param name="IdJournal">См. <see cref="DB.Journal.IdJournal"/>.</param>
-        /// <param name="eventType">См. <see cref="DB.Journal.EventType"/>.</param>
-        /// <param name="eventInfo">См. <see cref="DB.Journal.EventInfo"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="DB.Journal.EventInfoDetailed"/>.</param>
-        /// <param name="eventTime">См. <see cref="DB.Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
-        /// <param name="exception">См. <see cref="DB.Journal.ExceptionDetailed"/>.</param>
+        /// <param name="IdJournal">См. <see cref="DB.JournalDAO.IdJournal"/>.</param>
+        /// <param name="eventType">См. <see cref="DB.JournalDAO.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="DB.JournalDAO.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="DB.JournalDAO.EventInfoDetailed"/>.</param>
+        /// <param name="eventTime">См. <see cref="DB.JournalDAO.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
+        /// <param name="exception">См. <see cref="DB.JournalDAO.ExceptionDetailed"/>.</param>
         /// <returns>
         /// Возвращает объект <see cref="ExecutionRegisterResult"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. 
         /// В случае успеха свойство <see cref="ExecutionRegisterResult.Result"/> содержит идентификатор записи журнала (см. также <see cref="GetJournalData(int)"/>).
@@ -261,11 +268,11 @@ namespace OnUtils.Application.Journaling
         /// <summary>
         /// Регистрирует новое событие в журнале на основе типа <typeparamref name="TJournalTyped"/>.
         /// </summary>
-        /// <param name="eventType">См. <see cref="DB.Journal.EventType"/>.</param>
-        /// <param name="eventInfo">См. <see cref="DB.Journal.EventInfo"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="DB.Journal.EventInfoDetailed"/>.</param>
-        /// <param name="eventTime">См. <see cref="DB.Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
-        /// <param name="exception">См. <see cref="DB.Journal.ExceptionDetailed"/>.</param>
+        /// <param name="eventType">См. <see cref="DB.JournalDAO.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="DB.JournalDAO.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="DB.JournalDAO.EventInfoDetailed"/>.</param>
+        /// <param name="eventTime">См. <see cref="DB.JournalDAO.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
+        /// <param name="exception">См. <see cref="DB.JournalDAO.ExceptionDetailed"/>.</param>
         /// <returns>
         /// Возвращает объект <see cref="ExecutionRegisterResult"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. 
         /// В случае успеха свойство <see cref="ExecutionRegisterResult.Result"/> содержит идентификатор записи журнала (см. также <see cref="GetJournalData(int)"/>).
@@ -299,13 +306,13 @@ namespace OnUtils.Application.Journaling
         /// <summary>
         /// Регистрирует новое событие, связанное с объектом <paramref name="relatedItem"/>, в журнале <paramref name="IdJournal"/>.
         /// </summary>
-        /// <param name="IdJournal">См. <see cref="DB.Journal.IdJournal"/>.</param>
-        /// <param name="relatedItem">См. <see cref="DB.Journal.IdJournal"/>.</param>
-        /// <param name="eventType">См. <see cref="DB.Journal.EventType"/>.</param>
-        /// <param name="eventInfo">См. <see cref="DB.Journal.EventInfo"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="DB.Journal.EventInfoDetailed"/>.</param>
-        /// <param name="eventTime">См. <see cref="DB.Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
-        /// <param name="exception">См. <see cref="DB.Journal.ExceptionDetailed"/>.</param>
+        /// <param name="IdJournal">См. <see cref="DB.JournalDAO.IdJournal"/>.</param>
+        /// <param name="relatedItem">См. <see cref="DB.JournalDAO.IdJournal"/>.</param>
+        /// <param name="eventType">См. <see cref="DB.JournalDAO.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="DB.JournalDAO.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="DB.JournalDAO.EventInfoDetailed"/>.</param>
+        /// <param name="eventTime">См. <see cref="DB.JournalDAO.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
+        /// <param name="exception">См. <see cref="DB.JournalDAO.ExceptionDetailed"/>.</param>
         /// <returns>
         /// Возвращает объект <see cref="ExecutionRegisterResult"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. 
         /// В случае успеха свойство <see cref="ExecutionRegisterResult.Result"/> содержит идентификатор записи журнала (см. также <see cref="GetJournalData(int)"/>).
@@ -325,12 +332,12 @@ namespace OnUtils.Application.Journaling
         /// <summary>
         /// Регистрирует новое событие, связанное с объектом <paramref name="relatedItem"/>, в журнале на основе типа <typeparamref name="TJournalTyped"/>.
         /// </summary>
-        /// <param name="relatedItem">См. <see cref="DB.Journal.IdJournal"/>.</param>
-        /// <param name="eventType">См. <see cref="DB.Journal.EventType"/>.</param>
-        /// <param name="eventInfo">См. <see cref="DB.Journal.EventInfo"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="DB.Journal.EventInfoDetailed"/>.</param>
-        /// <param name="eventTime">См. <see cref="DB.Journal.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
-        /// <param name="exception">См. <see cref="DB.Journal.ExceptionDetailed"/>.</param>
+        /// <param name="relatedItem">См. <see cref="DB.JournalDAO.IdJournal"/>.</param>
+        /// <param name="eventType">См. <see cref="DB.JournalDAO.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="DB.JournalDAO.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="DB.JournalDAO.EventInfoDetailed"/>.</param>
+        /// <param name="eventTime">См. <see cref="DB.JournalDAO.DateEvent"/>. Если передано значение null, то событие записывается на момент вызова метода.</param>
+        /// <param name="exception">См. <see cref="DB.JournalDAO.ExceptionDetailed"/>.</param>
         /// <returns>
         /// Возвращает объект <see cref="ExecutionRegisterResult"/> со свойством <see cref="ExecutionResult.IsSuccess"/> в зависимости от успешности выполнения операции. 
         /// В случае успеха свойство <see cref="ExecutionRegisterResult.Result"/> содержит идентификатор записи журнала (см. также <see cref="GetJournalData(int)"/>).
@@ -353,8 +360,8 @@ namespace OnUtils.Application.Journaling
             try
             {
                 var journalResult = GetJournalTyped(typedType);
-                return !journalResult.IsSuccess ? 
-                    new ExecutionRegisterResult(false, journalResult.Message) : 
+                return !journalResult.IsSuccess ?
+                    new ExecutionRegisterResult(false, journalResult.Message) :
                     RegisterEventInternal(journalResult.Result.IdJournal, eventType, eventInfo, eventInfoDetailed, eventTime, exception, relatedItem.ID, itemType.IdItemType);
             }
             catch (Exception ex)
@@ -382,7 +389,7 @@ namespace OnUtils.Application.Journaling
                 var idUser = AppCore.GetUserContextManager().GetCurrentUserContext()?.IdUser;
                 if (idUser == 0) idUser = null;
 
-                var data = new DB.Journal()
+                var data = new DB.JournalDAO()
                 {
                     IdJournal = IdJournal,
                     EventType = eventType,
@@ -395,16 +402,16 @@ namespace OnUtils.Application.Journaling
 
                 using (var db = this.CreateUnitOfWork())
                 {
-                    DB.JournalName journalForCritical = null;
+                    DB.JournalNameDAO journalForCritical = null;
 
                     using (var scope = db.CreateScope(TransactionScopeOption.RequiresNew))
                     {
-                        db.Repo1.Add(data);
+                        db.Journal.Add(data);
                         db.SaveChanges();
 
                         if (eventType == EventType.CriticalError)
                         {
-                            journalForCritical = db.Repo2.Where(x => x.IdJournal == IdJournal).FirstOrDefault();
+                            journalForCritical = db.JournalName.Where(x => x.IdJournal == IdJournal).FirstOrDefault();
                         }
                         scope.Commit();
                     }
@@ -436,6 +443,12 @@ namespace OnUtils.Application.Journaling
         }
 
         #endregion
+
+        #region Свойства
+        /// <summary>
+        /// </summary>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public DB.JournalingManagerDatabaseAccessor<TAppCoreSelfReference> DatabaseAccessor { get; private set; }
+        #endregion
     }
 }
-

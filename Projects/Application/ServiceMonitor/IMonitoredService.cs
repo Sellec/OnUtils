@@ -5,7 +5,7 @@ namespace OnUtils.Application.ServiceMonitor
     using Architecture.AppCore;
 
     /// <summary>
-    /// Представляет сервис, который можно отслеживать через <see cref="Monitor"/>.
+    /// Представляет сервис, который можно отслеживать через <see cref="Monitor{TAppCoreSelfReference}"/>.
     /// </summary>
     public interface IMonitoredService<TAppCoreSelfReference> : IComponent<TAppCoreSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>

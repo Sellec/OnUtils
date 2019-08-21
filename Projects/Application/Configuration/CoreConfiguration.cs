@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace OnUtils.Application.Configuration
 {
     /// <summary>
-    /// Класс конфигурации. При создании экземпляра объекта через метод Create ядра <see cref="ApplicationCore"/> автоматически заполняется значениями настроек ядра.
+    /// Класс конфигурации. При создании экземпляра объекта через метод Create ядра <see cref="ApplicationCore{TAppCoreSelfReference}"/> автоматически заполняется значениями настроек ядра.
     /// </summary>
 #pragma warning disable CS1591 // todo внести комментарии.
     public class CoreConfiguration<TAppCoreSelfReference> : ModuleConfiguration<TAppCoreSelfReference, Modules.CoreModule.CoreModule<TAppCoreSelfReference>>
@@ -24,8 +24,8 @@ namespace OnUtils.Application.Configuration
         /// <summary>
         /// Настройки коннекторов приёма/отправки сообщений.
         /// </summary>
-        /// <seealso cref="Messaging.Connectors.IConnectorBase{TMessage}"/>
-        /// <seealso cref="Messaging.MessagingManager"/>
+        /// <seealso cref="Messaging.Connectors.IConnectorBase{TAppCoreSelfReference, TMessage}"/>
+        /// <seealso cref="Messaging.MessagingManager{TAppCoreSelfReference}"/>
         public List<Messaging.Connectors.ConnectorSettings> ConnectorsSettings
         {
             get => JsonConvert.DeserializeObject<List<Messaging.Connectors.ConnectorSettings>>(Get("ConnectorsSettings", "")) ?? new List<Messaging.Connectors.ConnectorSettings>();

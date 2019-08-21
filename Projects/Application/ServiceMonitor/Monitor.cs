@@ -8,19 +8,19 @@ namespace OnUtils.Application.ServiceMonitor
     using Architecture.AppCore;
     using Data;
     using Journaling;
-    using Journaling.DB;
+    using Journaling.Model;
 
     /// <summary>
     /// Монитор сервисов. Позволяет вносить и получать информацию о сервисах, о их состоянии, событиях и пр.
     /// </summary>
-    public class Monitor<TAppCoreSelfReference> : 
-        CoreComponentBase<TAppCoreSelfReference>, 
-        IComponentSingleton<TAppCoreSelfReference>, 
-        IUnitOfWorkAccessor<UnitOfWork<Journal>>,
+    public class Monitor<TAppCoreSelfReference> :
+        CoreComponentBase<TAppCoreSelfReference>,
+        IComponentSingleton<TAppCoreSelfReference>,
+        IUnitOfWorkAccessor<UnitOfWork<JournalData>>,
         ITypedJournalComponent<Monitor<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        private static ConcurrentDictionary<Guid, JournalName> _servicesJournalsList = new ConcurrentDictionary<Guid, JournalName>();
+        private static ConcurrentDictionary<Guid, JournalInfo> _servicesJournalsList = new ConcurrentDictionary<Guid, JournalInfo>();
         private static ConcurrentDictionary<Guid, ServiceInfo> _servicesList = new ConcurrentDictionary<Guid, ServiceInfo>();
 
         #region CoreComponentBase
@@ -81,17 +81,17 @@ namespace OnUtils.Application.ServiceMonitor
         /// Записывает в журнал сервиса событие, связанное с сервисом.
         /// </summary>
         /// <param name="service">Сервис, для которого производится регистрация состояния.</param>
-        /// <param name="eventType">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="eventInfo">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="exception">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
+        /// <param name="eventType">См. <see cref="JournalData.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="JournalData.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="JournalData.EventInfoDetailed"/>.</param>
+        /// <param name="exception">См. <see cref="JournalData.ExceptionDetailed"/>.</param>
         public void RegisterServiceEvent(IMonitoredService<TAppCoreSelfReference> service, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
         {
             var serviceJournal = GetJournalName(service);
             if (serviceJournal != null) AppCore.Get<JournalingManager<TAppCoreSelfReference>>().RegisterEvent(serviceJournal.IdJournal, eventType, eventInfo, eventInfoDetailed, null, exception);
         }
 
-        private JournalName GetJournalName(IMonitoredService<TAppCoreSelfReference> service)
+        private JournalInfo GetJournalName(IMonitoredService<TAppCoreSelfReference> service)
         {
             return _servicesJournalsList.GetOrAddWithExpiration(service.ServiceID, (key) =>
             {
@@ -104,7 +104,7 @@ namespace OnUtils.Application.ServiceMonitor
         /// <summary>
         /// Возвращает журнал для указанного сервиса.
         /// </summary>
-        public IEnumerable<Journal> GetServiceJournal(IMonitoredService<TAppCoreSelfReference> service)
+        public IEnumerable<JournalData> GetServiceJournal(IMonitoredService<TAppCoreSelfReference> service)
         {
             var serviceJournal = GetJournalName(service);
             return GetServiceJournal(service.ServiceID);
@@ -113,21 +113,24 @@ namespace OnUtils.Application.ServiceMonitor
         /// <summary>
         /// Возвращает журнал для указанного идентификатора сервиса.
         /// </summary>
-        public IEnumerable<Journal> GetServiceJournal(Guid serviceID)
+        public List<JournalData> GetServiceJournal(Guid serviceID)
         {
-            if (_servicesJournalsList.TryGetValue(serviceID, out JournalName serviceJournal))
+            if (_servicesJournalsList.TryGetValue(serviceID, out var serviceJournal))
             {
-                using (var db = this.CreateUnitOfWork())
+                var journalingManager = AppCore.Get<JournalingManager<TAppCoreSelfReference>>();
+                using (var db = new Journaling.DB.DataContext())
                 {
-                    return db.Repo1.
-                        Where(x => x.IdJournal == serviceJournal.IdJournal).
-                        OrderByDescending(x => x.DateEvent).
-                        ToList();
+                    var query = journalingManager.DatabaseAccessor.CreateQueryJournalData(db).
+                        Where(x => x.JournalData.IdJournal == serviceJournal.IdJournal).
+                        OrderByDescending(x => x.JournalData.DateEvent);
+
+                    var data = journalingManager.DatabaseAccessor.FetchQueryJournalData(query);
+                    return data;
                 }
             }
             else
             {
-                return Enumerable.Empty<Journal>();
+                return new List<JournalData>();
             }
         }
 
@@ -153,6 +156,7 @@ namespace OnUtils.Application.ServiceMonitor
 namespace System
 {
     using OnUtils.Application.Journaling;
+    using OnUtils.Application.Journaling.Model;
     using ServiceMonitor = OnUtils.Application.ServiceMonitor;
 
     /// <summary>
@@ -176,10 +180,10 @@ namespace System
         /// Записывает в журнал сервиса событие, связанное с сервисом.
         /// </summary>
         /// <param name="service">Сервис, для которого производится регистрация состояния.</param>
-        /// <param name="eventType">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="eventInfo">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="eventInfoDetailed">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
-        /// <param name="exception">См. <see cref="JournalingManager.RegisterEvent"/>.</param>
+        /// <param name="eventType">См. <see cref="JournalData.EventType"/>.</param>
+        /// <param name="eventInfo">См. <see cref="JournalData.EventInfo"/>.</param>
+        /// <param name="eventInfoDetailed">См. <see cref="JournalData.EventInfoDetailed"/>.</param>
+        /// <param name="exception">См. <see cref="JournalData.ExceptionDetailed"/>.</param>
         public static void RegisterServiceEvent<TAppCoreSelfReference>(this ServiceMonitor.IMonitoredService<TAppCoreSelfReference> service, EventType eventType, string eventInfo, string eventInfoDetailed = null, Exception exception = null)
             where TAppCoreSelfReference : OnUtils.Application.ApplicationCore<TAppCoreSelfReference>
         {

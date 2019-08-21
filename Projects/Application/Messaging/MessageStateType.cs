@@ -10,7 +10,7 @@ namespace OnUtils.Application.Messaging
     public enum MessageStateType : byte
     {
         /// <summary>
-        /// Не обработано коннекторами. Такое сообщение считывается в <see cref="ServiceBase{TMessageType}.GetUnsentMessages"/> и обрабатывается коннекторами.
+        /// Не обработано коннекторами. Такое сообщение считывается в <see cref="ServiceBase{TAppCoreSelfReference, TMessageType}.GetUnsentMessages"/> и обрабатывается коннекторами.
         /// </summary>
         NotProcessed = 0,
 

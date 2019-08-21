@@ -278,7 +278,7 @@ namespace OnUtils.Application.Messaging
 
         #region IMonitoredService
         /// <summary>
-        /// См. <see cref="IMonitoredService.ServiceStatus"/>.
+        /// См. <see cref="IMonitoredService{TAppCoreSelfReference}.ServiceStatus"/>.
         /// </summary>
         public virtual ServiceStatus ServiceStatus
         {
@@ -287,7 +287,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMonitoredService.ServiceStatusDetailed"/>.
+        /// См. <see cref="IMonitoredService{TAppCoreSelfReference}.ServiceStatusDetailed"/>.
         /// </summary>
         public virtual string ServiceStatusDetailed
         {
@@ -296,7 +296,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMonitoredService.IsSupportsCurrentStatusInfo"/>.
+        /// См. <see cref="IMonitoredService{TAppCoreSelfReference}.IsSupportsCurrentStatusInfo"/>.
         /// </summary>
         public virtual bool IsSupportsCurrentStatusInfo
         {
@@ -307,7 +307,7 @@ namespace OnUtils.Application.Messaging
 
         #region IMessagingServiceBackgroundOperations
         /// <summary>
-        /// См. <see cref="IMessagingService.IsSupportsIncoming"/>.
+        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
         /// </summary>
         public virtual bool IsSupportsIncoming
         {
@@ -316,7 +316,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMessagingService.IsSupportsIncoming"/>.
+        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
         /// </summary>
         public virtual bool IsSupportsOutcoming
         {
@@ -325,7 +325,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMessagingService.IsSupportsIncoming"/>.
+        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
         /// </summary>
         public virtual int OutcomingQueueLength
         {

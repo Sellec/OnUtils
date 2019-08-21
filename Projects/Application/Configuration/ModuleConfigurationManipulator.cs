@@ -10,7 +10,7 @@ namespace OnUtils.Application.Configuration
     /// <summary>
     /// Предоставляет методы для управления настройками модуля типа <typeparamref name="TModule"/>. Позволяет получить, изменить и применить измененные настройки к модулю.
     /// </summary>
-    /// <seealso cref="ModuleConfiguration{TModule}"/>
+    /// <seealso cref="ModuleConfiguration{TAppCoreSelfReference, TModule}"/>
     public class ModuleConfigurationManipulator<TAppCoreSelfReference, TModule> : CoreComponentBase<TAppCoreSelfReference>, IComponentTransient<TAppCoreSelfReference>, IUnitOfWorkAccessor<CoreContext>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TModule : ModuleCore<TAppCoreSelfReference, TModule>
@@ -70,7 +70,7 @@ namespace OnUtils.Application.Configuration
         /// Сохраняет настройки из объекта настроек <paramref name="configuration"/> и немедленно применяет их к модулю.
         /// </summary>
         /// <returns>Возвращает кортеж из двух значений - результат сохранения и идентификатор записи журнала в случае ошибки.</returns>
-        /// <seealso cref="Journaling.JournalingManager.GetJournalData(int)"/>
+        /// <seealso cref="Journaling.JournalingManager{TAppCoreSelfReference}.GetJournalData(int)"/>
         public (ApplyConfigurationResult, int?) ApplyConfiguration<TConfiguration>(TConfiguration configuration)
             where TConfiguration : ModuleConfiguration<TAppCoreSelfReference, TModule>, new()
         {

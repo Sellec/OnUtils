@@ -2,7 +2,6 @@
 {
     /// <summary>
     /// Контейнер схемы. Указывает идентификатор и тип объекта, к которому привязаны поля схемы.
-    /// Для подробностей см. <see cref="ExtensionCustomsFields"/>.
     /// </summary>
     public class SchemeItem
     {

@@ -11,6 +11,8 @@ namespace OnUtils.Application
     {
         private static ConcurrentDictionary<Type, object> _modulesManagers = new ConcurrentDictionary<Type, object>();
 
+        /// <summary>
+        /// </summary>
         [Obsolete("Будет удалено в будущих версиях.")]
         public static Modules.ModulesManager<TAppCoreSelfReference> Get<TAppCoreSelfReference>()
             where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
@@ -18,6 +20,8 @@ namespace OnUtils.Application
             return _modulesManagers.Where(x => x.Key == typeof(TAppCoreSelfReference)).Select(x => x.Value as Modules.ModulesManager<TAppCoreSelfReference>).FirstOrDefault();
         }
 
+        /// <summary>
+        /// </summary>
         [Obsolete("Будет удалено в будущих версиях.")]
         public static void Set<TAppCoreSelfReference>(Modules.ModulesManager<TAppCoreSelfReference> manager)
             where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>

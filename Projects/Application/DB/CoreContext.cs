@@ -3,7 +3,12 @@ namespace OnUtils.Application.DB
     using Data;
 
 #pragma warning disable CS1591 // todo внести комментарии.
-    public class CoreContext : UnitOfWorkBase
+    public abstract class CoreContextBase : UnitOfWorkBase
+    {
+
+    }
+
+    public class CoreContext : CoreContextBase
     {
         public IRepository<ModuleConfig> Module { get; }
 

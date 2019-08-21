@@ -9,13 +9,13 @@ namespace OnUtils.Application.Messaging
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
         /// <summary>
-        /// Обрабатывает входящие сообщения, если режим приема входящих сообщений поддерживается сервисом. См. <see cref="IMessagingService.IsSupportsIncoming"/>.
+        /// Обрабатывает входящие сообщения, если режим приема входящих сообщений поддерживается сервисом. См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
         /// </summary>
         [ApiIrreversible]
         void ExecuteIncoming();
 
         /// <summary>
-        /// Обрабатывает исходящие сообщения, если режим отправки исходящих сообщений поддерживается сервисом. См. <see cref="IMessagingService.IsSupportsOutcoming"/>.
+        /// Обрабатывает исходящие сообщения, если режим отправки исходящих сообщений поддерживается сервисом. См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsOutcoming"/>.
         /// </summary>
         [ApiIrreversible]
         void ExecuteOutcoming();
