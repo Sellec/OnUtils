@@ -6,7 +6,7 @@
     [EventInfoDetailed] NVARCHAR (MAX) NULL,
     [ExceptionDetailed] NVARCHAR (MAX) NULL,
     [DateEvent]         DATETIME       NOT NULL,
-    [IdUser] INT NULL DEFAULT -1, 
+    [IdUser] INT NULL , 
     [IdRelatedItem]     INT            NULL,
     [IdRelatedItemType] NCHAR (10)     NULL,
     CONSTRAINT [PK_Journal] PRIMARY KEY CLUSTERED ([IdJournalData] ASC), 
