@@ -172,7 +172,6 @@ namespace OnUtils.Application.Messaging
         void IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming()
         {
             var type = GetType();
-            Debug.WriteLineNoLog($"Messaging: {type.FullName} planning immediately - restrict");
 
             if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
             {
