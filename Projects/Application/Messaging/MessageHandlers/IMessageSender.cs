@@ -4,9 +4,8 @@ namespace OnUtils.Application.Messaging.MessageHandlers
 {
     /// <summary>
     /// Представляет обработчик для отправки сообщений определенного типа.
-    /// Используется сервисами для отправки сообщений.
     /// </summary>
-    public interface IOutcomingMessageHandler<TAppCoreSelfReference, TMessage> : IMessageHandler<TAppCoreSelfReference, TMessage>
+    public interface IMessageSender<TAppCoreSelfReference, TMessage> : IMessageHandler<TAppCoreSelfReference, TMessage>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TMessage : MessageBase, new()
     {

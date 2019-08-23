@@ -6,7 +6,7 @@
     /// <summary>
     /// Представляет обработчик сообщений определенного типа.
     /// </summary>
-    /// <seealso cref="IOutcomingMessageHandler{TAppCoreSelfReference, TMessage}"/>
+    /// <seealso cref="IMessageSender{TAppCoreSelfReference, TMessage}"/>
     public interface IMessageHandler<TAppCoreSelfReference, TMessage> : IPoolObjectOrdered, IComponentTransient<TAppCoreSelfReference> 
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TMessage : MessageBase, new()

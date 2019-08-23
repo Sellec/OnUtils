@@ -3,7 +3,7 @@
 namespace OnUtils.Application.Messaging.MessageHandlers
 {
     /// <summary>
-    /// Предоставляет обработчику информацию о сообщении.
+    /// Предоставляет информацию о сообщении.
     /// </summary>
     public class HandlerMessage<TMessageType> where TMessageType : MessageBase
     {

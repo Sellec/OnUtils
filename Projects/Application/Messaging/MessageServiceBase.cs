@@ -80,8 +80,6 @@ namespace OnUtils.Application.Messaging
         {
             try
             {
-                // todo setError(null);
-
                 using (var db = this.CreateUnitOfWork())
                 {
                     var mess = new DB.MessageQueue()
@@ -166,7 +164,96 @@ namespace OnUtils.Application.Messaging
         #region IInternalForTasks
         void IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming()
         {
+            var type = GetType();
 
+            if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task2 - restrict");
+                return;
+            }
+            Debug.WriteLineNoLog($"Messaging: {type.FullName} task2 - working start");
+
+            int messagesReceived = 0;
+
+            try
+            {
+                using (var db = this.CreateUnitOfWork())
+                using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
+                {
+                    var handlers = GetHandlers().
+                    OfType<IMessageReceiver<TAppCoreSelfReference, TMessageType>>().
+                    Select(x => new {
+                        Handler = x,
+                        IdTypeHandler = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                    }).
+                    OrderBy(x => x.Handler.OrderInPool).
+                    ToList();
+
+                    foreach (var handlerInfo in handlers)
+                    {
+                        try
+                        {
+                            var messages = handlerInfo.Handler.Receive(this);
+                            if (messages != null && messages.Count > 0)
+                            {
+                                int countAdded = 0;
+                                foreach (var message in messages)
+                                {
+                                    var mess = new DB.MessageQueue()
+                                    {
+                                        IdMessageType = IdMessageType,
+                                        Direction = true,
+                                        State = message.State,
+                                        StateType = message.StateType,
+                                        DateCreate = DateTime.Now,
+                                        MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message.MessageBody),
+                                    };
+
+                                    db.MessageQueue.Add(mess);
+                                    countAdded++;
+                                    messagesReceived++;
+
+                                    if (countAdded >= 50)
+                                    {
+                                        db.SaveChanges();
+                                        countAdded = 0;
+                                    }
+                                }
+
+                                db.SaveChanges();
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
+                    db.SaveChanges();
+                    scope.Commit();
+                }
+
+                if (messagesReceived > 0)
+                {
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Сообщений получено - {messagesReceived}.");
+                }
+
+                var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
+                if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
+                {
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Messaging.ServiceBase.PrepareIncoming: {0}", ex.GetMessageExtended());
+                this.RegisterServiceState(ServiceStatus.RunningWithErrors, $"Сообщений получено - {messagesReceived}.", ex);
+            }
+            finally
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task2 - working end");
+                _executingFlags[nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming)] = 0;
+            }
         }
 
         void IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming()
@@ -209,7 +296,7 @@ namespace OnUtils.Application.Messaging
                         }
 
                         var handlers = GetHandlers().
-                            OfType<IOutcomingMessageHandler<TAppCoreSelfReference, TMessageType>>().
+                            OfType<IMessageSender<TAppCoreSelfReference, TMessageType>>().
                             Select(x => new {
                                 Handler = x,
                                 IdTypeHandler = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType

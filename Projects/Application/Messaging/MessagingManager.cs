@@ -41,14 +41,13 @@ namespace OnUtils.Application.Messaging
 
         private static MethodInfo _handlerCreateCall = null;
         private static ApplicationCore<TAppCoreSelfReference> _appCore = null;
-        private volatile bool _incomingLock = false;
-        private volatile bool _outcomingLock = false;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private List<IMessageServiceInternal<TAppCoreSelfReference>> _services = new List<IMessageServiceInternal<TAppCoreSelfReference>>();
 
         private object _activeHandlersSyncRoot = new object();
         private List<IComponentTransient<TAppCoreSelfReference>> _activeHandlers = null;
+        private List<IComponentTransient<TAppCoreSelfReference>> _registeredHandlers = null;
 
         static MessagingManager()
         {
@@ -61,6 +60,7 @@ namespace OnUtils.Application.Messaging
         public MessagingManager()
         {
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl(this);
+            _registeredHandlers = new List<IComponentTransient<TAppCoreSelfReference>>();
         }
 
         #region CoreComponentBase
@@ -107,6 +107,17 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
+        /// Регистрирует новый обработчик сообщений.
+        /// </summary>
+        public void RegisterHandler<TMessage>(IMessageHandler<TAppCoreSelfReference, TMessage> handler)
+            where TMessage : MessageBase, new()
+        {
+            if (handler == null) return;
+            if (_registeredHandlers.Contains(handler)) return;
+            _registeredHandlers.Add(handler);
+        }
+
+        /// <summary>
         /// Возвращает список обработчиков, поддерживающих обмен сообщениями указанного типа <typeparamref name="TMessage"/>.
         /// </summary>
         public IEnumerable<IMessageHandler<TAppCoreSelfReference, TMessage>> GetHandlersByMessageType<TMessage>() where TMessage : MessageBase, new()
@@ -115,7 +126,10 @@ namespace OnUtils.Application.Messaging
                 if (_activeHandlers == null)
                     UpdateHandlersFromSettings();
 
-            return _activeHandlers.OfType<IMessageHandler<TAppCoreSelfReference, TMessage>>();
+            var active = _activeHandlers.OfType<IMessageHandler<TAppCoreSelfReference, TMessage>>();
+            var registered = _registeredHandlers.OfType<IMessageHandler<TAppCoreSelfReference, TMessage>>();
+
+            return active.Union(registered);
         }
 
         /// <summary>
