@@ -14,13 +14,18 @@ namespace OnUtils.Application.Messaging.DB
 
         public int IdMessageType  { get; set; }
 
+        /// <summary>
+        /// Направление сообщения. True - входящее. False - исходящее.
+        /// </summary>
+        public bool Direction { get; set; }
+
         public DateTime DateCreate { get; set; }
 
         public MessageStateType StateType { get; set; }
 
         public string State { get; set; }
 
-        public int? IdTypeConnector { get; set; }
+        public int? IdTypeHandler { get; set; }
 
         public DateTime? DateChange { get; set; }
 

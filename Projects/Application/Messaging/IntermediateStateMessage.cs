@@ -37,10 +37,10 @@ namespace OnUtils.Application.Messaging
             set => MessageSource.State = value;
         }
 
-        public int? IdTypeConnector
+        public int? IdTypeHandler
         {
-            get => MessageSource.IdTypeConnector;
-            set => MessageSource.IdTypeConnector = value;
+            get => MessageSource.IdTypeHandler;
+            set => MessageSource.IdTypeHandler = value;
         }
 
         public DateTime DateChange

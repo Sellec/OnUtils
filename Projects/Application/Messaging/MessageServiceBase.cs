@@ -1,4 +1,6 @@
-﻿using System;
+﻿using OnUtils.Tasks;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Transactions;
@@ -8,6 +10,7 @@ namespace OnUtils.Application.Messaging
     using Architecture.AppCore;
     using Data;
     using Items;
+    using MessageHandlers;
     using ServiceMonitor;
 
     /// <summary>
@@ -15,17 +18,23 @@ namespace OnUtils.Application.Messaging
     /// </summary>
     /// <typeparam name="TMessageType">Тип сообщения, с которым работает сервис.</typeparam>
     /// <typeparam name="TAppCoreSelfReference">Тип приложения, для работы с которым предназначен сервис.</typeparam>
-    public abstract class ServiceBase<TAppCoreSelfReference, TMessageType> : CoreComponentBase<TAppCoreSelfReference>, IMonitoredService<TAppCoreSelfReference>, IMessagingServiceBackgroundOperations<TAppCoreSelfReference>, IUnitOfWorkAccessor<UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory>>
+    public abstract class MessageServiceBase<TAppCoreSelfReference, TMessageType> : 
+        CoreComponentBase<TAppCoreSelfReference>,
+        IMessageService<TAppCoreSelfReference>,
+        IMessageServiceInternal<TAppCoreSelfReference>,
+        IUnitOfWorkAccessor<DB.DataContext>,
+        IAutoStart
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
         where TMessageType : MessageBase, new()
     {
+        private ConcurrentDictionary<string, int> _executingFlags = new ConcurrentDictionary<string, int>();
+
         /// <summary>
         /// Создает новый экземпляр сервиса.
         /// </summary>
         /// <param name="serviceName">Текстовое название сервиса.</param>
         /// <param name="serviceID">Уникальный идентификатор сервиса.</param>
-        /// <param name="idMessageType">Идентификатор типа сообщения. Если не задан, то используется автоматически присваиваемый идентификатор. Предпочтительно не задавать значение.</param>
-        protected ServiceBase(string serviceName, Guid serviceID, int? idMessageType = null)
+        protected MessageServiceBase(string serviceName, Guid serviceID)
         {
             if (string.IsNullOrEmpty(serviceName)) throw new ArgumentNullException(nameof(serviceName));
             if (serviceID == null) throw new ArgumentNullException(nameof(serviceID));
@@ -33,7 +42,7 @@ namespace OnUtils.Application.Messaging
             ServiceID = serviceID;
             ServiceName = serviceName;
 
-            if (!idMessageType.HasValue) IdMessageType = Items.ItemTypeFactory.GetItemType(typeof(TMessageType)).IdItemType;
+            IdMessageType = Items.ItemTypeFactory.GetItemType(typeof(TMessageType)).IdItemType;
         }
 
         #region CoreComponentBase
@@ -42,6 +51,10 @@ namespace OnUtils.Application.Messaging
         protected sealed override void OnStart()
         {
             this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
+
+            var type = GetType();
+            TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncoming(type));
+            TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
         }
 
         /// <summary>
@@ -49,6 +62,11 @@ namespace OnUtils.Application.Messaging
         protected sealed override void OnStop()
         {
             this.RegisterServiceState(ServiceStatus.Shutdown, "Сервис остановлен.");
+
+            var type = GetType();
+            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming) + "_minutely1");
+            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_minutely1");
+            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_immediately");
         }
         #endregion
 
@@ -58,7 +76,7 @@ namespace OnUtils.Application.Messaging
         /// </summary>
         /// <returns>Возвращает true в случае успеха и false в случае ошибки во время регистрации сообщения. Текст ошибки </returns>
         [ApiReversible]
-        protected bool RegisterMessage(TMessageType message)
+        protected bool RegisterOutcomingMessage(TMessageType message)
         {
             try
             {
@@ -74,8 +92,19 @@ namespace OnUtils.Application.Messaging
                         MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message),
                     };
 
-                    db.Repo1.Add(mess);
+                    db.MessageQueue.Add(mess);
                     db.SaveChanges();
+                    if (_executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) == 1)
+                    {
+                        var type = GetType();
+                        TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
+                        Debug.WriteLineNoLog($"Messaging: {type.FullName} planning immediately - success");
+                    }
+                    else
+                    {
+                        var type = GetType();
+                        Debug.WriteLineNoLog($"Messaging: {type.FullName} planning immediately - restrict");
+                    }
 
                     return true;
                 }
@@ -87,10 +116,10 @@ namespace OnUtils.Application.Messaging
             }
         }
 
-        private List<IntermediateStateMessage<TMessageType>> GetUnsentMessages(UnitOfWork<DB.MessageQueue, DB.MessageQueueHistory> db)
+        private List<IntermediateStateMessage<TMessageType>> GetUnsentMessages(DB.DataContext db)
         {
-            var messages = db.Repo1.
-                Where(x => x.IdMessageType == IdMessageType && (x.StateType == MessageStateType.NotProcessed || x.StateType == MessageStateType.RepeatWithControllerType)).
+            var messages = db.MessageQueue.
+                Where(x => !x.Direction && x.IdMessageType == IdMessageType && (x.StateType == MessageStateType.NotProcessed || x.StateType == MessageStateType.RepeatWithControllerType)).
                 ToList();
 
             var messagesUnserialized = messages.Select(x =>
@@ -112,12 +141,12 @@ namespace OnUtils.Application.Messaging
 
         #region Методы
         /// <summary>
-        /// Возвращает список активных коннекторов, работающих с типом сообщений сервиса.
+        /// Возвращает список активных обработчиков, работающих с типом сообщений сервиса.
         /// </summary>
-        /// <seealso cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.ConnectorsSettings"/>
-        protected List<Connectors.IConnectorBase<TAppCoreSelfReference, TMessageType>> GetConnectors()
+        /// <seealso cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.MessageHandlersSettings"/>
+        protected List<IMessageHandler<TAppCoreSelfReference, TMessageType>> GetHandlers()
         {
-            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetConnectorsByMessageType<TMessageType>().ToList();
+            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetHandlersByMessageType<TMessageType>().ToList();
         }
 
         /// <summary>
@@ -134,13 +163,24 @@ namespace OnUtils.Application.Messaging
         }
         #endregion
 
-        #region Фоновые операции
-        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteIncoming()
+        #region IInternalForTasks
+        void IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming()
         {
+
         }
 
-        void IMessagingServiceBackgroundOperations<TAppCoreSelfReference>.ExecuteOutcoming()
+        void IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming()
         {
+            var type = GetType();
+            Debug.WriteLineNoLog($"Messaging: {type.FullName} planning immediately - restrict");
+
+            if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task - restrict");
+                return;
+            }
+            Debug.WriteLineNoLog($"Messaging: {type.FullName} task - working start");
+
             int messagesAll = 0;
             int messagesSent = 0;
             int messagesErrors = 0;
@@ -150,6 +190,7 @@ namespace OnUtils.Application.Messaging
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
                 {
+                    _executingFlags[nameof(RegisterOutcomingMessage)] = 0;
                     var messages = GetUnsentMessages(db);
                     if (messages == null) return;
 
@@ -168,38 +209,48 @@ namespace OnUtils.Application.Messaging
                             continue;
                         }
 
-                        var connectors = GetConnectors().Select(x => new { Connector = x, IdTypeConnector = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType }).OrderBy(x => x.Connector.OrderInPool).ToList();
-                        if (intermediateMessage.IdTypeConnector.HasValue)
-                            connectors = connectors.Where(x => x.IdTypeConnector.HasValue && x.IdTypeConnector == intermediateMessage.IdTypeConnector).ToList();
+                        var handlers = GetHandlers().
+                            OfType<IOutcomingMessageHandler<TAppCoreSelfReference, TMessageType>>().
+                            Select(x => new {
+                                Handler = x,
+                                IdTypeHandler = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                            }).
+                            OrderBy(x => x.Handler.OrderInPool).
+                            ToList();
 
-                        foreach (var connectorInfo in connectors)
+                        if (intermediateMessage.IdTypeHandler.HasValue)
+                        {
+                            handlers = handlers.Where(x => x.IdTypeHandler.HasValue && x.IdTypeHandler == intermediateMessage.IdTypeHandler).ToList();
+                        }
+
+                        foreach (var handlerInfo in handlers)
                         {
                             try
                             {
-                                var connector = connectorInfo.Connector;
-                                var connectorMessage = new ConnectorMessage<TMessageType>(intermediateMessage);
-                                connector.Send(connectorMessage, this);
-                                if (connectorMessage.HandledState != ConnectorMessageStateType.NotHandled)
+                                var handler = handlerInfo.Handler;
+                                var handlerMessage = new HandlerMessage<TMessageType>(intermediateMessage);
+                                handler.Send(handlerMessage, this);
+                                if (handlerMessage.HandledState != HandlerMessageStateType.NotHandled)
                                 {
                                     intermediateMessage.DateChange = DateTime.Now;
-                                    switch (connectorMessage.HandledState)
+                                    switch (handlerMessage.HandledState)
                                     {
-                                        case ConnectorMessageStateType.Error:
+                                        case HandlerMessageStateType.Error:
                                             intermediateMessage.StateType = MessageStateType.Error;
-                                            intermediateMessage.State = connectorMessage.State;
-                                            intermediateMessage.IdTypeConnector = null;
+                                            intermediateMessage.State = handlerMessage.State;
+                                            intermediateMessage.IdTypeHandler = null;
                                             break;
 
-                                        case ConnectorMessageStateType.RepeatWithControllerType:
+                                        case HandlerMessageStateType.RepeatWithControllerType:
                                             intermediateMessage.StateType = MessageStateType.RepeatWithControllerType;
-                                            intermediateMessage.State = connectorMessage.State;
-                                            intermediateMessage.IdTypeConnector = connectorInfo.IdTypeConnector;
+                                            intermediateMessage.State = handlerMessage.State;
+                                            intermediateMessage.IdTypeHandler = handlerInfo.IdTypeHandler;
                                             break;
 
-                                        case ConnectorMessageStateType.Sent:
-                                            intermediateMessage.StateType = MessageStateType.Sent;
+                                        case HandlerMessageStateType.Completed:
+                                            intermediateMessage.StateType = MessageStateType.Complete;
                                             intermediateMessage.State = null;
-                                            intermediateMessage.IdTypeConnector = null;
+                                            intermediateMessage.IdTypeHandler = null;
                                             break;
                                     }
                                     processedMessages.Add(intermediateMessage);
@@ -245,8 +296,15 @@ namespace OnUtils.Application.Messaging
                 Debug.WriteLine("Messaging.ServiceBase.ExecuteOutcoming: {0}", ex.GetMessageExtended());
                 this.RegisterServiceState(ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Отправлено - {messagesSent}. Ошибки отправки - {messagesErrors}.", ex);
             }
+            finally
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task - working end");
+                _executingFlags[nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming)] = 0;
+            }
         }
+        #endregion
 
+        #region Фоновые операции
         /// <summary>
         /// Вызывается перед началом отправки сообщений.
         /// </summary>
@@ -254,22 +312,26 @@ namespace OnUtils.Application.Messaging
         {
 
         }
-
-        private void TryToSendThrougnConnectors(IntermediateStateMessage<TMessageType> messageBody)
-        {
-        }
-
         #endregion
 
         #region Свойства
-        public virtual int IdMessageType { get; set; }
+        /// <summary>
+        /// Возвращает идентификатор типа сообщения.
+        /// </summary>
+        public int IdMessageType { get; }
 
+        /// <summary>
+        /// Возвращает идентификатор сервиса.
+        /// </summary>
         public Guid ServiceID
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Возвращает название сервиса.
+        /// </summary>
         public string ServiceName
         {
             get;
@@ -307,7 +369,7 @@ namespace OnUtils.Application.Messaging
 
         #region IMessagingServiceBackgroundOperations
         /// <summary>
-        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
+        /// Указывает, что сервис поддерживает прием сообщений.
         /// </summary>
         public virtual bool IsSupportsIncoming
         {
@@ -316,7 +378,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
+        /// Указывает, что сервис поддерживает отправку сообщений.
         /// </summary>
         public virtual bool IsSupportsOutcoming
         {
@@ -325,7 +387,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// См. <see cref="IMessagingService{TAppCoreSelfReference}.IsSupportsIncoming"/>.
+        /// Возвращает длину очереди на отправку сообщений.
         /// </summary>
         public virtual int OutcomingQueueLength
         {

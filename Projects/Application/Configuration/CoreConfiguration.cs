@@ -22,14 +22,14 @@ namespace OnUtils.Application.Configuration
         }
 
         /// <summary>
-        /// Настройки коннекторов приёма/отправки сообщений.
+        /// Настройки обработчиков приёма/отправки сообщений.
         /// </summary>
-        /// <seealso cref="Messaging.Connectors.IConnectorBase{TAppCoreSelfReference, TMessage}"/>
+        /// <seealso cref="Messaging.MessageHandlers.IMessageHandler{TAppCoreSelfReference, TMessage}"/>
         /// <seealso cref="Messaging.MessagingManager{TAppCoreSelfReference}"/>
-        public List<Messaging.Connectors.ConnectorSettings> ConnectorsSettings
+        public List<Messaging.MessageHandlers.MessageHandlerSettings> MessageHandlersSettings
         {
-            get => JsonConvert.DeserializeObject<List<Messaging.Connectors.ConnectorSettings>>(Get("ConnectorsSettings", "")) ?? new List<Messaging.Connectors.ConnectorSettings>();
-            set => Set("ConnectorsSettings", value == null ? "" : JsonConvert.SerializeObject(value));
+            get => JsonConvert.DeserializeObject<List<Messaging.MessageHandlers.MessageHandlerSettings>>(Get("MessageHandlersSettings", "")) ?? new List<Messaging.MessageHandlers.MessageHandlerSettings>();
+            set => Set("MessageHandlersSettings", value == null ? "" : JsonConvert.SerializeObject(value));
         }
 
         /// <summary>
