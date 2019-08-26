@@ -1,4 +1,4 @@
-﻿namespace OnUtils.Application.Messaging
+﻿namespace OnUtils.Application.Messaging.Messages
 {
     /// <summary>
     /// Описывает контакт сообщения.

@@ -22,14 +22,14 @@ namespace OnUtils.Application.Configuration
         }
 
         /// <summary>
-        /// Настройки обработчиков приёма/отправки сообщений.
+        /// Настройки компонентов сервисов обработки сообщений.
         /// </summary>
-        /// <seealso cref="Messaging.MessageHandlers.IMessageHandler{TAppCoreSelfReference, TMessage}"/>
+        /// <seealso cref="Messaging.Components.IMessageServiceComponent{TAppCoreSelfReference, TMessage}"/>
         /// <seealso cref="Messaging.MessagingManager{TAppCoreSelfReference}"/>
-        public List<Messaging.MessageHandlers.MessageHandlerSettings> MessageHandlersSettings
+        public List<Messaging.Components.ComponentSettings> MessageServicesComponentsSettings
         {
-            get => JsonConvert.DeserializeObject<List<Messaging.MessageHandlers.MessageHandlerSettings>>(Get("MessageHandlersSettings", "")) ?? new List<Messaging.MessageHandlers.MessageHandlerSettings>();
-            set => Set("MessageHandlersSettings", value == null ? "" : JsonConvert.SerializeObject(value));
+            get => JsonConvert.DeserializeObject<List<Messaging.Components.ComponentSettings>>(Get("MessageServicesComponentsSettings", "")) ?? new List<Messaging.Components.ComponentSettings>();
+            set => Set("MessageServicesComponentsSettings", value == null ? "" : JsonConvert.SerializeObject(value));
         }
 
         /// <summary>

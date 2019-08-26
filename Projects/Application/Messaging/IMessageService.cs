@@ -6,6 +6,6 @@
     public interface IMessageService<TAppCoreSelfReference> : ServiceMonitor.IMonitoredService<TAppCoreSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        
+
     }
 }

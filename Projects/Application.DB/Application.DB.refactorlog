@@ -7,4 +7,11 @@
     <Property Name="ParentElementType" Value="SqlTable" />
     <Property Name="NewName" Value="IdTypeHandler" />
   </Operation>
+  <Operation Name="Rename Refactor" Key="f4b6d054-df56-476d-89f9-f0545a3413a1" ChangeDateTime="08/26/2019 03:50:27">
+    <Property Name="ElementName" Value="[dbo].[MessageQueue].[IdTypeHandler]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[MessageQueue]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="IdTypeComponent" />
+  </Operation>
 </Operations>

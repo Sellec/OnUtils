@@ -5,7 +5,8 @@
     interface IMessageServiceInternal<TAppCoreSelfReference> : IComponentSingleton<TAppCoreSelfReference>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
     {
-        void PrepareIncoming();
+        void PrepareIncomingReceive();
+        void PrepareIncomingHandle();
         void PrepareOutcoming();
     }
 }

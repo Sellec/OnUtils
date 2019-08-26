@@ -10,11 +10,12 @@ namespace OnUtils.Application.Messaging
     using Architecture.AppCore;
     using Data;
     using Items;
-    using MessageHandlers;
+    using Components;
     using ServiceMonitor;
+    using Messages;
 
     /// <summary>
-    /// Предпочтительная базовая реализация сервиса отправки-приема сообщений для приложения.
+    /// Предпочтительная базовая реализация сервиса обработки сообщений для приложения.
     /// </summary>
     /// <typeparam name="TMessageType">Тип сообщения, с которым работает сервис.</typeparam>
     /// <typeparam name="TAppCoreSelfReference">Тип приложения, для работы с которым предназначен сервис.</typeparam>
@@ -53,7 +54,8 @@ namespace OnUtils.Application.Messaging
             this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
 
             var type = GetType();
-            TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncoming(type));
+            TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingHandle) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
+            TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingReceive) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingReceive(type));
             TasksManager.SetTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
         }
 
@@ -64,7 +66,8 @@ namespace OnUtils.Application.Messaging
             this.RegisterServiceState(ServiceStatus.Shutdown, "Сервис остановлен.");
 
             var type = GetType();
-            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming) + "_minutely1");
+            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingHandle) + "_minutely1");
+            TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingReceive) + "_minutely1");
             TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_minutely1");
             TasksManager.RemoveTask(type.FullName + "_" + nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareOutcoming) + "_immediately");
         }
@@ -85,7 +88,7 @@ namespace OnUtils.Application.Messaging
                     var mess = new DB.MessageQueue()
                     {
                         IdMessageType = IdMessageType,
-                        StateType = MessageStateType.NotProcessed,
+                        StateType = DB.MessageStateType.NotProcessed,
                         DateCreate = DateTime.Now,
                         MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message),
                     };
@@ -114,10 +117,10 @@ namespace OnUtils.Application.Messaging
             }
         }
 
-        private List<IntermediateStateMessage<TMessageType>> GetUnsentMessages(DB.DataContext db)
+        private List<IntermediateStateMessage<TMessageType>> GetMessages(DB.DataContext db, bool direction)
         {
             var messages = db.MessageQueue.
-                Where(x => !x.Direction && x.IdMessageType == IdMessageType && (x.StateType == MessageStateType.NotProcessed || x.StateType == MessageStateType.RepeatWithControllerType)).
+                Where(x => x.Direction == direction && x.IdMessageType == IdMessageType && (x.StateType == DB.MessageStateType.NotProcessed || x.StateType == DB.MessageStateType.Repeat)).
                 ToList();
 
             var messagesUnserialized = messages.Select(x =>
@@ -129,7 +132,7 @@ namespace OnUtils.Application.Messaging
                 }
                 catch (Exception ex)
                 {
-                    return new IntermediateStateMessage<TMessageType>(null, x) { StateType = MessageStateType.Error, State = ex.Message, DateChange = DateTime.Now };
+                    return new IntermediateStateMessage<TMessageType>(null, x) { StateType = DB.MessageStateType.Error, State = ex.Message, DateChange = DateTime.Now };
                 }
             }).ToList();
 
@@ -139,12 +142,12 @@ namespace OnUtils.Application.Messaging
 
         #region Методы
         /// <summary>
-        /// Возвращает список активных обработчиков, работающих с типом сообщений сервиса.
+        /// Возвращает список активных компонентов, работающих с типом сообщений сервиса.
         /// </summary>
-        /// <seealso cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.MessageHandlersSettings"/>
-        protected List<IMessageHandler<TAppCoreSelfReference, TMessageType>> GetHandlers()
+        /// <seealso cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.MessageServicesComponentsSettings"/>
+        protected List<IMessageServiceComponent<TAppCoreSelfReference, TMessageType>> GetComponents()
         {
-            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetHandlersByMessageType<TMessageType>().ToList();
+            return AppCore.Get<MessagingManager<TAppCoreSelfReference>>().GetComponentsByMessageType<TMessageType>().ToList();
         }
 
         /// <summary>
@@ -156,17 +159,17 @@ namespace OnUtils.Application.Messaging
         {
             using (var db = new UnitOfWork<DB.MessageQueue>())
             {
-                return db.Repo1.Where(x => x.IdMessageType == IdMessageType && (x.StateType == MessageStateType.NotProcessed || x.StateType == MessageStateType.RepeatWithControllerType)).Count();
+                return db.Repo1.Where(x => x.IdMessageType == IdMessageType && (x.StateType == DB.MessageStateType.NotProcessed || x.StateType == DB.MessageStateType.Repeat)).Count();
             }
         }
         #endregion
 
         #region IInternalForTasks
-        void IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming()
+        void IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingReceive()
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
+            if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingReceive), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
             {
                 Debug.WriteLineNoLog($"Messaging: {type.FullName} task2 - restrict");
                 return;
@@ -180,33 +183,56 @@ namespace OnUtils.Application.Messaging
                 using (var db = this.CreateUnitOfWork())
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
                 {
-                    var handlers = GetHandlers().
-                    OfType<IMessageReceiver<TAppCoreSelfReference, TMessageType>>().
+                    var components = GetComponents().
+                    OfType<IIncomingMessageReceiver<TAppCoreSelfReference, TMessageType>>().
                     Select(x => new {
-                        Handler = x,
-                        IdTypeHandler = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                        Component = x,
+                        IdTypeComponent = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
                     }).
-                    OrderBy(x => x.Handler.OrderInPool).
+                    OrderBy(x => x.Component.OrderInPool).
                     ToList();
 
-                    foreach (var handlerInfo in handlers)
+                    foreach (var componentInfo in components)
                     {
                         try
                         {
-                            var messages = handlerInfo.Handler.Receive(this);
+                            var messages = componentInfo.Component.Receive(this);
                             if (messages != null && messages.Count > 0)
                             {
                                 int countAdded = 0;
                                 foreach (var message in messages)
                                 {
+                                    if (message == null) continue;
+
+                                    var stateType = DB.MessageStateType.NotProcessed;
+                                    switch(message.StateType)
+                                    {
+                                        case MessageStateType.Completed:
+                                            stateType = DB.MessageStateType.Complete;
+                                            break;
+
+                                        case MessageStateType.Error:
+                                            stateType = DB.MessageStateType.Error;
+                                            break;
+
+                                        case MessageStateType.NotHandled:
+                                            stateType = DB.MessageStateType.NotProcessed;
+                                            break;
+
+                                        case MessageStateType.Repeat:
+                                            stateType = DB.MessageStateType.Repeat;
+                                            break;
+
+                                    }
+
                                     var mess = new DB.MessageQueue()
                                     {
                                         IdMessageType = IdMessageType,
                                         Direction = true,
                                         State = message.State,
-                                        StateType = message.StateType,
+                                        StateType = stateType,
                                         DateCreate = DateTime.Now,
-                                        MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message.MessageBody),
+                                        MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message.Message),
                                     };
 
                                     db.MessageQueue.Add(mess);
@@ -252,7 +278,139 @@ namespace OnUtils.Application.Messaging
             finally
             {
                 Debug.WriteLineNoLog($"Messaging: {type.FullName} task2 - working end");
-                _executingFlags[nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncoming)] = 0;
+                _executingFlags[nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingReceive)] = 0;
+            }
+        }
+
+        void IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingHandle()
+        {
+            var type = GetType();
+
+            if (_executingFlags.AddOrUpdate(nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingHandle), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1)
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task 3 - restrict");
+                return;
+            }
+            Debug.WriteLineNoLog($"Messaging: {type.FullName} task 3 - working start");
+
+            int messagesAll = 0;
+            int messagesSent = 0;
+            int messagesErrors = 0;
+
+            try
+            {
+                using (var db = this.CreateUnitOfWork())
+                using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
+                {
+                    var messages = GetMessages(db, true);
+                    if (messages == null) return;
+
+                    messagesAll = messages.Count;
+
+                    OnBeforeExecuteOutcoming(messagesAll);
+
+                    var processedMessages = new List<IntermediateStateMessage<TMessageType>>();
+
+                    var time = new MeasureTime();
+                    foreach (var intermediateMessage in messages)
+                    {
+                        if (intermediateMessage.StateType == DB.MessageStateType.Error)
+                        {
+                            processedMessages.Add(intermediateMessage);
+                            continue;
+                        }
+
+                        var components = GetComponents().
+                            OfType<IIncomingMessageHandler<TAppCoreSelfReference, TMessageType>>().
+                            Select(x => new {
+                                Component = x,
+                                IdTypeComponent = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                            }).
+                            OrderBy(x => x.Component.OrderInPool).
+                            ToList();
+
+                        if (intermediateMessage.IdTypeComponent.HasValue)
+                        {
+                            components = components.Where(x => x.IdTypeComponent.HasValue && x.IdTypeComponent == intermediateMessage.IdTypeComponent).ToList();
+                        }
+
+                        foreach (var componentInfo in components)
+                        {
+                            try
+                            {
+                                var component = componentInfo.Component;
+                                var messageInfo = new MessageInfo<TMessageType>(intermediateMessage);
+                                if (component.Prepare(messageInfo, this))
+                                {
+                                    if (messageInfo.StateType == MessageStateType.NotHandled) messageInfo.StateType = MessageStateType.Completed;
+                                    intermediateMessage.DateChange = DateTime.Now;
+                                    switch (messageInfo.StateType)
+                                    {
+                                        case MessageStateType.Error:
+                                            intermediateMessage.StateType = DB.MessageStateType.Error;
+                                            intermediateMessage.State = messageInfo.State;
+                                            intermediateMessage.IdTypeComponent = null;
+                                            break;
+
+                                        case MessageStateType.Repeat:
+                                            intermediateMessage.StateType = DB.MessageStateType.Repeat;
+                                            intermediateMessage.State = messageInfo.State;
+                                            intermediateMessage.IdTypeComponent = componentInfo.IdTypeComponent;
+                                            break;
+
+                                        case MessageStateType.Completed:
+                                            intermediateMessage.StateType = DB.MessageStateType.Complete;
+                                            intermediateMessage.State = null;
+                                            intermediateMessage.IdTypeComponent = null;
+                                            break;
+                                    }
+                                    processedMessages.Add(intermediateMessage);
+                                    break;
+                                }
+                            }
+                            catch
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (time.Calculate(false).TotalSeconds >= 3)
+                        {
+                            db.SaveChanges();
+                            processedMessages.Clear();
+                            time.Start();
+                        }
+                    }
+
+                    if (processedMessages.Count > 0)
+                    {
+                        db.SaveChanges();
+                    }
+
+                    db.SaveChanges();
+                    scope.Commit();
+                }
+
+                if (messagesAll > 0)
+                {
+                    this.RegisterServiceState(messagesErrors == 0 ? ServiceStatus.RunningIdeal : ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Обработано - {messagesSent}. Ошибки обработки - {messagesErrors}.");
+                }
+
+                var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
+                if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
+                {
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Messaging.ServiceBase.ExecuteOutcoming: {0}", ex.GetMessageExtended());
+                this.RegisterServiceState(ServiceStatus.RunningWithErrors, $"Сообщений в очереди - {messagesAll}. Обработано - {messagesSent}. Ошибки обработки - {messagesErrors}.", ex);
+            }
+            finally
+            {
+                Debug.WriteLineNoLog($"Messaging: {type.FullName} task 3 - working end");
+                _executingFlags[nameof(IMessageServiceInternal<TAppCoreSelfReference>.PrepareIncomingHandle)] = 0;
             }
         }
 
@@ -277,7 +435,7 @@ namespace OnUtils.Application.Messaging
                 using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
                 {
                     _executingFlags[nameof(RegisterOutcomingMessage)] = 0;
-                    var messages = GetUnsentMessages(db);
+                    var messages = GetMessages(db, false);
                     if (messages == null) return;
 
                     messagesAll = messages.Count;
@@ -289,54 +447,54 @@ namespace OnUtils.Application.Messaging
                     var time = new MeasureTime();
                     foreach (var intermediateMessage in messages)
                     {
-                        if (intermediateMessage.StateType == MessageStateType.Error)
+                        if (intermediateMessage.StateType == DB.MessageStateType.Error)
                         {
                             processedMessages.Add(intermediateMessage);
                             continue;
                         }
 
-                        var handlers = GetHandlers().
-                            OfType<IMessageSender<TAppCoreSelfReference, TMessageType>>().
+                        var components = GetComponents().
+                            OfType<IOutcomingMessageSender<TAppCoreSelfReference, TMessageType>>().
                             Select(x => new {
-                                Handler = x,
-                                IdTypeHandler = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                                Component = x,
+                                IdTypeComponent = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
                             }).
-                            OrderBy(x => x.Handler.OrderInPool).
+                            OrderBy(x => x.Component.OrderInPool).
                             ToList();
 
-                        if (intermediateMessage.IdTypeHandler.HasValue)
+                        if (intermediateMessage.IdTypeComponent.HasValue)
                         {
-                            handlers = handlers.Where(x => x.IdTypeHandler.HasValue && x.IdTypeHandler == intermediateMessage.IdTypeHandler).ToList();
+                            components = components.Where(x => x.IdTypeComponent.HasValue && x.IdTypeComponent == intermediateMessage.IdTypeComponent).ToList();
                         }
 
-                        foreach (var handlerInfo in handlers)
+                        foreach (var componentInfo in components)
                         {
                             try
                             {
-                                var handler = handlerInfo.Handler;
-                                var handlerMessage = new HandlerMessage<TMessageType>(intermediateMessage);
-                                handler.Send(handlerMessage, this);
-                                if (handlerMessage.HandledState != HandlerMessageStateType.NotHandled)
+                                var component = componentInfo.Component;
+                                var messageInfo = new MessageInfo<TMessageType>(intermediateMessage);
+                                if (component.Send(messageInfo, this))
                                 {
+                                    if (messageInfo.StateType == MessageStateType.NotHandled) messageInfo.StateType = MessageStateType.Completed;
                                     intermediateMessage.DateChange = DateTime.Now;
-                                    switch (handlerMessage.HandledState)
+                                    switch (messageInfo.StateType)
                                     {
-                                        case HandlerMessageStateType.Error:
-                                            intermediateMessage.StateType = MessageStateType.Error;
-                                            intermediateMessage.State = handlerMessage.State;
-                                            intermediateMessage.IdTypeHandler = null;
+                                        case MessageStateType.Error:
+                                            intermediateMessage.StateType = DB.MessageStateType.Error;
+                                            intermediateMessage.State = messageInfo.State;
+                                            intermediateMessage.IdTypeComponent = null;
                                             break;
 
-                                        case HandlerMessageStateType.RepeatWithControllerType:
-                                            intermediateMessage.StateType = MessageStateType.RepeatWithControllerType;
-                                            intermediateMessage.State = handlerMessage.State;
-                                            intermediateMessage.IdTypeHandler = handlerInfo.IdTypeHandler;
+                                        case MessageStateType.Repeat:
+                                            intermediateMessage.StateType = DB.MessageStateType.Repeat;
+                                            intermediateMessage.State = messageInfo.State;
+                                            intermediateMessage.IdTypeComponent = componentInfo.IdTypeComponent;
                                             break;
 
-                                        case HandlerMessageStateType.Completed:
-                                            intermediateMessage.StateType = MessageStateType.Complete;
+                                        case MessageStateType.Completed:
+                                            intermediateMessage.StateType = DB.MessageStateType.Complete;
                                             intermediateMessage.State = null;
-                                            intermediateMessage.IdTypeHandler = null;
+                                            intermediateMessage.IdTypeComponent = null;
                                             break;
                                     }
                                     processedMessages.Add(intermediateMessage);

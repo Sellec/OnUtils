@@ -2,6 +2,8 @@
 
 namespace OnUtils.Application.Messaging
 {
+    using Messages;
+
     class IntermediateStateMessage<TMessageType> where TMessageType : MessageBase
     {
         internal IntermediateStateMessage(TMessageType message, DB.MessageQueue messageSource)
@@ -25,7 +27,7 @@ namespace OnUtils.Application.Messaging
             get;
         }
 
-        public MessageStateType StateType
+        public DB.MessageStateType StateType
         {
             get => MessageSource.StateType;
             set => MessageSource.StateType = value;
@@ -37,10 +39,10 @@ namespace OnUtils.Application.Messaging
             set => MessageSource.State = value;
         }
 
-        public int? IdTypeHandler
+        public int? IdTypeComponent
         {
-            get => MessageSource.IdTypeHandler;
-            set => MessageSource.IdTypeHandler = value;
+            get => MessageSource.IdTypeComponent;
+            set => MessageSource.IdTypeComponent = value;
         }
 
         public DateTime DateChange

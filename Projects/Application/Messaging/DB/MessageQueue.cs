@@ -25,7 +25,7 @@ namespace OnUtils.Application.Messaging.DB
 
         public string State { get; set; }
 
-        public int? IdTypeHandler { get; set; }
+        public int? IdTypeComponent { get; set; }
 
         public DateTime? DateChange { get; set; }
 

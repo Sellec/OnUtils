@@ -5,7 +5,7 @@
     [DateCreate]      DATETIME       CONSTRAINT [DF_MessageQueue_DateCreate] DEFAULT (getdate()) NOT NULL,
     [StateType]       TINYINT        CONSTRAINT [DF_MessageQueue_StateType] DEFAULT ((0)) NOT NULL,
     [State]           NVARCHAR (200) NULL,
-    [IdTypeHandler] INT            NULL,
+    [IdTypeComponent] INT            NULL,
     [DateChange]      DATETIME       NULL,
     [MessageInfo]     NVARCHAR (MAX) NULL,
     CONSTRAINT [PK_MessageQueue] PRIMARY KEY CLUSTERED ([IdQueue] ASC)

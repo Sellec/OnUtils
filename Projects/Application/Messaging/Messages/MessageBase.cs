@@ -1,4 +1,4 @@
-﻿namespace OnUtils.Application.Messaging
+﻿namespace OnUtils.Application.Messaging.Messages
 {
     /// <summary>
     /// Базовый класс сообщения. Все специфические типы сообщений сервисов должны наследоваться от него.

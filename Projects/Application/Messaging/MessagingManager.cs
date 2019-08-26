@@ -7,9 +7,10 @@ namespace OnUtils.Application.Messaging
 {
     using Architecture.AppCore;
     using Architecture.AppCore.DI;
-    using MessageHandlers;
+    using Components;
     using Journaling;
     using OnUtils.Types;
+    using Messages;
 
     /// <summary>
     /// Представляет менеджер, управляющий обменом сообщениями - уведомления, электронная почта, смс и прочее.
@@ -39,20 +40,20 @@ namespace OnUtils.Application.Messaging
             }
         }
 
-        private static MethodInfo _handlerCreateCall = null;
+        private static MethodInfo _componentCreateCall = null;
         private static ApplicationCore<TAppCoreSelfReference> _appCore = null;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private List<IMessageServiceInternal<TAppCoreSelfReference>> _services = new List<IMessageServiceInternal<TAppCoreSelfReference>>();
 
-        private object _activeHandlersSyncRoot = new object();
-        private List<IComponentTransient<TAppCoreSelfReference>> _activeHandlers = null;
-        private List<IComponentTransient<TAppCoreSelfReference>> _registeredHandlers = null;
+        private object _activeComponentsSyncRoot = new object();
+        private List<IComponentTransient<TAppCoreSelfReference>> _activeComponents = null;
+        private List<IComponentTransient<TAppCoreSelfReference>> _registeredComponents = null;
 
         static MessagingManager()
         {
-            _handlerCreateCall = typeof(MessagingManager<TAppCoreSelfReference>).GetMethod(nameof(InitHandler), BindingFlags.NonPublic | BindingFlags.Instance);
-            if (_handlerCreateCall == null) throw new TypeInitializationException(typeof(MessagingManager<TAppCoreSelfReference>).FullName, new Exception($"Ошибка поиска метода '{nameof(InitHandler)}'"));
+            _componentCreateCall = typeof(MessagingManager<TAppCoreSelfReference>).GetMethod(nameof(InitComponent), BindingFlags.NonPublic | BindingFlags.Instance);
+            if (_componentCreateCall == null) throw new TypeInitializationException(typeof(MessagingManager<TAppCoreSelfReference>).FullName, new Exception($"Ошибка поиска метода '{nameof(InitComponent)}'"));
         }
 
         /// <summary>
@@ -60,7 +61,7 @@ namespace OnUtils.Application.Messaging
         public MessagingManager()
         {
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl(this);
-            _registeredHandlers = new List<IComponentTransient<TAppCoreSelfReference>>();
+            _registeredComponents = new List<IComponentTransient<TAppCoreSelfReference>>();
         }
 
         #region CoreComponentBase
@@ -94,10 +95,16 @@ namespace OnUtils.Application.Messaging
         #endregion
 
         #region Методы
-        internal static void CallServiceIncoming(Type serviceType)
+        internal static void CallServiceIncomingHandle(Type serviceType)
         {
             var service = _appCore.Get<MessagingManager<TAppCoreSelfReference>>()._services.FirstOrDefault(x => x.GetType() == serviceType);
-            service?.PrepareIncoming();
+            service?.PrepareIncomingHandle();
+        }
+
+        internal static void CallServiceIncomingReceive(Type serviceType)
+        {
+            var service = _appCore.Get<MessagingManager<TAppCoreSelfReference>>()._services.FirstOrDefault(x => x.GetType() == serviceType);
+            service?.PrepareIncomingReceive();
         }
 
         internal static void CallServiceOutcoming(Type serviceType)
@@ -107,27 +114,27 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// Регистрирует новый обработчик сообщений.
+        /// Регистрирует новый компонент сервиса обработки сообщений.
         /// </summary>
-        public void RegisterHandler<TMessage>(IMessageHandler<TAppCoreSelfReference, TMessage> handler)
+        public void RegisterComponent<TMessage>(IMessageServiceComponent<TAppCoreSelfReference, TMessage> component)
             where TMessage : MessageBase, new()
         {
-            if (handler == null) return;
-            if (_registeredHandlers.Contains(handler)) return;
-            _registeredHandlers.Add(handler);
+            if (component == null) return;
+            if (_registeredComponents.Contains(component)) return;
+            _registeredComponents.Add(component);
         }
 
         /// <summary>
-        /// Возвращает список обработчиков, поддерживающих обмен сообщениями указанного типа <typeparamref name="TMessage"/>.
+        /// Возвращает список компонентов, поддерживающих обмен сообщениями указанного типа <typeparamref name="TMessage"/>.
         /// </summary>
-        public IEnumerable<IMessageHandler<TAppCoreSelfReference, TMessage>> GetHandlersByMessageType<TMessage>() where TMessage : MessageBase, new()
+        public IEnumerable<IMessageServiceComponent<TAppCoreSelfReference, TMessage>> GetComponentsByMessageType<TMessage>() where TMessage : MessageBase, new()
         {
-            lock (_activeHandlersSyncRoot)
-                if (_activeHandlers == null)
-                    UpdateHandlersFromSettings();
+            lock (_activeComponentsSyncRoot)
+                if (_activeComponents == null)
+                    UpdateComponentsFromSettings();
 
-            var active = _activeHandlers.OfType<IMessageHandler<TAppCoreSelfReference, TMessage>>();
-            var registered = _registeredHandlers.OfType<IMessageHandler<TAppCoreSelfReference, TMessage>>();
+            var active = _activeComponents.OfType<IMessageServiceComponent<TAppCoreSelfReference, TMessage>>();
+            var registered = _registeredComponents.OfType<IMessageServiceComponent<TAppCoreSelfReference, TMessage>>();
 
             return active.Union(registered);
         }
@@ -149,15 +156,15 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// Пересоздает текущий используемый список обработчиков с учетом настроек. Рекомендуется к использованию в случае изменения настроек.
+        /// Пересоздает текущий используемый список компонентов с учетом настроек. Рекомендуется к использованию в случае изменения настроек.
         /// </summary>
-        /// <see cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.MessageHandlersSettings"/>
-        public void UpdateHandlersFromSettings()
+        /// <see cref="Configuration.CoreConfiguration{TAppCoreSelfReference}.MessageServicesComponentsSettings"/>
+        public void UpdateComponentsFromSettings()
         {
-            lock (_activeHandlersSyncRoot)
+            lock (_activeComponentsSyncRoot)
             {
-                if (_activeHandlers != null)
-                    _activeHandlers.ForEach(x =>
+                if (_activeComponents != null)
+                    _activeComponents.ForEach(x =>
                     {
                         try
                         {
@@ -165,55 +172,55 @@ namespace OnUtils.Application.Messaging
                         }
                         catch (Exception ex)
                         {
-                            this.RegisterEvent(EventType.Error, "Ошибка при закрытии обработчика", $"Возникла ошибка при выгрузке обработчика типа '{x.GetType().FullName}'.", null, ex);
+                            this.RegisterEvent(EventType.Error, "Ошибка при закрытии компонента", $"Возникла ошибка при выгрузке компонента типа '{x.GetType().FullName}'.", null, ex);
                         }
                     });
 
-                _activeHandlers = new List<IComponentTransient<TAppCoreSelfReference>>();
+                _activeComponents = new List<IComponentTransient<TAppCoreSelfReference>>();
 
-                var handlersSettings = AppCore.AppConfig.MessageHandlersSettings;
-                if (handlersSettings != null)
+                var settings = AppCore.AppConfig.MessageServicesComponentsSettings;
+                if (settings != null)
                 {
                     var types = AppCore.
                         GetQueryTypes().
-                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericInterface(x, typeof(IMessageHandler<,>)) }).
+                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericInterface(x, typeof(IMessageServiceComponent<,>)) }).
                         Where(x => x.Extracted != null).
                         Select(x => new { x.Type, MessageType = x.Extracted.GetGenericArguments()[1] }).
                         ToList();
 
-                    foreach (var setting in handlersSettings)
+                    foreach (var setting in settings)
                     {
-                        var handlerType = types.FirstOrDefault(x => x.Type.FullName == setting.TypeFullName);
-                        if (handlerType == null)
+                        var type = types.FirstOrDefault(x => x.Type.FullName == setting.TypeFullName);
+                        if (type == null)
                         {
-                            this.RegisterEvent(EventType.Error, "Ошибка при поиске обработчика", $"Не найден тип обработчика из настроек - '{setting.TypeFullName}'. Для стирания старых настроек следует зайти в настройку обработчиков и сделать сохранение.");
+                            this.RegisterEvent(EventType.Error, "Ошибка при поиске компонента", $"Не найден тип компонента из настроек - '{setting.TypeFullName}'. Для стирания старых настроек следует зайти в настройку компонентов и сделать сохранение.");
                             continue;
                         }
 
                         try
                         {
-                            var handler = AppCore.Create<IComponentTransient<TAppCoreSelfReference>>(handlerType.Type);
-                            var initResult = (bool)_handlerCreateCall.MakeGenericMethod(handlerType.MessageType).Invoke(this, new object[] { handler, setting.SettingsSerialized });
+                            var instance = AppCore.Create<IComponentTransient<TAppCoreSelfReference>>(type.Type);
+                            var initResult = (bool)_componentCreateCall.MakeGenericMethod(type.MessageType).Invoke(this, new object[] { instance, setting.SettingsSerialized });
                             if (!initResult)
                             {
-                                this.RegisterEvent(EventType.Error, "Отказ инициализации обработчика", $"Обработчик типа '{setting.TypeFullName}' ('{handler.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
+                                this.RegisterEvent(EventType.Error, "Отказ инициализации компонента", $"Компонент типа '{setting.TypeFullName}' ('{instance.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
                                 continue;
                             }
 
-                            _activeHandlers.Add(handler);
+                            _activeComponents.Add(instance);
                         }
                         catch (Exception ex)
                         {
-                            this.RegisterEvent(EventType.Error, "Ошибка создания обработчика", $"Во время создания и инициализации обработчика типа '{setting.TypeFullName}' возникла неожиданная ошибка.", null, ex.InnerException);
+                            this.RegisterEvent(EventType.Error, "Ошибка создания компонента", $"Во время создания и инициализации компонента типа '{setting.TypeFullName}' возникла неожиданная ошибка.", null, ex.InnerException);
                         }
                     }
                 }
             }
         }
 
-        private bool InitHandler<TMessage>(IMessageHandler<TAppCoreSelfReference, TMessage> handler, string serializedSettings) where TMessage : MessageBase, new()
+        private bool InitComponent<TMessage>(IMessageServiceComponent<TAppCoreSelfReference, TMessage> instance, string serializedSettings) where TMessage : MessageBase, new()
         {
-            return handler.Init(serializedSettings);
+            return instance.Init(serializedSettings);
         }
         #endregion
     }
