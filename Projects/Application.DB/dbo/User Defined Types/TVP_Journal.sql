@@ -5,5 +5,10 @@
     [EventInfo]         NVARCHAR (300) DEFAULT ('') NOT NULL,
     [EventInfoDetailed] NVARCHAR (MAX) NULL,
     [ExceptionDetailed] NVARCHAR (MAX) NULL,
-    [DateEvent]         DATETIME       DEFAULT (getdate()) NOT NULL);
+    [DateEvent]         DATETIME       DEFAULT (getdate()) NOT NULL,
+    [IdUser]            INT            NULL,
+    [IdRelatedItem]     INT            NULL,
+    [IdRelatedItemType] NCHAR (10)     NULL);
+
+
 
