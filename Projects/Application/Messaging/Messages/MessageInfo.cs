@@ -24,7 +24,9 @@ namespace OnUtils.Application.Messaging.Messages
         /// <param name="state">См. <see cref="State"/>.</param>
         public MessageInfo(TMessage message, MessageStateType messageState = MessageStateType.NotHandled, string state = null)
         {
-
+            Message = message;
+            StateType = messageState;
+            State = state;
         }
 
         /// <summary>

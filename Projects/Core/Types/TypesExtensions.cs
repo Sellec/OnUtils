@@ -33,7 +33,7 @@ namespace System
         /// </summary>
         public static List<Type> GetBaseTypes(this Type type)
         {
-            if (type == null || type.BaseType == typeof(object) || !type.BaseType.IsClass) return new List<Type>();
+            if (type == null || type.BaseType == typeof(object) || type.BaseType == null || !type.BaseType.IsClass) return new List<Type>();
 
             var baseTypes = type.BaseType.GetBaseTypes();
             baseTypes.Insert(0, type.BaseType);

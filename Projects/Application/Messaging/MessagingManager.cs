@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace OnUtils.Application.Messaging
 {
@@ -9,15 +8,15 @@ namespace OnUtils.Application.Messaging
     using Architecture.AppCore.DI;
     using Components;
     using Journaling;
-    using OnUtils.Types;
     using Messages;
+    using OnUtils.Types;
 
     /// <summary>
     /// Представляет менеджер, управляющий обменом сообщениями - уведомления, электронная почта, смс и прочее.
     /// </summary>
-    public sealed class MessagingManager<TAppCoreSelfReference> : 
-        CoreComponentBase<TAppCoreSelfReference>, 
-        IComponentSingleton<TAppCoreSelfReference>, 
+    public sealed class MessagingManager<TAppCoreSelfReference> :
+        CoreComponentBase<TAppCoreSelfReference>,
+        IComponentSingleton<TAppCoreSelfReference>,
         IAutoStart,
         ITypedJournalComponent<MessagingManager<TAppCoreSelfReference>>
         where TAppCoreSelfReference : ApplicationCore<TAppCoreSelfReference>
@@ -40,7 +39,6 @@ namespace OnUtils.Application.Messaging
             }
         }
 
-        private static MethodInfo _componentCreateCall = null;
         private static ApplicationCore<TAppCoreSelfReference> _appCore = null;
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
@@ -49,12 +47,6 @@ namespace OnUtils.Application.Messaging
         private object _activeComponentsSyncRoot = new object();
         private List<IComponentTransient<TAppCoreSelfReference>> _activeComponents = null;
         private List<IComponentTransient<TAppCoreSelfReference>> _registeredComponents = null;
-
-        static MessagingManager()
-        {
-            _componentCreateCall = typeof(MessagingManager<TAppCoreSelfReference>).GetMethod(nameof(InitComponent), BindingFlags.NonPublic | BindingFlags.Instance);
-            if (_componentCreateCall == null) throw new TypeInitializationException(typeof(MessagingManager<TAppCoreSelfReference>).FullName, new Exception($"Ошибка поиска метода '{nameof(InitComponent)}'"));
-        }
 
         /// <summary>
         /// </summary>
@@ -116,25 +108,44 @@ namespace OnUtils.Application.Messaging
         /// <summary>
         /// Регистрирует новый компонент сервиса обработки сообщений.
         /// </summary>
-        public void RegisterComponent<TMessage>(IMessageServiceComponent<TAppCoreSelfReference, TMessage> component)
+        public void RegisterComponent<TMessage>(MessageServiceComponent<TAppCoreSelfReference, TMessage> component)
             where TMessage : MessageBase, new()
         {
             if (component == null) return;
-            if (_registeredComponents.Contains(component)) return;
+            if (_registeredComponents.Contains(component) || (_activeComponents != null && _activeComponents.Contains(component))) return;
+
+            try
+            {
+                if (component.GetState() == CoreComponentState.None && component is IComponentStartable<TAppCoreSelfReference> startableComponent)
+                {
+                    startableComponent.Start(AppCore);
+                    var allowed = ((IInternal)component).OnStartComponent();
+                    if (!allowed)
+                    {
+                        this.RegisterEvent(EventType.Error, "Отказ инициализации компонента", $"Компонент типа ('{component.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.RegisterEvent(EventType.Error, "Ошибка запуска компонента", $"Во время инициализации компонента типа '{component.GetType().FullName}' возникла неожиданная ошибка.", null, ex.InnerException);
+            }
+
             _registeredComponents.Add(component);
         }
 
         /// <summary>
         /// Возвращает список компонентов, поддерживающих обмен сообщениями указанного типа <typeparamref name="TMessage"/>.
         /// </summary>
-        public IEnumerable<IMessageServiceComponent<TAppCoreSelfReference, TMessage>> GetComponentsByMessageType<TMessage>() where TMessage : MessageBase, new()
+        public IEnumerable<MessageServiceComponent<TAppCoreSelfReference, TMessage>> GetComponentsByMessageType<TMessage>() where TMessage : MessageBase, new()
         {
             lock (_activeComponentsSyncRoot)
                 if (_activeComponents == null)
                     UpdateComponentsFromSettings();
 
-            var active = _activeComponents.OfType<IMessageServiceComponent<TAppCoreSelfReference, TMessage>>();
-            var registered = _registeredComponents.OfType<IMessageServiceComponent<TAppCoreSelfReference, TMessage>>();
+            var active = _activeComponents.OfType<MessageServiceComponent<TAppCoreSelfReference, TMessage>>();
+            var registered = _registeredComponents.OfType<MessageServiceComponent<TAppCoreSelfReference, TMessage>>();
 
             return active.Union(registered);
         }
@@ -183,7 +194,7 @@ namespace OnUtils.Application.Messaging
                 {
                     var types = AppCore.
                         GetQueryTypes().
-                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericInterface(x, typeof(IMessageServiceComponent<,>)) }).
+                        Select(x => new { Type = x, Extracted = TypeHelpers.ExtractGenericType(x, typeof(MessageServiceComponent<,>)) }).
                         Where(x => x.Extracted != null).
                         Select(x => new { x.Type, MessageType = x.Extracted.GetGenericArguments()[1] }).
                         ToList();
@@ -199,15 +210,20 @@ namespace OnUtils.Application.Messaging
 
                         try
                         {
-                            var instance = AppCore.Create<IComponentTransient<TAppCoreSelfReference>>(type.Type);
-                            var initResult = (bool)_componentCreateCall.MakeGenericMethod(type.MessageType).Invoke(this, new object[] { instance, setting.SettingsSerialized });
-                            if (!initResult)
+                            var allowed = true;
+                            var instance = AppCore.Create<IComponentTransient<TAppCoreSelfReference>>(type.Type, component =>
+                            {
+                                ((IInternal)component).SerializedSettings = setting.SettingsSerialized;
+                                allowed = ((IInternal)component).OnStartComponent();
+                            });
+                            if (allowed)
+                            {
+                                _activeComponents.Add(instance);
+                            }
+                            else
                             {
                                 this.RegisterEvent(EventType.Error, "Отказ инициализации компонента", $"Компонент типа '{setting.TypeFullName}' ('{instance.GetType().FullName}') вернул отказ инициализации. См. журналы ошибок для поиска возможной информации.");
-                                continue;
                             }
-
-                            _activeComponents.Add(instance);
                         }
                         catch (Exception ex)
                         {
@@ -217,11 +233,7 @@ namespace OnUtils.Application.Messaging
                 }
             }
         }
-
-        private bool InitComponent<TMessage>(IMessageServiceComponent<TAppCoreSelfReference, TMessage> instance, string serializedSettings) where TMessage : MessageBase, new()
-        {
-            return instance.Init(serializedSettings);
-        }
         #endregion
     }
 }
+
