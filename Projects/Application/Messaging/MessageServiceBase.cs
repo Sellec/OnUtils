@@ -67,6 +67,12 @@ namespace OnUtils.Application.Messaging
             TasksManager.SetTask(TasksOutcomingSend + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
             TasksManager.SetTask(TasksIncomingReceive + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingReceive(type));
             TasksManager.SetTask(TasksIncomingHandle + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
+
+            _executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            TasksManager.SetTask(TasksOutcomingSend + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
+
+            _executingFlags.AddOrUpdate(nameof(RegisterIncomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
         }
 
         /// <summary>
@@ -127,7 +133,7 @@ namespace OnUtils.Application.Messaging
         }
 
         /// <summary>
-        /// Регистрирует сообщение <paramref name="message"/> как входящее. Оно поступит в обработку в компоненты <see cref="IIncomingMessageHandler{TAppCoreSelfReference, TMessage}"/>.
+        /// Регистрирует сообщение <paramref name="message"/> как входящее. Оно поступит в обработку в компоненты <see cref="IncomingMessageHandler{TAppCoreSelfReference, TMessage}"/>.
         /// </summary>
         /// <returns>Возвращает true в случае успеха и false в случае ошибки во время регистрации сообщения.</returns>
         [ApiReversible]
@@ -325,7 +331,7 @@ namespace OnUtils.Application.Messaging
                 var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
                 if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
                 {
-                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Сообщений нет, сервис работает без ошибок.");
                 }
             }
             catch (Exception ex)
@@ -435,7 +441,7 @@ namespace OnUtils.Application.Messaging
                 var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
                 if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
                 {
-                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Сообщений нет, сервис работает без ошибок.");
                 }
             }
             catch (Exception ex)
@@ -462,33 +468,25 @@ namespace OnUtils.Application.Messaging
             try
             {
                 using (var db = this.CreateUnitOfWork())
-                using (var scope = db.CreateScope(TransactionScopeOption.Suppress)) // Здесь Suppress вместо RequiresNew, т.к. весь процесс отправки занимает много времени и блокировать таблицу нельзя.
+                using (var scope = db.CreateScope(TransactionScopeOption.Suppress))
                 {
                     var messages = GetMessages(db, true);
-                    if (messages == null) return;
+                    if (messages.IsNullOrEmpty()) return;
 
                     messagesAll = messages.Count;
 
-                    var processedMessages = new List<IntermediateStateMessage<TMessageType>>();
+                    var components = GetComponents().
+                        OfType<IncomingMessageHandler<TAppCoreSelfReference, TMessageType>>().
+                        Select(x => new {
+                            Component = x,
+                            IdTypeComponent = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
+                        }).
+                        OrderBy(x => ((IPoolObjectOrdered)x.Component).OrderInPool).
+                        ToList();
 
-                    var time = new MeasureTime();
                     foreach (var intermediateMessage in messages)
                     {
-                        if (intermediateMessage.StateType == DB.MessageStateType.Error)
-                        {
-                            processedMessages.Add(intermediateMessage);
-                            continue;
-                        }
-
-                        var components = GetComponents().
-                            OfType<IncomingMessageHandler<TAppCoreSelfReference, TMessageType>>().
-                            Select(x => new {
-                                Component = x,
-                                IdTypeComponent = ItemTypeFactory.GetItemType(x.GetType())?.IdItemType
-                            }).
-                            OrderBy(x => ((IPoolObjectOrdered)x.Component).OrderInPool).
-                            ToList();
-
+                        var componentsForMessage = components;
                         if (intermediateMessage.IdTypeComponent.HasValue)
                         {
                             components = components.Where(x => x.IdTypeComponent.HasValue && x.IdTypeComponent == intermediateMessage.IdTypeComponent).ToList();
@@ -524,7 +522,7 @@ namespace OnUtils.Application.Messaging
                                             intermediateMessage.IdTypeComponent = null;
                                             break;
                                     }
-                                    processedMessages.Add(intermediateMessage);
+                                    db.SaveChanges();
                                     break;
                                 }
                             }
@@ -533,22 +531,7 @@ namespace OnUtils.Application.Messaging
                                 continue;
                             }
                         }
-
-                        if (time.Calculate(false).TotalSeconds >= 3)
-                        {
-                            db.SaveChanges();
-                            processedMessages.Clear();
-                            time.Start();
-                        }
                     }
-
-                    if (processedMessages.Count > 0)
-                    {
-                        db.SaveChanges();
-                    }
-
-                    db.SaveChanges();
-                    scope.Commit();
                 }
 
                 if (messagesAll > 0)
@@ -559,7 +542,7 @@ namespace OnUtils.Application.Messaging
                 var service = AppCore.Get<Monitor<TAppCoreSelfReference>>().GetService(ServiceID);
                 if (service != null && (DateTime.Now - service.LastDateEvent).TotalHours >= 1)
                 {
-                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Писем нет, сервис работает без ошибок.");
+                    this.RegisterServiceState(ServiceStatus.RunningIdeal, $"Сообщений нет, сервис работает без ошибок.");
                 }
             }
             catch (Exception ex)
