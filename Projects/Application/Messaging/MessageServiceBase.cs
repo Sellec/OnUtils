@@ -379,7 +379,7 @@ namespace OnUtils.Application.Messaging
                                     if (message == null) continue;
 
                                     var stateType = DB.MessageStateType.NotProcessed;
-                                    switch(message.StateType)
+                                    switch (message.StateType)
                                     {
                                         case MessageStateType.Completed:
                                             stateType = DB.MessageStateType.Complete;
@@ -423,8 +423,95 @@ namespace OnUtils.Application.Messaging
                                 db.SaveChanges();
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
+                            continue;
+                        }
+
+                        try
+                        {
+                            while (true)
+                            {
+                                var message = componentInfo.Component.OnBeginReceive(this);
+                                if (message == null) break;
+
+                                DB.MessageQueue queueMessage = null;
+
+                                var queueState = DB.MessageStateType.NotProcessed;
+                                switch (message.StateType)
+                                {
+                                    case MessageStateType.Completed:
+                                        queueState = DB.MessageStateType.Complete;
+                                        break;
+
+                                    case MessageStateType.Error:
+                                        queueState = DB.MessageStateType.Error;
+                                        break;
+
+                                    case MessageStateType.NotHandled:
+                                        queueState = DB.MessageStateType.NotProcessed;
+                                        break;
+
+                                    case MessageStateType.Repeat:
+                                        queueState = DB.MessageStateType.Repeat;
+                                        break;
+
+                                }
+
+                                try
+                                {
+                                    var mess = new DB.MessageQueue()
+                                    {
+                                        IdMessageType = IdMessageType,
+                                        Direction = true,
+                                        State = message.State,
+                                        StateType = DB.MessageStateType.IntermediateAdded,
+                                        DateCreate = DateTime.Now,
+                                        MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message.Message),
+                                    };
+
+                                    db.MessageQueue.Add(mess);
+                                    db.SaveChanges();
+
+                                    queueMessage = mess;
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка регистрации сообщения после '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка регистрации сообщения после вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
+                                    try
+                                    {
+                                        componentInfo.Component.OnEndReceive(false, message, this);
+                                    }
+                                    catch (Exception ex2)
+                                    {
+                                        this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}' после ошибки регистрации сообщения.", ex2);
+                                    }
+                                    continue;
+                                }
+
+                                try
+                                {
+                                    var endReceiveResult = componentInfo.Component.OnEndReceive(true, message, this);
+                                    if (endReceiveResult)
+                                    {
+                                        queueMessage.StateType = queueState;
+                                    }
+                                    else
+                                    {
+                                        db.MessageQueue.Delete(queueMessage);
+                                    }
+                                    db.SaveChanges();
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}' после успешной регистрации сообщения.", ex);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
                             continue;
                         }
                     }
