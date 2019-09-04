@@ -1,19 +1,18 @@
-﻿using OnUtils.Tasks;
+﻿using OnUtils.Architecture.ObjectPool;
+using OnUtils.Tasks;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Transactions;
-using OnUtils.Architecture.ObjectPool;
 
 namespace OnUtils.Application.Messaging
 {
     using Architecture.AppCore;
+    using Components;
     using Data;
     using Items;
-    using Components;
-    using ServiceMonitor;
     using Messages;
+    using ServiceMonitor;
 
     /// <summary>
     /// Предпочтительная базовая реализация сервиса обработки сообщений для приложения.
@@ -33,7 +32,7 @@ namespace OnUtils.Application.Messaging
         private readonly string TasksIncomingReceive;
         private readonly string TasksIncomingHandle;
 
-        private ConcurrentDictionary<string, int> _executingFlags = new ConcurrentDictionary<string, int>();
+        private Types.ConcurrentFlagLocker<string> _executingFlags = new Types.ConcurrentFlagLocker<string>();
 
         /// <summary>
         /// Создает новый экземпляр сервиса.
@@ -68,10 +67,10 @@ namespace OnUtils.Application.Messaging
             TasksManager.SetTask(TasksIncomingReceive + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingReceive(type));
             TasksManager.SetTask(TasksIncomingHandle + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
 
-            _executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            _executingFlags.TryLock(nameof(RegisterOutcomingMessage));
             TasksManager.SetTask(TasksOutcomingSend + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
 
-            _executingFlags.AddOrUpdate(nameof(RegisterIncomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            _executingFlags.TryLock(nameof(RegisterIncomingMessage));
             TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
         }
 
@@ -116,7 +115,7 @@ namespace OnUtils.Application.Messaging
 
                     db.MessageQueue.Add(mess);
                     db.SaveChanges();
-                    if (_executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) == 1)
+                    if (_executingFlags.TryLock(nameof(RegisterOutcomingMessage)))
                     {
                         var type = GetType();
                         TasksManager.SetTask(TasksOutcomingSend + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
@@ -154,7 +153,7 @@ namespace OnUtils.Application.Messaging
 
                     db.MessageQueue.Add(mess);
                     db.SaveChanges();
-                    if (_executingFlags.AddOrUpdate(nameof(RegisterIncomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) == 1)
+                    if (_executingFlags.TryLock(nameof(RegisterIncomingMessage)))
                     {
                         var type = GetType();
                         TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
@@ -222,8 +221,8 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksOutcomingSend, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
-            _executingFlags[nameof(RegisterOutcomingMessage)] = 0;
+            if (!_executingFlags.TryLock(TasksOutcomingSend)) return;
+            _executingFlags.ReleaseLock(nameof(RegisterOutcomingMessage));
 
             int messagesAll = 0;
             int messagesSent = 0;
@@ -340,7 +339,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksOutcomingSend] = 0;
+                _executingFlags.ReleaseLock(TasksOutcomingSend);
             }
         }
 
@@ -348,7 +347,7 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksIncomingReceive, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
+            if (!_executingFlags.TryLock(TasksIncomingReceive)) return;
 
             int messagesReceived = 0;
 
@@ -537,7 +536,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksIncomingReceive] = 0;
+                _executingFlags.ReleaseLock(TasksIncomingReceive);
             }
         }
 
@@ -545,8 +544,8 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksIncomingHandle, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
-            _executingFlags[nameof(RegisterIncomingMessage)] = 0;
+            if (_executingFlags.TryLock(TasksIncomingHandle)) return;
+            _executingFlags.ReleaseLock(nameof(RegisterIncomingMessage));
 
             int messagesAll = 0;
             int messagesSent = 0;
@@ -638,7 +637,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksIncomingHandle] = 0;
+                _executingFlags.ReleaseLock(TasksIncomingHandle);
             }
         }
 
