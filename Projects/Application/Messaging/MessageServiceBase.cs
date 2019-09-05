@@ -60,6 +60,7 @@ namespace OnUtils.Application.Messaging
         /// </summary>
         protected sealed override void OnStart()
         {
+            AppCore.Get<Journaling.JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped(GetType(), ServiceName);
             this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
 
             var type = GetType();
@@ -72,6 +73,8 @@ namespace OnUtils.Application.Messaging
 
             _executingFlags.TryLock(nameof(RegisterIncomingMessage));
             TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
+
+            OnServiceStart();
         }
 
         /// <summary>
@@ -89,6 +92,24 @@ namespace OnUtils.Application.Messaging
 
             TasksManager.RemoveTask(TasksIncomingHandle + "_minutely1");
             TasksManager.RemoveTask(TasksIncomingHandle + "_immediately");
+
+            OnServiceStop();
+        }
+
+        /// <summary>
+        /// Вызывается при запуске сервиса.
+        /// </summary>
+        protected virtual void OnServiceStart()
+        {
+
+        }
+
+        /// <summary>
+        /// Вызывается при остановке сервиса.
+        /// </summary>
+        protected virtual void OnServiceStop()
+        {
+
         }
         #endregion
 
