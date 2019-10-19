@@ -1,19 +1,18 @@
-﻿using OnUtils.Tasks;
+﻿using OnUtils.Architecture.ObjectPool;
+using OnUtils.Tasks;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Transactions;
-using OnUtils.Architecture.ObjectPool;
 
 namespace OnUtils.Application.Messaging
 {
     using Architecture.AppCore;
+    using Components;
     using Data;
     using Items;
-    using Components;
-    using ServiceMonitor;
     using Messages;
+    using ServiceMonitor;
 
     /// <summary>
     /// Предпочтительная базовая реализация сервиса обработки сообщений для приложения.
@@ -33,7 +32,7 @@ namespace OnUtils.Application.Messaging
         private readonly string TasksIncomingReceive;
         private readonly string TasksIncomingHandle;
 
-        private ConcurrentDictionary<string, int> _executingFlags = new ConcurrentDictionary<string, int>();
+        private Types.ConcurrentFlagLocker<string> _executingFlags = new Types.ConcurrentFlagLocker<string>();
 
         /// <summary>
         /// Создает новый экземпляр сервиса.
@@ -61,6 +60,7 @@ namespace OnUtils.Application.Messaging
         /// </summary>
         protected sealed override void OnStart()
         {
+            AppCore.Get<Journaling.JournalingManager<TAppCoreSelfReference>>().RegisterJournalTyped(GetType(), ServiceName);
             this.RegisterServiceState(ServiceStatus.RunningIdeal, "Сервис запущен.");
 
             var type = GetType();
@@ -68,11 +68,13 @@ namespace OnUtils.Application.Messaging
             TasksManager.SetTask(TasksIncomingReceive + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingReceive(type));
             TasksManager.SetTask(TasksIncomingHandle + "_minutely1", Cron.MinuteInterval(1), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
 
-            _executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            _executingFlags.TryLock(nameof(RegisterOutcomingMessage));
             TasksManager.SetTask(TasksOutcomingSend + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
 
-            _executingFlags.AddOrUpdate(nameof(RegisterIncomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1));
+            _executingFlags.TryLock(nameof(RegisterIncomingMessage));
             TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
+
+            OnServiceStart();
         }
 
         /// <summary>
@@ -90,6 +92,24 @@ namespace OnUtils.Application.Messaging
 
             TasksManager.RemoveTask(TasksIncomingHandle + "_minutely1");
             TasksManager.RemoveTask(TasksIncomingHandle + "_immediately");
+
+            OnServiceStop();
+        }
+
+        /// <summary>
+        /// Вызывается при запуске сервиса.
+        /// </summary>
+        protected virtual void OnServiceStart()
+        {
+
+        }
+
+        /// <summary>
+        /// Вызывается при остановке сервиса.
+        /// </summary>
+        protected virtual void OnServiceStop()
+        {
+
         }
         #endregion
 
@@ -116,7 +136,7 @@ namespace OnUtils.Application.Messaging
 
                     db.MessageQueue.Add(mess);
                     db.SaveChanges();
-                    if (_executingFlags.AddOrUpdate(nameof(RegisterOutcomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) == 1)
+                    if (_executingFlags.TryLock(nameof(RegisterOutcomingMessage)))
                     {
                         var type = GetType();
                         TasksManager.SetTask(TasksOutcomingSend + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceOutcoming(type));
@@ -154,7 +174,7 @@ namespace OnUtils.Application.Messaging
 
                     db.MessageQueue.Add(mess);
                     db.SaveChanges();
-                    if (_executingFlags.AddOrUpdate(nameof(RegisterIncomingMessage), 1, (k, o) => Math.Min(int.MaxValue, o + 1)) == 1)
+                    if (_executingFlags.TryLock(nameof(RegisterIncomingMessage)))
                     {
                         var type = GetType();
                         TasksManager.SetTask(TasksIncomingHandle + "_immediately", DateTime.Now.AddSeconds(5), () => MessagingManager<TAppCoreSelfReference>.CallServiceIncomingHandle(type));
@@ -222,8 +242,8 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksOutcomingSend, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
-            _executingFlags[nameof(RegisterOutcomingMessage)] = 0;
+            if (!_executingFlags.TryLock(TasksOutcomingSend)) return;
+            _executingFlags.ReleaseLock(nameof(RegisterOutcomingMessage));
 
             int messagesAll = 0;
             int messagesSent = 0;
@@ -340,7 +360,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksOutcomingSend] = 0;
+                _executingFlags.ReleaseLock(TasksOutcomingSend);
             }
         }
 
@@ -348,7 +368,7 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksIncomingReceive, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
+            if (!_executingFlags.TryLock(TasksIncomingReceive)) return;
 
             int messagesReceived = 0;
 
@@ -379,7 +399,7 @@ namespace OnUtils.Application.Messaging
                                     if (message == null) continue;
 
                                     var stateType = DB.MessageStateType.NotProcessed;
-                                    switch(message.StateType)
+                                    switch (message.StateType)
                                     {
                                         case MessageStateType.Completed:
                                             stateType = DB.MessageStateType.Complete;
@@ -423,8 +443,95 @@ namespace OnUtils.Application.Messaging
                                 db.SaveChanges();
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
+                            continue;
+                        }
+
+                        try
+                        {
+                            while (true)
+                            {
+                                var message = componentInfo.Component.OnBeginReceive(this);
+                                if (message == null) break;
+
+                                DB.MessageQueue queueMessage = null;
+
+                                var queueState = DB.MessageStateType.NotProcessed;
+                                switch (message.StateType)
+                                {
+                                    case MessageStateType.Completed:
+                                        queueState = DB.MessageStateType.Complete;
+                                        break;
+
+                                    case MessageStateType.Error:
+                                        queueState = DB.MessageStateType.Error;
+                                        break;
+
+                                    case MessageStateType.NotHandled:
+                                        queueState = DB.MessageStateType.NotProcessed;
+                                        break;
+
+                                    case MessageStateType.Repeat:
+                                        queueState = DB.MessageStateType.Repeat;
+                                        break;
+
+                                }
+
+                                try
+                                {
+                                    var mess = new DB.MessageQueue()
+                                    {
+                                        IdMessageType = IdMessageType,
+                                        Direction = true,
+                                        State = message.State,
+                                        StateType = DB.MessageStateType.IntermediateAdded,
+                                        DateCreate = DateTime.Now,
+                                        MessageInfo = Newtonsoft.Json.JsonConvert.SerializeObject(message.Message),
+                                    };
+
+                                    db.MessageQueue.Add(mess);
+                                    db.SaveChanges();
+
+                                    queueMessage = mess;
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка регистрации сообщения после '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка регистрации сообщения после вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
+                                    try
+                                    {
+                                        componentInfo.Component.OnEndReceive(false, message, this);
+                                    }
+                                    catch (Exception ex2)
+                                    {
+                                        this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}' после ошибки регистрации сообщения.", ex2);
+                                    }
+                                    continue;
+                                }
+
+                                try
+                                {
+                                    var endReceiveResult = componentInfo.Component.OnEndReceive(true, message, this);
+                                    if (endReceiveResult)
+                                    {
+                                        queueMessage.StateType = queueState;
+                                    }
+                                    else
+                                    {
+                                        db.MessageQueue.Delete(queueMessage);
+                                    }
+                                    db.SaveChanges();
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}' после успешной регистрации сообщения.", ex);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.RegisterServiceEvent(Journaling.EventType.Error, $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}'", $"Ошибка вызова '{nameof(componentInfo.Component.OnBeginReceive)}' для компонента '{componentInfo?.Component?.GetType()?.FullName}'.", ex);
                             continue;
                         }
                     }
@@ -450,7 +557,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksIncomingReceive] = 0;
+                _executingFlags.ReleaseLock(TasksIncomingReceive);
             }
         }
 
@@ -458,8 +565,8 @@ namespace OnUtils.Application.Messaging
         {
             var type = GetType();
 
-            if (_executingFlags.AddOrUpdate(TasksIncomingHandle, 1, (k, o) => Math.Min(int.MaxValue, o + 1)) > 1) return;
-            _executingFlags[nameof(RegisterIncomingMessage)] = 0;
+            if (_executingFlags.TryLock(TasksIncomingHandle)) return;
+            _executingFlags.ReleaseLock(nameof(RegisterIncomingMessage));
 
             int messagesAll = 0;
             int messagesSent = 0;
@@ -551,7 +658,7 @@ namespace OnUtils.Application.Messaging
             }
             finally
             {
-                _executingFlags[TasksIncomingHandle] = 0;
+                _executingFlags.ReleaseLock(TasksIncomingHandle);
             }
         }
 
