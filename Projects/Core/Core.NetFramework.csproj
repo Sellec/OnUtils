@@ -167,7 +167,6 @@
     <Compile Include="System\Extensions\Extension.cs" />
     <Compile Include="System\Extensions\GenericCollectionsExtension.cs" />
     <Compile Include="System\Extensions\IsNullOrEmptyExtension.cs" />
-    <Compile Include="System\Extensions\ObjectClonableExtension.cs" />
     <Compile Include="Items\ConstructorInitializerAttribute.cs" />
     <Compile Include="System\Extensions\StringExtension.cs" />
     <Compile Include="System\LazyWithoutExceptionCaching.cs" />

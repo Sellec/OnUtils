@@ -221,13 +221,16 @@ namespace OnUtils.Data
         {
             var repositoryTypes = new List<Type>();
 
-            var properties = (new List<Type>() { this.GetType() }).Merge(this.GetType().GetNestedTypes())
-                                .SelectMany(x => x.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty | BindingFlags.SetProperty)
-                                                    .Select(y => new { Property = y, PropertyInterface = Types.TypeHelpers.ExtractGenericInterface(y.PropertyType, typeof(IRepository<>)) })
-                                                    .Where(y => y.PropertyInterface != null)
-                                                    .Select(y => y));
+            var typesList = new List<Type>() { GetType() };
+            typesList.AddRange(GetType().GetNestedTypes());
 
-            var fields = this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+            var properties = typesList.
+                SelectMany(x => x.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty | BindingFlags.SetProperty).
+                Select(y => new { Property = y, PropertyInterface = Types.TypeHelpers.ExtractGenericInterface(y.PropertyType, typeof(IRepository<>)) }).
+                Where(y => y.PropertyInterface != null).
+                Select(y => y));
+
+            var fields = GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
 
             foreach (var property in properties)
             {

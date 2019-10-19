@@ -33,56 +33,6 @@ namespace System.Collections.Generic
         }
 
         /// <summary>
-        /// Возвращает копию объекта <paramref name="source"/> и добавляет к ней содержимое коллекций, переданных в аргументах.
-        /// Содержимое коллекций добавляется с заменой содержимого при совпадении ключей. Например, если в качестве аргументов передана одна коллекция, содержащая пару 1 : "один" и <paramref name="source"/> содержит пару 1 : "one", то значение "one" будет заменено на "один".
-        /// </summary>
-        /// <param name="source">Исходный объект</param>
-        /// <param name="collectionsToAdd">Коллекции, содержимое которых следует объединить с содержимым <paramref name="source"/>.</param>
-        public static TDictionary Merge<TDictionary, TKey, TValue>(this TDictionary source, params IDictionary<TKey, TValue>[] collectionsToAdd) where TDictionary : class, IDictionary<TKey, TValue>
-        {
-            return (source as IDictionary<TKey, TValue>).Merge(collectionsToAdd) as TDictionary;
-        }
-
-        /// <summary>
-        /// Аналог <see cref="Merge{TDictionary, TKey, TValue}(TDictionary, IDictionary{TKey, TValue}[])"/>.
-        /// </summary>
-        public static IDictionary<TKey, TValue> Merge<TKey, TValue>(this IDictionary<TKey, TValue> source, params IDictionary<TKey, TValue>[] collectionsToAdd)
-        {
-            var dictionary = source.Clone();
-
-            foreach (var toAdd in collectionsToAdd)
-                foreach (var pair in toAdd)
-                    dictionary[pair.Key] = pair.Value;
-
-            return dictionary;
-        }
-
-        /// <summary>
-        /// Возвращает копию объекта <paramref name="source"/> и добавляет к ней содержимое коллекций, переданных в аргументах.
-        /// </summary>
-        /// <param name="source">Исходный объект</param>
-        /// <param name="collectionsToAdd">Коллекции, содержимое которых следует объединить с содержимым <paramref name="source"/>.</param>
-        public static TCollection Merge<TCollection, TItem>(this TCollection source, params IEnumerable<TItem>[] collectionsToAdd) where TCollection : class, ICollection<TItem>
-        {
-            return (source as ICollection<TItem>).Merge(collectionsToAdd) as TCollection;
-        }
-
-        /// <summary>
-        /// Аналог <see cref="Merge{TCollection, TItem}(TCollection, IEnumerable{TItem}[])"/>.
-        /// </summary>
-        public static ICollection<TItem> Merge<TItem>(this ICollection<TItem> source, params IEnumerable<TItem>[] collectionsToAdd)
-        {
-            var collection = source.Clone();
-
-            foreach (var toAdd in collectionsToAdd)
-                foreach (var item in toAdd)
-                    if (!collection.Contains(item))
-                        collection.Add(item);
-
-            return collection;
-        }
-
-        /// <summary>
         /// Добавляет объекты <paramref name="items"/> в коллекцию <paramref name="collection"/>. Если объекты уже добавлены в коллекцию, то ничего не делает.
         /// Аналог конструкции if (!collection.Contains(item)) collection.Add(item);
         /// </summary>
