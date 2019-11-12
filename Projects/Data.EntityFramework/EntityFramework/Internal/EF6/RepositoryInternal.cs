@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
@@ -236,6 +237,18 @@ namespace OnUtils.Data.EntityFramework.Internal
         public System.ComponentModel.BindingList<TEntity> AsBindingList()
         {
             return DbSet.Local.ToBindingList();
+        }
+
+        string IRepository<TEntity>.GetTableName()
+        {
+            var objectContext = ((IObjectContextAdapter)_context).ObjectContext;
+
+            string sql = objectContext.CreateObjectSet<TEntity>().ToTraceString();
+            Regex regex = new Regex("FROM (?<table>.*) AS");
+            Match match = regex.Match(sql);
+
+            string table = match.Groups["table"].Value;
+            return table;
         }
 
         /// <summary>

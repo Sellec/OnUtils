@@ -16,8 +16,8 @@ namespace OnUtils.Data
         /// </summary>
         public UpsertField(string columnName)
         {
-            this.ColumnName = columnName;
-            this.IsDirect = true;
+            ColumnName = columnName;
+            IsDirect = true;
         }
 
         /// <summary>
@@ -25,9 +25,9 @@ namespace OnUtils.Data
         /// </summary>
         public UpsertField(string columnName, string updateRightPart)
         {
-            this.ColumnName = columnName;
-            this.IsDirect = false;
-            this.UpdateRightPart = updateRightPart;
+            ColumnName = columnName;
+            IsDirect = false;
+            UpdateRightPart = updateRightPart;
         }
 
         /// <summary>
@@ -153,6 +153,12 @@ namespace OnUtils.Data
         System.ComponentModel.BindingList<TEntity> AsBindingList();
 
         /// <summary>
+        /// Возвращает название таблицы.
+        /// </summary>
+        /// <returns></returns>
+        string GetTableName();
+
+        /// <summary>
         /// Отражает состояние чтения/записи контекста данных, с которым связан репозиторий.
         /// В режиме "только чтение":
         ///     1. Возможно только выполнение запросов;
@@ -163,6 +169,7 @@ namespace OnUtils.Data
         ///     6. Метод <see cref="HasChanges"/> всегда возвращает false.
         /// </summary>
         bool IsReadonly { get; }
+
     }
 
 }

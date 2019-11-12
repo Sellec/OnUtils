@@ -147,5 +147,10 @@ namespace OnUtils.Data.UnitOfWork
         {
             return Repository.Include<TProperty>(path);
         }
+
+        public string GetTableName()
+        {
+            return Repository.GetTableName();
+        }
     }
 }

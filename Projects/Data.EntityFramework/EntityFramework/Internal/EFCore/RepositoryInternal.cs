@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
@@ -341,6 +342,15 @@ namespace OnUtils.Data.EntityFramework.Internal
         public bool IsReadonly
         {
             get => DataContext.IsReadonly;
+        }
+
+        string IRepository<TEntity>.GetTableName()
+        {
+            var mapping = _context.Model.FindEntityType(typeof(TEntity)).Relational();
+            var schema = mapping.Schema;
+            var table = mapping.TableName;
+
+            return table;
         }
 
         protected override IQueryProvider GetProvider()

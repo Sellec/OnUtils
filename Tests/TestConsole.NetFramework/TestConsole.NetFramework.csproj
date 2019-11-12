@@ -67,10 +67,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Projects\Application\Application.csproj">
-      <Project>{86e82704-31d0-43ba-b6cc-536c1f435393}</Project>
-      <Name>Application</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Projects\Core\Core.NetFramework.csproj">
       <Project>{e72e8b9c-9668-46c6-84e6-47d9ce44ad80}</Project>
       <Name>Core.NetFramework</Name>
