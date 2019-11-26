@@ -385,23 +385,35 @@ namespace OnUtils.Data.EntityFramework.Internal
 
                 //    for (int i = 0; i < objectsIntoQuery.Count(); i += 1000)
                 //    {
-                //        var rows = objectsIntoQuery.Skip(i).Take(1000).Select(x => "(" + string.Join(", ", properties.Values.Select(y => new { Property = y, Value = y.Property.GetValue(x, null) }).Select(y =>
-                //        {
-                //            var clrType = y.Property.Column.PrimitiveType.ClrEquivalentType;
-                //            var preValue = y.Value == null ? null : (y.Property.Property.PropertyType != clrType ? Convert.ChangeType(y.Value, clrType) : y.Value);
+                        //var rows = objectsIntoQuery.Skip(i).Take(1000).Select(x => "(" + string.Join(", ", properties.Values.Select(y => new { Property = y, Value = y.Property.GetValue(x, null) }).Select(y =>
+                        //{
+                        //    var clrType = y.Property.Column.PrimitiveType.ClrEquivalentType;
+                        //    var preValue = y.Value == null ? null : (y.Property.Property.PropertyType != clrType ? Convert.ChangeType(y.Value, clrType) : y.Value);
 
-                //            if (preValue == null) return "NULL";
-                //            var preValueStr = preValue.ToString();
+                        //    if (preValue == null) return "NULL";
 
-                //            var castToType = y.Property.Column.TypeName;
-                //            if (castToType.EndsWith("char", StringComparison.InvariantCultureIgnoreCase) && preValueStr.Length > 0) castToType += $"({preValueStr.Length})";
-                //            else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
-                //            //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
+                        //    var preValueStr = preValue.ToString();
+                        //    var preValueStrLength = preValueStr.Length;
 
-                //if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
+                        //    var isBinary = y.Property.Column.TypeName.Contains("binary");
+                        //    if (isBinary)
+                        //    {
+                        //        var binaryData = (byte[])preValue;
+                        //        preValueStr = "0x" + BitConverter.ToString(binaryData).Replace("-", "").ToLower();
+                        //        preValueStrLength = binaryData.Length;
+                        //    }
 
-                //            return "CAST('" + preValueStr + "' as " + castToType + ")";
-                //        })) + ")");
+                        //    var castToType = y.Property.Column.TypeName;
+                        //    if (castToType.EndsWith("char", StringComparison.InvariantCultureIgnoreCase) && preValueStr.Length > 0) castToType += $"({preValueStr.Length})";
+                        //    else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
+                        //    //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
+
+                        //    if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
+
+                        //    if (!isBinary) preValueStr = "'" + preValueStr + "'";
+
+                        //    return "CAST(" + preValueStr + " as " + castToType + ")";
+                        //})) + ")");
 
                 //        var insertString = "INSERT INTO @t (" + string.Join(", ", properties.Values.Select(x => $"[{x.Column.Name}]")) + ") VALUES " + string.Join(", ", rows);
                 //        results += InsertOrDuplicateUpdate(tableName, insertString, out lastIdentity, updateFields2.ToDictionary(x => x.source, x => x.mapped.Column.Name));

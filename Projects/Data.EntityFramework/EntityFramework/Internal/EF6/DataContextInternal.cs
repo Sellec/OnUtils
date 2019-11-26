@@ -417,7 +417,17 @@ namespace OnUtils.Data.EntityFramework.Internal
                             var preValue = y.Value == null ? null : (y.Property.Property.PropertyType != clrType ? Convert.ChangeType(y.Value, clrType) : y.Value);
 
                             if (preValue == null) return "NULL";
+
                             var preValueStr = preValue.ToString();
+                            var preValueStrLength = preValueStr.Length;
+
+                            var isBinary = y.Property.Column.TypeName.Contains("binary");
+                            if (isBinary)
+                            {
+                                var binaryData = (byte[])preValue;
+                                preValueStr = "0x" + BitConverter.ToString(binaryData).Replace("-", "").ToLower();
+                                preValueStrLength = binaryData.Length;
+                            }
 
                             var castToType = y.Property.Column.TypeName;
                             if (castToType.EndsWith("char", StringComparison.InvariantCultureIgnoreCase) && preValueStr.Length > 0) castToType += $"({preValueStr.Length})";
@@ -426,7 +436,9 @@ namespace OnUtils.Data.EntityFramework.Internal
 
                             if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
 
-                            return "CAST('" + preValueStr + "' as " + castToType + ")";
+                            if (!isBinary) preValueStr = "'" + preValueStr + "'";
+
+                            return "CAST(" + preValueStr + " as " + castToType + ")";
                         })) + ")");
 
                         var insertString = "INSERT INTO @t (" + string.Join(", ", properties.Values.Select(x => $"[{x.Column.Name}]")) + ") VALUES " + string.Join(", ", rows);
