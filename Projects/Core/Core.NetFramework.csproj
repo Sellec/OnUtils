@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Architecture\AppCore\AppCore.cs" />
+    <Compile Include="Architecture\AppCore\Listeners\IAppCoreStartListener.cs" />
     <Compile Include="Architecture\AppCore\IComponent.cs" />
     <Compile Include="Architecture\AppCore\ApplicationStartException.cs" />
     <Compile Include="Architecture\AppCore\ApplicationStartStep.cs" />

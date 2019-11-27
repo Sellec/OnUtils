@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -33,6 +33,7 @@ namespace OnUtils.Architecture.AppCore
                         if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable) coreComponentStartable.Start(_core);
                     }
                     _core.OnInstanceActivated<TRequestedType>(coreComponent);
+                    if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
                 }
 
                 if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
@@ -42,6 +43,7 @@ namespace OnUtils.Architecture.AppCore
             }
         }
 
+        private bool _starting = false;
         private bool _started = false;
         private bool _stopped = false;
         private bool _bindingsPreparing = false;
@@ -49,13 +51,14 @@ namespace OnUtils.Architecture.AppCore
 
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
+        private List<Listeners.IAppCoreStartListener> _instancesActivatedDuringStartup = new List<Listeners.IAppCoreStartListener>();
 
         /// <summary>
         /// Создает новый объект <see cref="AppCore{TAppCore}"/>. 
         /// </summary>
         protected AppCore()
         {
-            if (!typeof(TAppCore).IsAssignableFrom(this.GetType())) throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
+            if (!typeof(TAppCore).IsAssignableFrom(GetType())) throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl((TAppCore)(object)this);
             _activatedSingletonInstances = new ConcurrentStack<IComponentSingleton<TAppCore>>();
         }
@@ -69,7 +72,7 @@ namespace OnUtils.Architecture.AppCore
 
             try
             {
-                _started = true;
+                _starting = true;
 
                 var assemblyStartupList = GetAssemblyStartupList();
 
@@ -103,16 +106,25 @@ namespace OnUtils.Architecture.AppCore
 
                 assemblyStartupList.Where(x => x.Item3 != null).ForEach(x => x.Item3.Invoke(x.Item1, new object[] { this }));
                 OnStart();
+
+                _instancesActivatedDuringStartup.ForEach(x => x.OnAppCoreStarted());
+                _instancesActivatedDuringStartup.Clear();
+                _instancesActivatedDuringStartup = null;
+
+                _starting = false;
+                _started = true;
             }
             catch (ApplicationStartException)
             {
+                _starting = false;
                 _started = false;
                 throw;
             }
             catch (Exception ex)
             {
+                _starting = false;
                 _started = false;
-                throw new ApplicationStartException(startStep, Types.TypeHelpers.ExtractGenericType(this.GetType(), typeof(AppCore<TAppCore>)), ex);
+                throw new ApplicationStartException(startStep, Types.TypeHelpers.ExtractGenericType(GetType(), typeof(AppCore<TAppCore>)), ex);
             }
         }
 
@@ -151,7 +163,7 @@ namespace OnUtils.Architecture.AppCore
         /// </summary>
         public CoreComponentState GetState()
         {
-            return _started ? CoreComponentState.Started : (_stopped ? CoreComponentState.Stopped : CoreComponentState.None);
+            return _started ? CoreComponentState.Started : (_starting ? CoreComponentState.Starting : (_stopped ? CoreComponentState.Stopped : CoreComponentState.None));
         }
 
         #region Привязка типов
@@ -189,7 +201,7 @@ namespace OnUtils.Architecture.AppCore
             {
                 try
                 {
-                    var instance = this.Get<IComponentSingleton<TAppCore>>(type);
+                    var instance = Get<IComponentSingleton<TAppCore>>(type);
                 }
                 catch (Exception ex)
                 {
@@ -200,7 +212,7 @@ namespace OnUtils.Architecture.AppCore
 
         private List<Tuple<object, MethodInfo, MethodInfo>> GetAssemblyStartupList()
         {
-            var currentType = this.GetType();
+            var currentType = GetType();
 
             var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
 
@@ -405,7 +417,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public TQuery Get<TQuery>(Action<TQuery> onGetAction) where TQuery : class, IComponentSingleton<TAppCore>
         {
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             var instance = _objectProvider.GetInstances<TQuery>(true, true)?.FirstOrDefault();
@@ -437,7 +449,7 @@ namespace OnUtils.Architecture.AppCore
         public TQueryBase Get<TQueryBase>(Type queryType, Action<TQueryBase> onGetAction) where TQueryBase : class, IComponentSingleton<TAppCore>
         {
             if (!typeof(TQueryBase).IsAssignableFrom(queryType)) throw new ArgumentException($"Тип {nameof(queryType)} должен наследоваться от {nameof(TQueryBase)}.", nameof(queryType));
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             var instance = (TQueryBase)_objectProvider.GetInstances(queryType, true, true)?.FirstOrDefault();
@@ -474,7 +486,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public TQuery Create<TQuery>(Action<TQuery> onCreateAction) where TQuery : class, IComponentTransient<TAppCore>
         {
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             var instance = _objectProvider.GetInstances<TQuery>(false, true)?.FirstOrDefault();
@@ -513,7 +525,7 @@ namespace OnUtils.Architecture.AppCore
         public TQueryBase Create<TQueryBase>(Type queryType, Action<TQueryBase> onCreateAction) where TQueryBase : class, IComponentTransient<TAppCore>
         {
             if (!typeof(TQueryBase).IsAssignableFrom(queryType)) throw new ArgumentException($"Тип {nameof(queryType)} должен наследоваться от {nameof(TQueryBase)}.", nameof(queryType));
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             var instance = (TQueryBase)_objectProvider.GetInstances(queryType, false, true)?.FirstOrDefault();
@@ -547,7 +559,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public IEnumerable<TQuery> CreateAll<TQuery>(Action<IEnumerable<TQuery>> onCreateAction) where TQuery : class, IComponentTransient<TAppCore>
         {
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             IEnumerable<TQuery> instances = _objectProvider.GetInstances<TQuery>(false, false);
@@ -592,7 +604,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public IEnumerable<Type> GetBindedTypes<TQueryType>() where TQueryType : class
         {
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             return _objectProvider.GetBindedTypes(typeof(TQueryType));
@@ -606,7 +618,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public IEnumerable<Type> GetQueryTypes()
         {
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
             return _objectProvider.GetQueryTypes();
@@ -616,7 +628,7 @@ namespace OnUtils.Architecture.AppCore
 
         #region Для перегрузки в наследниках.
         /// <summary>
-        /// Вызывается при запуске ядра.
+        /// Вызывается при запуске ядра после определения всех зависимостей и автозагружаемых объектов (см. <see cref="IAutoStart"/>).
         /// </summary>
         protected virtual void OnStart()
         {

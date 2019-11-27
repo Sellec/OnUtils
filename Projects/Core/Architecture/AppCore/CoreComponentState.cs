@@ -6,17 +6,22 @@
     public enum CoreComponentState
     {
         /// <summary>
-        /// Компонент не запущен.
+        /// Не запущен.
         /// </summary>
         None,
 
         /// <summary>
-        /// Компонент запущен.
+        /// Запускается.
+        /// </summary>
+        Starting,
+
+        /// <summary>
+        /// Запущен.
         /// </summary>
         Started,
 
         /// <summary>
-        /// Компонент остановлен.
+        /// Остановлен.
         /// </summary>
         Stopped
     }
