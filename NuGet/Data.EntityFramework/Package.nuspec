@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils.Data.EntityFramework</id>
-    <version>0.1.12</version>
+    <version>0.1.13</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -30,7 +30,7 @@
       </group>
     </dependencies>
     <contentFiles>
-      <files include="any/any/DB/Data.DB.dacpac" buildAction="None" copyToOutput="true" />
+      <files include="any/any/DB/Data.DB.*.dacpac" buildAction="None" copyToOutput="true" />
     </contentFiles>
   </metadata>
   <files>
