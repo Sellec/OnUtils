@@ -30,4 +30,4 @@
 /Tests/**/obj
 /Tests/**/*proj.user
 
-/NuGet/Data.EntityFramework/content/DB/Data.DB.dacpac
+/NuGet/Data.EntityFramework/content/DB

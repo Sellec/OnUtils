@@ -123,8 +123,8 @@
     <Content Include="..\..\Projects\Data.EntityFramework\EntityFramework\Internal\TransactionScopeInternal.cs">
       <Link>src\EntityFramework\Internal\TransactionScopeInternal.cs</Link>
     </Content>
-    <Content Include="..\..\Projects\Data.DB\bin\Debug\Data.DB.dacpac">
-      <Link>content\DB\Data.DB.dacpac</Link>
+    <Content Include="..\..\Projects\Data.DB\bin\Debug\Data.DB.*.dacpac">
+      <Link>content\DB\%(Filename)%(Extension)</Link>
     </Content>
     <None Include="..\..\Projects\Data.EntityFramework\bin\Debug\netstandard2.0\OnUtils.Data.EntityFramework.deps.json">
       <Link>lib\netstandard2.0\OnUtils.Data.EntityFramework.deps.json</Link>
