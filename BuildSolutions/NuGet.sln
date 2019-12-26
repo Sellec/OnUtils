@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nuget", "Nuget", "{C05FF974
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data.EntityFramework", "..\NuGet\Data.EntityFramework\Data.EntityFramework.csproj", "{523C231E-F960-452F-A48D-0124EE5C263E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{061AAA10-2170-487B-8C20-F10D79305D9A} = {061AAA10-2170-487B-8C20-F10D79305D9A}
 		{24C1BA52-EE2D-4C56-B2BA-8AEC002AF930} = {24C1BA52-EE2D-4C56-B2BA-8AEC002AF930}
 		{8F3240C4-1A14-4E3B-85AC-C94EE406041E} = {8F3240C4-1A14-4E3B-85AC-C94EE406041E}
 	EndProjectSection
@@ -37,6 +38,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data.EntityFramework.NetStandard", "..\Projects\Data.EntityFramework\Data.EntityFramework.NetStandard.csproj", "{24C1BA52-EE2D-4C56-B2BA-8AEC002AF930}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Data.DB", "..\Projects\Data.DB\Data.DB.sqlproj", "{061AAA10-2170-487B-8C20-F10D79305D9A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -80,6 +83,12 @@ Global
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -94,6 +103,7 @@ Global
 		{8F3240C4-1A14-4E3B-85AC-C94EE406041E} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{24C1BA52-EE2D-4C56-B2BA-8AEC002AF930} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{2B9F1DA0-E1CF-49F5-A842-15A5E256B798} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
+		{061AAA10-2170-487B-8C20-F10D79305D9A} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EED38A6B-FD8B-4735-9632-1F78301B6F9F}
