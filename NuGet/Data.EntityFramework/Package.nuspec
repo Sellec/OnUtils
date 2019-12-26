@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils.Data.EntityFramework</id>
-    <version>0.1.9</version>
+    <version>0.1.10</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -29,11 +29,15 @@
         <dependency id="Microsoft.Extensions.DiagnosticAdapter" version="2.2.0" />
       </group>
     </dependencies>
+    <contentFiles>
+      <files include="any/any/DB/Core.DB.dacpac" buildAction="Content" copyToOutput="true" />
+    </contentFiles>
   </metadata>
   <files>
     <file src="lib\" target="lib" />
     <file src="tools\" target="tools" />
-    <!-- <file src="content\" target="content" /> -->
+    <file src="content\DB\Data.DB.dacpac" target="content\DB\Data.DB.dacpac" />
+    <file src="content\DB\Data.DB.dacpac" target="contentFiles\any\any\DB\Data.DB.dacpac" />
     <file src="src\**\*.cs" target="src" />
   </files>
 </package>
