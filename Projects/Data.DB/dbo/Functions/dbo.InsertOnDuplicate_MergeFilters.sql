@@ -4,7 +4,10 @@
 -- Description:	<Description,,>
 -- =============================================
 CREATE FUNCTION [dbo].[InsertOnDuplicate_MergeFilters]()
-RETURNS @Result TABLE (TableName SYSNAME, FilterStr nvarchar(MAX))
+RETURNS @Result TABLE (
+	TableName nvarchar(128) NOT NULL, 
+	FilterStr nvarchar(MAX)
+)
 AS
 BEGIN
 	/**

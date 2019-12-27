@@ -4,7 +4,10 @@
 -- Description:	<Description,,>
 -- =============================================
 CREATE FUNCTION [dbo].[InsertOnDuplicate_TypesDefaultValues]()
-RETURNS @TypesDefaultValues TABLE (TypeName SYSNAME, Value NVARCHAR(100))
+RETURNS @TypesDefaultValues TABLE (
+	TypeName nvarchar(128) NOT NULL, 
+	Value nvarchar(100)
+)
 AS
 BEGIN
 	-- Fill the table variable with the rows for your result set

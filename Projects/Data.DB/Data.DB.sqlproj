@@ -76,22 +76,22 @@
     <Build Include="dbo\Tables\dbo.InsertOnDuplicate_MergeFiltersCache.sql" />
     <Build Include="dbo\Functions\dbo.FROM_UNIXTIME.sql" />
     <Build Include="dbo\Functions\dbo.InsertOnDuplicate_TypesDefaultValues.sql">
-      <AnsiNulls>Off</AnsiNulls>
-      <QuotedIdentifier>Off</QuotedIdentifier>
+      <AnsiNulls>ProjectDefault</AnsiNulls>
+      <QuotedIdentifier>ProjectDefault</QuotedIdentifier>
     </Build>
     <Build Include="dbo\Functions\dbo.InsertOnDuplicate_MergeFilters.sql">
-      <AnsiNulls>Off</AnsiNulls>
-      <QuotedIdentifier>Off</QuotedIdentifier>
+      <AnsiNulls>ProjectDefault</AnsiNulls>
+      <QuotedIdentifier>ProjectDefault</QuotedIdentifier>
     </Build>
     <Build Include="dbo\Stored Procedures\dbo.InsertOnDuplicate_CreateTableUDT.sql">
-      <AnsiNulls>Off</AnsiNulls>
-      <QuotedIdentifier>Off</QuotedIdentifier>
+      <AnsiNulls>ProjectDefault</AnsiNulls>
+      <QuotedIdentifier>ProjectDefault</QuotedIdentifier>
     </Build>
     <Build Include="Database Triggers\dbo.DB_InsertOnDuplicate_TableUDT_Remove.sql" />
     <Build Include="Database Triggers\dbo.DB_InsertOnDuplicate_TableUDT.sql" />
     <Build Include="dbo\Stored Procedures\dbo.InsertOnDuplicate_CreateQuery.sql">
-      <AnsiNulls>Off</AnsiNulls>
-      <QuotedIdentifier>Off</QuotedIdentifier>
+      <AnsiNulls>ProjectDefault</AnsiNulls>
+      <QuotedIdentifier>ProjectDefault</QuotedIdentifier>
     </Build>
   </ItemGroup>
   <ItemGroup>
