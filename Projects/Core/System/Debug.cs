@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Web;
-using System.IO;
-using System.Reflection;
-
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
 
 namespace System
 {
@@ -30,7 +24,7 @@ namespace System
             EnableLoggingOnDebugOutput = true;
             EnableAdditionalCommonLog = true;
 
-            var dir = System.Environment.CurrentDirectory;
+            var dir = Environment.CurrentDirectory;
             if (Assembly.GetEntryAssembly() == null ||
                 !hasWriteAccessToFolder(dir) ||
                 dir.ToLower().Contains("iis") ||
@@ -39,7 +33,7 @@ namespace System
                 dir.ToLower().Contains("inetsrv")
                 )
             {
-                var p = Path.GetDirectoryName((new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath);
+                var p = Path.GetDirectoryName((new Uri(Assembly.GetExecutingAssembly().CodeBase)).LocalPath);
                 var p2 = Path.GetFileName(p).ToLower() == "bin" ? Path.GetDirectoryName(p) : p;
 
                 if (hasWriteAccessToFolder(p2)) _logsSourceDirectoryCustom = p2;
@@ -48,13 +42,15 @@ namespace System
                 _logsSourceDirectoryIsCustom = true;
             }
 
-#if DEBUG
             if (IsDeveloper)
             {
-                _logsSourceDirectoryCustom = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                _logsSourceDirectoryIsCustom = true;
+                var desktopFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (!string.IsNullOrEmpty(desktopFolder))
+                {
+                    _logsSourceDirectoryCustom = desktopFolder;
+                    _logsSourceDirectoryIsCustom = true;
+                }
             }
-#endif
         }
 
         #region Вывод в консоль
@@ -158,7 +154,7 @@ namespace System
         {
             try
             {
-                var trace = new System.Diagnostics.StackTrace(1, true);
+                var trace = new StackTrace(1, true);
                 for (int i = 1; i < trace.FrameCount; i++)
                 {
                     var frame = trace.GetFrame(i);
@@ -219,14 +215,11 @@ namespace System
 
 #region Property
         /// <summary>
-        /// Это машина разработчика, значит надо менять папку логов на рабочий стол + строку подключения на локальную.
+        /// Это машина разработчика, значит надо менять папку логов на рабочий стол.
         /// </summary>
         public static bool IsDeveloper
         {
-            get
-            {
-                return _isDeveloper;
-            }
+            get => _isDeveloper;
         }
 
         /// <summary>
@@ -256,7 +249,7 @@ namespace System
         /// </summary>
         public static string LogsDirectory
         {
-            get { return Path.Combine(_logsSourceDirectoryIsCustom ? _logsSourceDirectoryCustom : Environment.CurrentDirectory, "Logs"); }
+            get => Path.Combine(_logsSourceDirectoryIsCustom ? _logsSourceDirectoryCustom : Environment.CurrentDirectory, "Logs");
         }
 
 #endregion

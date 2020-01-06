@@ -29,6 +29,7 @@
     <Trustworthy>False</Trustworthy>
     <CompatibilityMode>100</CompatibilityMode>
     <GenerateSqlClrSymbols>False</GenerateSqlClrSymbols>
+    <GenerateSqlClrDdl>True</GenerateSqlClrDdl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>bin\Release\</OutputPath>
