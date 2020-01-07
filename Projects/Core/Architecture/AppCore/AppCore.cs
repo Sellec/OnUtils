@@ -24,16 +24,62 @@ namespace OnUtils.Architecture.AppCore
                 _core = core;
             }
 
-            void IInstanceActivatedHandler.OnInstanceActivated<TRequestedType>(object instance)
+            public void OnInstanceActivated<TRequestedType>(object instance)
             {
+                if (_core.AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: активация компонента '{instance.GetType().FullName}'.");
+
                 if (instance is IComponent<TAppCore> coreComponent)
                 {
                     if (!coreComponent.GetState().In(CoreComponentState.Started, CoreComponentState.Stopped))
                     {
-                        if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable) coreComponentStartable.Start(_core);
+                        if (_core.AppDebugLevel >= DebugLevel.Detailed)
+                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: компонент не запущен, состояние - {coreComponent.GetState()}");
+
+                        if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable)
+                        {
+                            if (_core.AppDebugLevel >= DebugLevel.Detailed)
+                            {
+                                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: попытка запуска компонента.");
+                                try
+                                {
+                                    coreComponentStartable.Start(_core);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: ошибка запуска компонента");
+                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: {ex}");
+                                    throw;
+                                }
+                            }
+                            else
+                            {
+                                coreComponentStartable.Start(_core);
+                            }
+                        }
                     }
-                    _core.OnInstanceActivated<TRequestedType>(coreComponent);
-                    if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
+
+                    if (_core.AppDebugLevel >= DebugLevel.Detailed)
+                    {
+                        try
+                        {
+                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: событие активации в ядре");
+
+                            _core.OnInstanceActivated<TRequestedType>(coreComponent);
+                            if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: ошибка события активации в ядре");
+                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: {ex}");
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        _core.OnInstanceActivated<TRequestedType>(coreComponent);
+                        if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
+                    }
                 }
 
                 if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
@@ -58,7 +104,11 @@ namespace OnUtils.Architecture.AppCore
         /// </summary>
         protected AppCore()
         {
-            if (!typeof(TAppCore).IsAssignableFrom(GetType())) throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
+            if (!typeof(TAppCore).IsAssignableFrom(GetType()))
+            {
+                if (AppDebugLevel>= DebugLevel.Disabled) Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.new: Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
+                throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
+            }
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl((TAppCore)(object)this);
             _activatedSingletonInstances = new ConcurrentStack<IComponentSingleton<TAppCore>>();
         }
@@ -68,6 +118,9 @@ namespace OnUtils.Architecture.AppCore
         /// </summary>
         public void Start()
         {
+            if (AppDebugLevel >= DebugLevel.Common)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: запуск");
+
             var startStep = ApplicationStartStep.PrepareAssemblyStandardList;
 
             try
@@ -83,13 +136,19 @@ namespace OnUtils.Architecture.AppCore
                     _bindingsPreparing = true;
 
                     var bindingsCollection = new BindingsCollection<TAppCore>();
+                    if (AppDebugLevel >= DebugLevel.Common)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: выполнение {nameof(IConfigureBindings<TAppCore>)}.{nameof(IConfigureBindings<TAppCore>.ConfigureBindings)}");
                     assemblyStartupList.Where(x => x.Item2 != null).ForEach(x => x.Item2.Invoke(x.Item1, new object[] { bindingsCollection }));
+                    if (AppDebugLevel >= DebugLevel.Detailed)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsRequired)}");
                     OnBindingsRequired(bindingsCollection);
 
                     startStep = ApplicationStartStep.BindingsApplying;
 
                     BindingsApply(bindingsCollection);
-                    ((DI.IBindingsObjectProvider)_objectProvider).RegisterInstanceActivatedHandler(_instanceActivatedHandler);
+                    ((IBindingsObjectProvider)_objectProvider).RegisterInstanceActivatedHandler(_instanceActivatedHandler);
+                    if (AppDebugLevel >= DebugLevel.Detailed)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsApplied)}");
                     OnBindingsApplied();
                 }
                 finally
@@ -100,11 +159,17 @@ namespace OnUtils.Architecture.AppCore
                 startStep = ApplicationStartStep.BindingsAutoStart;
 
                 BindingsAutoStart();
+                if (AppDebugLevel >= DebugLevel.Detailed)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsAutoStart)}");
                 OnBindingsAutoStart();
 
                 startStep = ApplicationStartStep.Start;
 
+                if (AppDebugLevel >= DebugLevel.Detailed)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: выполнение {nameof(IExecuteStart<TAppCore>)}.{nameof(IExecuteStart<TAppCore>.ExecuteStart)}");
                 assemblyStartupList.Where(x => x.Item3 != null).ForEach(x => x.Item3.Invoke(x.Item1, new object[] { this }));
+                if (AppDebugLevel >= DebugLevel.Detailed)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnStart)}");
                 OnStart();
 
                 _instancesActivatedDuringStartup.ForEach(x => x.OnAppCoreStarted());
@@ -113,6 +178,9 @@ namespace OnUtils.Architecture.AppCore
 
                 _starting = false;
                 _started = true;
+
+                if (AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: успешный запуск");
             }
             catch (ApplicationStartException)
             {
@@ -122,6 +190,11 @@ namespace OnUtils.Architecture.AppCore
             }
             catch (Exception ex)
             {
+                if (AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: ошибка запуска.");
+                if (AppDebugLevel >= DebugLevel.Detailed)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: {ex}");
+
                 _starting = false;
                 _started = false;
                 throw new ApplicationStartException(startStep, Types.TypeHelpers.ExtractGenericType(GetType(), typeof(AppCore<TAppCore>)), ex);
@@ -134,7 +207,11 @@ namespace OnUtils.Architecture.AppCore
         public void Stop()
         {
             if (_stopped) return;
-            if (!_started) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            if (!_started)
+            {
+                if (AppDebugLevel > DebugLevel.Disabled) Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Stop)}: Ядро не запущено. Вызовите Start.");
+                throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
+            }
 
             while (_activatedSingletonInstances.TryPop(out var componentSingleton))
             {
@@ -144,7 +221,10 @@ namespace OnUtils.Architecture.AppCore
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLineNoLog($"Ошибка во время остановки компонента '{componentSingleton.GetType().FullName}': {ex.Message}");
+                    if (AppDebugLevel >= DebugLevel.Common)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Stop)}: ошибка во время остановки компонента '{componentSingleton.GetType().FullName}'.");
+                    if (AppDebugLevel >= DebugLevel.Detailed)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Stop)}: {ex}");
                 }
             }
 
@@ -169,7 +249,16 @@ namespace OnUtils.Architecture.AppCore
         #region Привязка типов
         private void BindingsApply(BindingsCollection<TAppCore> collection)
         {
-            if (!_bindingsPreparing) throw new InvalidOperationException("Невозможно устанавливать привязки после запуска ядра.");
+            if (AppDebugLevel >= DebugLevel.Common)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsApply)}");
+
+            if (!_bindingsPreparing)
+            {
+                if (AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsApply)}: невозможно устанавливать привязки после запуска ядра.");
+
+                throw new InvalidOperationException("Невозможно устанавливать привязки после запуска ядра.");
+            }
             if (collection == null) throw new ArgumentNullException(nameof(collection));
 
             _objectProvider = new BindingsObjectProvider(collection._typesCollection.ToList());
@@ -177,10 +266,19 @@ namespace OnUtils.Architecture.AppCore
 
         private void BindingsAutoStart()
         {
+            if (AppDebugLevel >= DebugLevel.Common)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}");
+
             var typesForAutoStart = _objectProvider.
                 GetQueryTypes().
                 Where(type => typeof(IAutoStart).IsAssignableFrom(type) && typeof(IComponentSingleton<TAppCore>).IsAssignableFrom(type)).
                 ToList();
+
+            if (AppDebugLevel >= DebugLevel.Detailed)
+            {
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: несортированный список:");
+                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {x}"));
+            }
 
             var thisType = GetType();
             while (thisType != typeof(object))
@@ -197,14 +295,28 @@ namespace OnUtils.Architecture.AppCore
                 thisType = thisType.BaseType;
             }
 
+            if (AppDebugLevel >= DebugLevel.Detailed)
+            {
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: сортированный список:");
+                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {x}"));
+            }
+
             foreach (var type in typesForAutoStart)
             {
                 try
                 {
+                    if (AppDebugLevel >= DebugLevel.Detailed)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: автозапуск типа '{type}'.");
+
                     var instance = Get<IComponentSingleton<TAppCore>>(type);
                 }
                 catch (Exception ex)
                 {
+                    if (AppDebugLevel >= DebugLevel.Common)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: ошибка автозапуска");
+                    if (AppDebugLevel >= DebugLevel.Detailed)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {ex}");
+
                     if (typeof(ICritical).IsAssignableFrom(type)) throw new ApplicationStartException(ApplicationStartStep.BindingsAutoStartCritical, type, ex);
                 }
             }
@@ -686,10 +798,20 @@ namespace OnUtils.Architecture.AppCore
         /// <summary>
         /// Возвращает провайдер объектов на основе привязок типов.
         /// </summary>
-        public DI.IBindingsObjectProvider ObjectProvider
+        public IBindingsObjectProvider ObjectProvider
         {
             get => _objectProvider;
         }
+
+        /// <summary>
+        /// Возвращает или задает уровень отладочной информации, выводимый в лог (см. <see cref="Debug.WriteLine(object)"/>).
+        /// </summary>
+        public DebugLevel AppDebugLevel
+        {
+            get;
+            set;
+        }
+
         #endregion
     }
 }
