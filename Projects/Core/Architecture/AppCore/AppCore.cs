@@ -119,7 +119,7 @@ namespace OnUtils.Architecture.AppCore
         public void Start()
         {
             if (AppDebugLevel >= DebugLevel.Common)
-                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: запуск");
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: запуск");
 
             var startStep = ApplicationStartStep.PrepareAssemblyStandardList;
 
@@ -128,6 +128,11 @@ namespace OnUtils.Architecture.AppCore
                 _starting = true;
 
                 var assemblyStartupList = GetAssemblyStartupList();
+                if (AppDebugLevel >= DebugLevel.Detailed)
+                {
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: список типов для создания привязок типов и выполнения действий при запуске:");
+                    assemblyStartupList.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: {x.Item1.GetType()} (привязка типов - {(x.Item2 != null ? "да" : "нет")}, действия при запуске - {(x.Item2 != null ? "да" : "нет")})"));
+                }
 
                 try
                 {
@@ -137,10 +142,10 @@ namespace OnUtils.Architecture.AppCore
 
                     var bindingsCollection = new BindingsCollection<TAppCore>();
                     if (AppDebugLevel >= DebugLevel.Common)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: выполнение {nameof(IConfigureBindings<TAppCore>)}.{nameof(IConfigureBindings<TAppCore>.ConfigureBindings)}");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: выполнение {nameof(IConfigureBindings<TAppCore>)}.{nameof(IConfigureBindings<TAppCore>.ConfigureBindings)}");
                     assemblyStartupList.Where(x => x.Item2 != null).ForEach(x => x.Item2.Invoke(x.Item1, new object[] { bindingsCollection }));
                     if (AppDebugLevel >= DebugLevel.Detailed)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsRequired)}");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsRequired)}");
                     OnBindingsRequired(bindingsCollection);
 
                     startStep = ApplicationStartStep.BindingsApplying;
@@ -148,7 +153,7 @@ namespace OnUtils.Architecture.AppCore
                     BindingsApply(bindingsCollection);
                     ((IBindingsObjectProvider)_objectProvider).RegisterInstanceActivatedHandler(_instanceActivatedHandler);
                     if (AppDebugLevel >= DebugLevel.Detailed)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsApplied)}");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsApplied)}");
                     OnBindingsApplied();
                 }
                 finally
@@ -160,16 +165,16 @@ namespace OnUtils.Architecture.AppCore
 
                 BindingsAutoStart();
                 if (AppDebugLevel >= DebugLevel.Detailed)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnBindingsAutoStart)}");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsAutoStart)}");
                 OnBindingsAutoStart();
 
                 startStep = ApplicationStartStep.Start;
 
                 if (AppDebugLevel >= DebugLevel.Detailed)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: выполнение {nameof(IExecuteStart<TAppCore>)}.{nameof(IExecuteStart<TAppCore>.ExecuteStart)}");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: выполнение {nameof(IExecuteStart<TAppCore>)}.{nameof(IExecuteStart<TAppCore>.ExecuteStart)}");
                 assemblyStartupList.Where(x => x.Item3 != null).ForEach(x => x.Item3.Invoke(x.Item1, new object[] { this }));
                 if (AppDebugLevel >= DebugLevel.Detailed)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnStart)}");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnStart)}");
                 OnStart();
 
                 _instancesActivatedDuringStartup.ForEach(x => x.OnAppCoreStarted());
@@ -180,7 +185,7 @@ namespace OnUtils.Architecture.AppCore
                 _started = true;
 
                 if (AppDebugLevel >= DebugLevel.Common)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: успешный запуск");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: успешный запуск");
             }
             catch (ApplicationStartException)
             {
@@ -191,9 +196,9 @@ namespace OnUtils.Architecture.AppCore
             catch (Exception ex)
             {
                 if (AppDebugLevel >= DebugLevel.Common)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: ошибка запуска.");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: ошибка запуска.");
                 if (AppDebugLevel >= DebugLevel.Detailed)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(Start)}: {ex}");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: {ex}");
 
                 _starting = false;
                 _started = false;
@@ -250,12 +255,12 @@ namespace OnUtils.Architecture.AppCore
         private void BindingsApply(BindingsCollection<TAppCore> collection)
         {
             if (AppDebugLevel >= DebugLevel.Common)
-                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsApply)}");
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsApply)}");
 
             if (!_bindingsPreparing)
             {
                 if (AppDebugLevel >= DebugLevel.Common)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsApply)}: невозможно устанавливать привязки после запуска ядра.");
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsApply)}: невозможно устанавливать привязки после запуска ядра.");
 
                 throw new InvalidOperationException("Невозможно устанавливать привязки после запуска ядра.");
             }
@@ -267,7 +272,7 @@ namespace OnUtils.Architecture.AppCore
         private void BindingsAutoStart()
         {
             if (AppDebugLevel >= DebugLevel.Common)
-                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}");
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}");
 
             var typesForAutoStart = _objectProvider.
                 GetQueryTypes().
@@ -276,8 +281,8 @@ namespace OnUtils.Architecture.AppCore
 
             if (AppDebugLevel >= DebugLevel.Detailed)
             {
-                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: несортированный список:");
-                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {x}"));
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: несортированный список:");
+                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: {x}"));
             }
 
             var thisType = GetType();
@@ -297,8 +302,8 @@ namespace OnUtils.Architecture.AppCore
 
             if (AppDebugLevel >= DebugLevel.Detailed)
             {
-                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: сортированный список:");
-                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {x}"));
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: сортированный список:");
+                typesForAutoStart.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: {x}"));
             }
 
             foreach (var type in typesForAutoStart)
@@ -306,16 +311,16 @@ namespace OnUtils.Architecture.AppCore
                 try
                 {
                     if (AppDebugLevel >= DebugLevel.Detailed)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: автозапуск типа '{type}'.");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: автозапуск типа '{type}'.");
 
                     var instance = Get<IComponentSingleton<TAppCore>>(type);
                 }
                 catch (Exception ex)
                 {
                     if (AppDebugLevel >= DebugLevel.Common)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: ошибка автозапуска");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: ошибка автозапуска");
                     if (AppDebugLevel >= DebugLevel.Detailed)
-                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(BindingsAutoStart)}: {ex}");
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}: {ex}");
 
                     if (typeof(ICritical).IsAssignableFrom(type)) throw new ApplicationStartException(ApplicationStartStep.BindingsAutoStartCritical, type, ex);
                 }
