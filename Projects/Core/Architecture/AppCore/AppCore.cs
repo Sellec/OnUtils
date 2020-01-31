@@ -89,6 +89,60 @@ namespace OnUtils.Architecture.AppCore
             }
         }
 
+        class BindingsResolverInternalImpl : BindingsResolverInternal
+        {
+            private static MethodInfo _methodResolveTypeSingleton = null;
+            private static MethodInfo _methodResolveTypeTransient = null;
+
+            static BindingsResolverInternalImpl()
+            {
+                _methodResolveTypeSingleton = typeof(BindingsResolverInternalImpl).GetMethod(nameof(ResolveTypeSingleton), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                _methodResolveTypeTransient = typeof(BindingsResolverInternalImpl).GetMethod(nameof(ResolveTypeTransient), BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                if (_methodResolveTypeSingleton == null || _methodResolveTypeTransient == null) throw new InvalidProgramException();
+            }
+
+            public override BindingDescription ResolveType<TRequestedType>(bool isSingleton)
+            {
+                return (BindingDescription)(isSingleton ?
+                    _methodResolveTypeSingleton.MakeGenericMethod(typeof(TRequestedType)).Invoke(this, new object[] { }) :
+                    _methodResolveTypeTransient.MakeGenericMethod(typeof(TRequestedType)).Invoke(this, new object[] { }));
+            }
+
+            public BindingDescription ResolveTypeSingleton<TRequstedType>() where TRequstedType : IComponentSingleton<TAppCore>
+            {
+                var bindingsCollection = new BindingsCollection<TAppCore>();
+                BindingsResolver?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
+                if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var value))
+                {
+                    return value;
+                }
+                else
+                {
+                    BindingsResolver2?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
+                    return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out value) ? value : null;
+                }
+            }
+
+            public BindingDescription ResolveTypeTransient<TRequstedType>() where TRequstedType : IComponentTransient<TAppCore>
+            {
+                var bindingsCollection = new BindingsCollection<TAppCore>();
+                BindingsResolver?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
+                if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var value))
+                {
+                    return value;
+                }
+                else
+                {
+                    BindingsResolver2?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
+                    return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out value) ? value : null;
+                }
+            }
+
+            public IBindingsResolver<TAppCore> BindingsResolver { get; set; }
+
+            public IBindingsResolver<TAppCore> BindingsResolver2 { get; set; }
+        }
+
         private bool _starting = false;
         private bool _started = false;
         private bool _stopped = false;
@@ -98,6 +152,7 @@ namespace OnUtils.Architecture.AppCore
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
         private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
         private List<Listeners.IAppCoreStartListener> _instancesActivatedDuringStartup = new List<Listeners.IAppCoreStartListener>();
+        private BindingsResolverInternalImpl _bindingsResolver = null;
 
         /// <summary>
         /// Создает новый объект <see cref="AppCore{TAppCore}"/>. 
@@ -267,6 +322,10 @@ namespace OnUtils.Architecture.AppCore
             if (collection == null) throw new ArgumentNullException(nameof(collection));
 
             _objectProvider = new BindingsObjectProvider(collection._typesCollection.ToList());
+
+            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolver = GetBindingsResolver(), BindingsResolver2 = _bindingsResolver?.BindingsResolver2 };
+            _objectProvider.RegisterBindingsResolver(bindingsResolver);
+            _bindingsResolver = bindingsResolver;
         }
 
         private void BindingsAutoStart()
@@ -510,6 +569,25 @@ namespace OnUtils.Architecture.AppCore
             return assembliesSorted.SelectMany(x => instances2[x]).Select(x => new Tuple<object, MethodInfo, MethodInfo>(x.Instance, x.ConfigureBindings, x.ExecuteStart)).ToList();
         }
 
+        /// <summary>
+        /// Возвращает обработчик, разрешающий отсутствующие привязки типов.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IBindingsResolver<TAppCore> GetBindingsResolver()
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Позволяет задать дополнительный обработчик, разрешающий отсутствующие привязки типов.
+        /// </summary>
+        /// <returns></returns>
+        public void SetBindingsResolver(IBindingsResolver<TAppCore> resolver)
+        {
+            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolver = _bindingsResolver?.BindingsResolver, BindingsResolver2 = resolver };
+            _objectProvider.RegisterBindingsResolver(bindingsResolver);
+            _bindingsResolver = bindingsResolver;
+        }
         #endregion
 
         #region Get/Create/Attach

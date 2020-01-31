@@ -62,6 +62,10 @@
   <ItemGroup>
     <Compile Include="Architecture\AppCore\AppCore.cs" />
     <Compile Include="Architecture\AppCore\DebugLevel.cs" />
+    <Compile Include="Architecture\AppCore\DI\BindingsResolverInternal.cs" />
+    <Compile Include="Architecture\AppCore\IBindingsResolver.cs" />
+    <Compile Include="Architecture\AppCore\DI\ITransientBindingsHandler.cs" />
+    <Compile Include="Architecture\AppCore\DI\ISingletonBindingsHandler.cs" />
     <Compile Include="Architecture\AppCore\Listeners\IAppCoreStartListener.cs" />
     <Compile Include="Architecture\AppCore\IComponent.cs" />
     <Compile Include="Architecture\AppCore\ApplicationStartException.cs" />

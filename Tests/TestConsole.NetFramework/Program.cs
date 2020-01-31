@@ -1,4 +1,6 @@
-﻿using OnUtils.Data;
+﻿using OnUtils.Architecture.AppCore;
+using OnUtils.Architecture.AppCore.DI;
+using OnUtils.Data;
 using OnUtils.Data.EntityFramework;
 using OnUtils.Data.UnitOfWork;
 using System;
@@ -62,6 +64,47 @@ namespace TestConsole
         }
     }
 
+    class apptest : AppCore<apptest>
+    {
+        //protected override IBindingsResolver<apptest> GetBindingsResolver()
+        //{
+        //    return new resolver();
+        //}
+    }
+
+    class t : CoreComponentBase<apptest>, IComponentSingleton<apptest>
+    {
+        protected override void OnStart()
+        {
+         //   throw new NotImplementedException();
+        }
+
+        protected override void OnStop()
+        {
+          //  throw new NotImplementedException();
+        }
+    }
+
+    class startup : IConfigureBindings<apptest>
+    {
+        void IConfigureBindings<apptest>.ConfigureBindings(IBindingsCollection<apptest> bindingsCollection)
+        {
+    //        bindingsCollection.SetSingleton<t>();
+        }
+    }
+
+    class resolver : IBindingsResolver<apptest>
+    {
+        void IBindingsResolver<apptest>.OnSingletonBindingResolve<TRequestedType>(ISingletonBindingsHandler<apptest> bindingsHandler)
+        {
+            if (typeof(TRequestedType) == typeof(t)) bindingsHandler.SetSingleton<t>();
+        }
+
+        void IBindingsResolver<apptest>.OnTransientBindingResolve<TRequestedType>(ITransientBindingsHandler<apptest> bindingsHandler)
+        {
+   //         if (typeof(TRequestedType) == typeof(t)) bindingsHandler.SetTransient<t>();
+        }
+    }
 
     class Program
     {
@@ -69,10 +112,15 @@ namespace TestConsole
         {
             DataAccessManager.SetConnectionStringResolver(new res());
 
-            var d = new ccc();
-            var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
-            ddd.First().IdUserChange = 123133;
-            d.SaveChanges();
+            //var d = new ccc();
+            //var ddd = d.Repo1.Where(x => x.IdModule >= 1).Take(2).ToList();
+            //ddd.First().IdUserChange = 123133;
+            //d.SaveChanges();
+
+            var appcore = new apptest();
+            appcore.Start();
+            appcore.SetBindingsResolver(new resolver());
+            var instance = appcore.Get<t>();
 
             Console.WriteLine("Hello World!");
 
