@@ -42,7 +42,7 @@ namespace OnUtils.Architecture.AppCore.DI
                     var resolver = _bindingsResolver;
                     if (resolver == null) return null;
 
-                    var bindingDescriptionPossible = resolver.ResolveType<T>(useSingleInstance);
+                    var bindingDescriptionPossible = resolver.ResolveType<T>(storeInstance);
                     if (bindingDescriptionPossible == null) return null;
                     // здесь должны быть проверки.
                     _typesCollectionResolved[typeof(T)] = bindingDescriptionPossible;

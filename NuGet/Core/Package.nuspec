@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils</id>
-    <version>0.1.16</version>
+    <version>0.1.17</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -13,7 +13,7 @@
       4) Инструменты для отладки и измерения производительности в логах (System.Debug, System.MeasureTime и пр.).
     </description>
     <releaseNotes>
-      Для OnUtils.Architecture.AppCore.AppCore&lt;&gt; добавлена возможность указать OnUtils.Architecture.AppCore.IBindingsResolver&lt;&gt; для резрешения отсутствующих привязок типов.
+      Исправлена ошибка определения отсутствующих привязок для IComponentTransient&lt;&gt;.
     </releaseNotes>
     <language>ru-RU</language>
     <projectUrl>https://github.com/Sellec/OnUtils</projectUrl>
