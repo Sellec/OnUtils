@@ -101,6 +101,11 @@ namespace OnUtils.Architecture.AppCore
                 if (_methodResolveTypeSingleton == null || _methodResolveTypeTransient == null) throw new InvalidProgramException();
             }
 
+            public BindingsResolverInternalImpl()
+            {
+                BindingsCollectionFromLazy = new BindingsCollection<TAppCore>();
+            }
+
             public override BindingDescription ResolveType<TRequestedType>(bool isSingleton)
             {
                 return (BindingDescription)(isSingleton ?
@@ -110,37 +115,55 @@ namespace OnUtils.Architecture.AppCore
 
             public BindingDescription ResolveTypeSingleton<TRequstedType>() where TRequstedType : IComponentSingleton<TAppCore>
             {
-                var bindingsCollection = new BindingsCollection<TAppCore>();
-                BindingsResolver?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
-                if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var value))
+                var typeRequested = typeof(TRequstedType);
+                if (BindingsCollectionFromLazy._typesCollection.TryGetValue(typeRequested, out var valueFromLazy))
                 {
-                    return value;
+                    return valueFromLazy;
                 }
                 else
                 {
-                    BindingsResolver2?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
-                    return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out value) ? value : null;
+                    var bindingsCollection = new BindingsCollection<TAppCore>();
+                    BindingsResolverFromProtected?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
+                    if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromProtected))
+                    {
+                        return valueFromProtected;
+                    }
+                    else
+                    {
+                        BindingsResolverFromExternal?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
+                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal : null;
+                    }
                 }
             }
 
             public BindingDescription ResolveTypeTransient<TRequstedType>() where TRequstedType : IComponentTransient<TAppCore>
             {
-                var bindingsCollection = new BindingsCollection<TAppCore>();
-                BindingsResolver?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
-                if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var value))
+                var typeRequested = typeof(TRequstedType);
+                if (BindingsCollectionFromLazy._typesCollection.TryGetValue(typeRequested, out var valueFromLazy))
                 {
-                    return value;
+                    return valueFromLazy;
                 }
                 else
                 {
-                    BindingsResolver2?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
-                    return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out value) ? value : null;
+                    var bindingsCollection = new BindingsCollection<TAppCore>();
+                    BindingsResolverFromProtected?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
+                    if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromProtected))
+                    {
+                        return valueFromProtected;
+                    }
+                    else
+                    {
+                        BindingsResolverFromExternal?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
+                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal : null;
+                    }
                 }
             }
 
-            public IBindingsResolver<TAppCore> BindingsResolver { get; set; }
+            public BindingsCollection<TAppCore> BindingsCollectionFromLazy { get; set; }
 
-            public IBindingsResolver<TAppCore> BindingsResolver2 { get; set; }
+            public IBindingsResolver<TAppCore> BindingsResolverFromProtected { get; set; }
+
+            public IBindingsResolver<TAppCore> BindingsResolverFromExternal { get; set; }
         }
 
         private bool _starting = false;
@@ -189,6 +212,10 @@ namespace OnUtils.Architecture.AppCore
                     assemblyStartupList.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: {x.Item1.GetType()} (привязка типов - {(x.Item2 != null ? "да" : "нет")}, действия при запуске - {(x.Item2 != null ? "да" : "нет")})"));
                 }
 
+                var assemblyLoadedDuringStartup = new List<Assembly>();
+                var assemblyLoadedDuringStartupHandler = new AssemblyLoadEventHandler((e, args) => assemblyLoadedDuringStartup.Add(args.LoadedAssembly));
+                AppDomain.CurrentDomain.AssemblyLoad += assemblyLoadedDuringStartupHandler;
+
                 try
                 {
                     startStep = ApplicationStartStep.BindingsRequired;
@@ -210,6 +237,24 @@ namespace OnUtils.Architecture.AppCore
                     if (AppDebugLevel >= DebugLevel.Detailed)
                         Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsApplied)}");
                     OnBindingsApplied();
+
+                    //AppDomain.CurrentDomain.AssemblyLoad += (e, args) => {
+                    //    var assemblyStartupListLazy = GetAssemblyStartupLazyList(args.LoadedAssembly);
+                    //    assemblyStartupListLazy.Where(x => x.Item2 != null).ForEach(x =>
+                    //    {
+                    //        var bindingsCollection2 = new BindingsCollection<TAppCore>();
+                    //        x.Item2.Invoke(x.Item1, new object[] { bindingsCollection2, bindingsCollection2 });
+                    //        bindingsCollection2._typesCollection.ForEach(pair =>
+                    //        {
+                    //            if (_objectProvider.GetQueryTypes !_bindingsResolver.BindingsCollectionFromLazy._typesCollection.TryAdd(pair.Key, pair.Value))
+                    //            {
+                    //                if (AppDebugLevel >= DebugLevel.Detailed)
+                    //                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.AssemblyLoadLazy: для query-типа '' уже существует привязка.");
+                    //            }
+                    //        });
+                    //    });
+                    //};
+
                 }
                 finally
                 {
@@ -218,7 +263,7 @@ namespace OnUtils.Architecture.AppCore
 
                 startStep = ApplicationStartStep.BindingsAutoStart;
 
-                BindingsAutoStart();
+                BindingsAutoStart(_objectProvider.GetQueryTypes());
                 if (AppDebugLevel >= DebugLevel.Detailed)
                     Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsAutoStart)}");
                 OnBindingsAutoStart();
@@ -236,11 +281,19 @@ namespace OnUtils.Architecture.AppCore
                 _instancesActivatedDuringStartup.Clear();
                 _instancesActivatedDuringStartup = null;
 
-                _starting = false;
-                _started = true;
+                if (AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: ленивая загрузка для сборок, загруженных дополнительно во время запуска приложения");
+
+                AppDomain.CurrentDomain.AssemblyLoad += (e, args) => LazyAssemblyLoad(args.LoadedAssembly);
+                AppDomain.CurrentDomain.AssemblyLoad -= assemblyLoadedDuringStartupHandler;
+                assemblyLoadedDuringStartup.ForEach(x => LazyAssemblyLoad(x));
 
                 if (AppDebugLevel >= DebugLevel.Common)
                     Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(Start)}: успешный запуск");
+
+                _starting = false;
+                _started = true;
+
             }
             catch (ApplicationStartException)
             {
@@ -259,6 +312,44 @@ namespace OnUtils.Architecture.AppCore
                 _started = false;
                 throw new ApplicationStartException(startStep, Types.TypeHelpers.ExtractGenericType(GetType(), typeof(AppCore<TAppCore>)), ex);
             }
+        }
+
+        private void LazyAssemblyLoad(Assembly assembly)
+        {
+            if (AppDebugLevel >= DebugLevel.Common)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): ленивая загрузка");
+
+            var assemblyStartupList = GetAssemblyStartupListLazy(assembly);
+            if (AppDebugLevel >= DebugLevel.Detailed)
+            {
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): список типов для создания привязок типов и выполнения действий при запуске:");
+                assemblyStartupList.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): {x.Item1.GetType()} (привязка типов - {(x.Item2 != null ? "да" : "нет")}, действия при запуске - {(x.Item2 != null ? "да" : "нет")})"));
+            }
+
+                var bindingsCollection = new BindingsCollection<TAppCore>();
+                if (AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): выполнение {nameof(IConfigureBindingsLazy<TAppCore>)}.{nameof(IConfigureBindingsLazy<TAppCore>.ConfigureBindingsLazy)}");
+                assemblyStartupList.Where(x => x.Item2 != null).ForEach(x => x.Item2.Invoke(x.Item1, new object[] { bindingsCollection }));
+
+            var queryTypesBound = new List<Type>();
+            foreach (var pair in bindingsCollection._typesCollection)
+            {
+                if (_objectProvider.TryAppendBinding(pair.Key, pair.Value))
+                {
+                    queryTypesBound.Add(pair.Key);
+                }
+                else
+                {
+                    if (AppDebugLevel >= DebugLevel.Common)
+                        Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): привязка для '{pair.Key}' уже существует.");
+                }
+            }
+
+            BindingsAutoStart(queryTypesBound);
+
+            if (AppDebugLevel >= DebugLevel.Detailed)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): выполнение {nameof(IExecuteStartLazy<TAppCore>)}.{nameof(IExecuteStartLazy<TAppCore>.ExecuteStartLazy)}");
+            assemblyStartupList.Where(x => x.Item3 != null).ForEach(x => x.Item3.Invoke(x.Item1, new object[] { this }));
         }
 
         /// <summary>
@@ -323,18 +414,17 @@ namespace OnUtils.Architecture.AppCore
 
             _objectProvider = new BindingsObjectProvider(collection._typesCollection.ToList());
 
-            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolver = GetBindingsResolver(), BindingsResolver2 = _bindingsResolver?.BindingsResolver2 };
+            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolverFromProtected = GetBindingsResolver(), BindingsResolverFromExternal = _bindingsResolver?.BindingsResolverFromExternal };
             _objectProvider.RegisterBindingsResolver(bindingsResolver);
             _bindingsResolver = bindingsResolver;
         }
 
-        private void BindingsAutoStart()
+        private void BindingsAutoStart(IEnumerable<Type> queryTypes)
         {
             if (AppDebugLevel >= DebugLevel.Common)
                 Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(BindingsAutoStart)}");
 
-            var typesForAutoStart = _objectProvider.
-                GetQueryTypes().
+            var typesForAutoStart = queryTypes.
                 Where(type => typeof(IAutoStart).IsAssignableFrom(type) && typeof(IComponentSingleton<TAppCore>).IsAssignableFrom(type)).
                 ToList();
 
@@ -569,6 +659,181 @@ namespace OnUtils.Architecture.AppCore
             return assembliesSorted.SelectMany(x => instances2[x]).Select(x => new Tuple<object, MethodInfo, MethodInfo>(x.Instance, x.ConfigureBindings, x.ExecuteStart)).ToList();
         }
 
+        private List<Tuple<object, MethodInfo, MethodInfo>> GetAssemblyStartupListLazy(Assembly assemblyLazy)
+        {
+            var currentType = GetType();
+
+            var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
+
+            var instances2 = assemblyLazy.ToEnumerable().
+                Where(assembly => !assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
+                Select(assembly =>
+                {
+                    var assemblyStartupTypes = assembly.
+                        GetTypes().
+                        Where(type =>
+                        {
+                            if (!type.IsClass || type.IsAbstract) return false;
+
+                            if (type.IsGenericType && type.IsGenericTypeDefinition)
+                            {
+                                var d = currentType;
+                                if (type.GetInterfaces().Any(interfaceType => interfaceType.IsGenericType && (interfaceType.GetGenericTypeDefinition() == typeof(IConfigureBindingsLazy<>) || interfaceType.GetGenericTypeDefinition() == typeof(IExecuteStartLazy<>))))
+                                {
+                                    var arguments = type.GetGenericArguments();
+                                    if (arguments.Length == 1 && arguments[0].IsGenericParameter)
+                                    {
+                                        var constraints = arguments[0].GetGenericParameterConstraints();
+                                        if (constraints.Length == 1 && constraints[0].IsGenericType)
+                                        {
+                                            var inheritedType = Types.TypeHelpers.ExtractGenericType(currentType, constraints[0].GetGenericTypeDefinition());
+                                            if (inheritedType != null) return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            }
+
+                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
+                            {
+                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
+                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                            }
+                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
+                            {
+                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
+                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                            }
+                            return false;
+                        }).
+                        Where(x => x.GetConstructor(new Type[] { }) != null).
+                        Select(type =>
+                        {
+                            if (type.IsGenericType && type.IsGenericTypeDefinition)
+                            {
+                                var d = currentType;
+                                if (type.GetInterfaces().Any(interfaceType => interfaceType.IsGenericType && (interfaceType.GetGenericTypeDefinition() == typeof(IConfigureBindingsLazy<>) || interfaceType.GetGenericTypeDefinition() == typeof(IExecuteStartLazy<>))))
+                                {
+                                    var arguments = type.GetGenericArguments();
+                                    if (arguments.Length == 1 && arguments[0].IsGenericParameter)
+                                    {
+                                        var constraints = arguments[0].GetGenericParameterConstraints();
+                                        if (constraints.Length == 1 && constraints[0].IsGenericType)
+                                        {
+                                            var inheritedType = Types.TypeHelpers.ExtractGenericType(currentType, constraints[0].GetGenericTypeDefinition());
+                                            if (inheritedType != null)
+                                            {
+                                                type = type.MakeGenericType(inheritedType.GetGenericArguments()[0]);
+
+                                                MethodInfo methodConfigureBindings2 = null;
+                                                if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
+                                                {
+                                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
+                                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                    {
+                                                        methodConfigureBindings2 = interfaceType.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
+                                                    }
+                                                }
+
+                                                MethodInfo methodExecuteStart2 = null;
+                                                if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStartLazy<int>))))
+                                                {
+                                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
+                                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                    {
+                                                        methodExecuteStart2 = interfaceType.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
+                                                    }
+                                                }
+
+                                                return new
+                                                {
+                                                    Type = type,
+                                                    ConfigureBindingsLazy = methodConfigureBindings2,
+                                                    ExecuteStartLazy = methodExecuteStart2
+                                                };
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            MethodInfo methodConfigureBindings = null;
+                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
+                            {
+                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
+                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                {
+                                    methodConfigureBindings = interfaceType.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
+                                }
+                            }
+
+                            MethodInfo methodExecuteStart = null;
+                            if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStartLazy<int>))))
+                            {
+                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
+                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                {
+                                    methodExecuteStart = interfaceType.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
+                                }
+                            }
+
+                            return new
+                            {
+                                Type = type,
+                                ConfigureBindingsLazy = methodConfigureBindings,
+                                ExecuteStartLazy = methodExecuteStart
+                            };
+                        }).
+                        Where(x => x.ConfigureBindingsLazy != null || x.ExecuteStartLazy != null).
+                        OrderBy(x => x.Type.FullName).
+                        ToList();
+
+                    return new
+                    {
+                        assembly,
+                        Instances = assemblyStartupTypes.
+                            Select(x => new
+                            {
+                                Instance = Activator.CreateInstance(x.Type),
+                                x.ConfigureBindingsLazy,
+                                x.ExecuteStartLazy
+                            }).
+                            ToList()
+                    };
+                }).
+                Where(x => x.Instances.Count > 0).
+                ToDictionary(x => x.assembly, x => x.Instances);
+
+            var assembliesSorted = instances2.Keys.ToList();
+            for (int j = 0; j < assembliesSorted.Count - 1; j++)
+            {
+                var ass = assembliesSorted[j];
+                var assReferenced = ass.GetReferencedAssemblies();
+                var isMove = false;
+                foreach (var assRef in assReferenced)
+                {
+                    for (int k = j + 1; k < assembliesSorted.Count; k++)
+                    {
+                        if (assembliesSorted[k].GetName().FullName == assRef.FullName)
+                        {
+                            isMove = true;
+                            break;
+                        }
+                    }
+                    if (isMove) break;
+                }
+
+                if (isMove)
+                {
+                    assembliesSorted.RemoveAt(j);
+                    assembliesSorted.Add(ass);
+                    j = j - 1;
+                }
+            }
+
+            return assembliesSorted.SelectMany(x => instances2[x]).Select(x => new Tuple<object, MethodInfo, MethodInfo>(x.Instance, x.ConfigureBindingsLazy, x.ExecuteStartLazy)).ToList();
+        }
+
         /// <summary>
         /// Возвращает обработчик, разрешающий отсутствующие привязки типов.
         /// </summary>
@@ -584,7 +849,7 @@ namespace OnUtils.Architecture.AppCore
         /// <returns></returns>
         public void SetBindingsResolver(IBindingsResolver<TAppCore> resolver)
         {
-            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolver = _bindingsResolver?.BindingsResolver, BindingsResolver2 = resolver };
+            var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolverFromProtected = _bindingsResolver?.BindingsResolverFromProtected, BindingsResolverFromExternal = resolver };
             _objectProvider.RegisterBindingsResolver(bindingsResolver);
             _bindingsResolver = bindingsResolver;
         }

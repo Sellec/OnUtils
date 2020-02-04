@@ -66,6 +66,8 @@
     <Compile Include="Architecture\AppCore\IBindingsResolver.cs" />
     <Compile Include="Architecture\AppCore\DI\ITransientBindingsHandler.cs" />
     <Compile Include="Architecture\AppCore\DI\ISingletonBindingsHandler.cs" />
+    <Compile Include="Architecture\AppCore\IConfigureBindingsLazy.cs" />
+    <Compile Include="Architecture\AppCore\IExecuteStartLazy.cs" />
     <Compile Include="Architecture\AppCore\Listeners\IAppCoreStartListener.cs" />
     <Compile Include="Architecture\AppCore\IComponent.cs" />
     <Compile Include="Architecture\AppCore\ApplicationStartException.cs" />

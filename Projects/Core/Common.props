@@ -1,0 +1,37 @@
+<Project>
+ <PropertyGroup>
+   <RootNamespace>OnUtils</RootNamespace>
+   <SignAssembly>true</SignAssembly>
+   <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
+   <DelaySign>false</DelaySign>
+   <AssemblyName>OnUtils</AssemblyName>
+   <Version>0.1.17</Version>
+   <PackageId>OnUtils</PackageId>
+   <Authors>Sellec</Authors>
+   <Company>TraceStudio</Company>
+   <Product>OnUtils</Product>
+   <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+   <Description>Набор утилит и абстракций для повышения удобства работы.</Description>
+   <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
+   <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+   <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+   <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+   <RepositoryType>git</RepositoryType>
+
+ </PropertyGroup>
+ <PropertyGroup>
+   <DocumentationFileName>$(AssemblyName).xml</DocumentationFileName>
+   <OutputFileName>$(AssemblyName).dll</OutputFileName>
+   <OutputFileNamePdb>$(AssemblyName).pdb</OutputFileNamePdb>
+
+   <DocumentationFileNet40>$(Configuration)Net40\$(DocumentationFileName)</DocumentationFileNet40>
+   <OutputPathNet40>$(Configuration)Net40</OutputPathNet40>
+   <OutputFileNet40>$(OutputPathNet40)\net40\$(OutputFileName)</OutputFileNet40>
+   <OutputFilePdbNet40>$(OutputPathNet40)\net40\$(OutputFileNamePdb)</OutputFilePdbNet40>
+
+   <DocumentationFileNetStandard>$(Configuration)NetStandard\$(DocumentationFileName)</DocumentationFileNetStandard>
+   <OutputPathNetStandard>$(Configuration)NetStandard</OutputPathNetStandard>
+   <OutputFileNetStandard>$(OutputPath)\netstandard2.0\$(OutputFileName)</OutputFileNetStandard>
+   <OutputFilePdbNetStandard>$(OutputPath)\netstandard2.0\$(OutputFileNamePdb)</OutputFilePdbNetStandard>
+ </PropertyGroup>
+</Project>

@@ -211,11 +211,11 @@ namespace OnUtils.Architecture.AppCore.DI
 
             _typesCollection.AddOrUpdate(
                 typeof(TQuery),
-                value => new BindingDescription(typeof(TImplementation), CreateActivator(typeof(TQuery))) { Instances = null },
+                value => new BindingDescription(typeof(TImplementation), CreateActivator(typeof(TImplementation))) { Instances = null },
                 (value, oldTypeDesctiption) =>
                 {
                     var bindedTypes = oldTypeDesctiption.BindedTypes;
-                    bindedTypes.Add(new BindedType() { Type = typeof(TImplementation), Activator = CreateActivator(typeof(TQuery)) });
+                    bindedTypes.Add(new BindedType() { Type = typeof(TImplementation), Activator = CreateActivator(typeof(TImplementation)) });
                     return new BindingDescription(bindedTypes) { Instances = null };
                 }
             );

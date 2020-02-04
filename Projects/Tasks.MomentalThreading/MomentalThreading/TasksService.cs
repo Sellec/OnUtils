@@ -22,7 +22,6 @@ namespace OnUtils.Tasks.MomentalThreading
 
         void ITasksService.Initialize()
         {
-            Debug.WriteLine($"TasksService({_unique}): Initialize");
             _jobsTimer = new Timer(new TimerCallback(state => CheckTasks()), null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
         }
 

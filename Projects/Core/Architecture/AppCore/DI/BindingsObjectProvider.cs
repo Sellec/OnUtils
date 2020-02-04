@@ -33,6 +33,16 @@ namespace OnUtils.Architecture.AppCore.DI
             _typesCollection = new TypesCollection(sourceDictionary);
         }
 
+        public bool TryAppendBinding(Type queryType, BindingDescription bindingDescription)
+        {
+            if (queryType == null) throw new ArgumentNullException(nameof(queryType));
+            if (bindingDescription == null) throw new ArgumentNullException(nameof(bindingDescription));
+            if (_typesCollection.ContainsKey(queryType) || _typesCollectionResolved.ContainsKey(queryType)) return false;
+
+            _typesCollectionResolved[queryType] = bindingDescription;
+            return true;
+        }
+
         public IEnumerable<T> GetInstances<T>(bool storeInstance, bool useSingleInstance) where T : class
         {
             if (!_typesCollection.TryGetValue(typeof(T), out BindingDescription bindingDescription))
@@ -90,6 +100,10 @@ namespace OnUtils.Architecture.AppCore.DI
             {
                 return bindingDescription.BindedTypes.Select(x => x.Type).ToList();
             }
+            else if (_typesCollectionResolved.TryGetValue(queryType, out bindingDescription))
+            {
+                return bindingDescription.BindedTypes.Select(x => x.Type).ToList();
+            }
             else
             {
                 return null;
@@ -98,7 +112,7 @@ namespace OnUtils.Architecture.AppCore.DI
 
         public IEnumerable<Type> GetQueryTypes()
         {
-            return _typesCollection.Keys.ToList();
+            return _typesCollection.Keys.Union(_typesCollectionResolved.Keys).ToList();
         }
 
         void IBindingsObjectProvider.RegisterInstanceActivatedHandler(IInstanceActivatedHandler handler)

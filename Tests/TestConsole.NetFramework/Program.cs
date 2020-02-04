@@ -117,10 +117,18 @@ namespace TestConsole
             //ddd.First().IdUserChange = 123133;
             //d.SaveChanges();
 
-            var appcore = new apptest();
-            appcore.Start();
-            appcore.SetBindingsResolver(new resolver());
-            var instance = appcore.Get<t>();
+            //var appcore = new apptest();
+            //appcore.Start();
+            //appcore.SetBindingsResolver(new resolver());
+            //var instance = appcore.Get<t>();
+
+            var appCoreLazyTest = new LazyBinding.App.ApplicationCore();
+            appCoreLazyTest.Start();
+
+            System.Reflection.Assembly.Load("TestConsole.NetFramework.LazyBinding");
+            var queryTypes = appCoreLazyTest.GetQueryTypes();
+            var bindedTypes1 = appCoreLazyTest.GetBindedTypes<LazyBinding.App.ITestComponent1>();
+            var bindedTypes2 = appCoreLazyTest.GetBindedTypes<LazyBinding.App.ITestComponent2>();
 
             Console.WriteLine("Hello World!");
 

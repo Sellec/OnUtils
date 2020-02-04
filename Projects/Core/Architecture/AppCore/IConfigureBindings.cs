@@ -11,6 +11,4 @@
         /// </summary>
         void ConfigureBindings(DI.IBindingsCollection<TAppCore> bindingsCollection);
     }
-
-
 }

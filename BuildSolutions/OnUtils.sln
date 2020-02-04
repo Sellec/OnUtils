@@ -42,10 +42,17 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsole.NetCore", "..\Tests\TestConsole.NetCore\TestConsole.NetCore.csproj", "{4B28218E-9A51-4D1E-8865-C2050DD1D144}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework", "..\Tests\TestConsole.NetFramework\TestConsole.NetFramework.csproj", "{3B8D299C-5CF7-4E20-AE48-449F5043B2A6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92} = {C1E7513B-3452-409F-A854-B1F64A8AFA92}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tasks.MomentalThreading", "..\Projects\Tasks.MomentalThreading\Tasks.MomentalThreading.csproj", "{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC}"
 EndProject
 Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Data.DB", "..\Projects\Data.DB\Data.DB.sqlproj", "{061AAA10-2170-487B-8C20-F10D79305D9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework.LazyBinding", "..\Tests\TestConsole.NetFramework.LazyBinding\TestConsole.NetFramework.LazyBinding.csproj", "{C1E7513B-3452-409F-A854-B1F64A8AFA92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole.NetFramework.LazyBindingApp", "..\Tests\TestConsole.NetFramework.LazyBindingApp\TestConsole.NetFramework.LazyBindingApp.csproj", "{F43ACE2F-730B-4B54-9C75-F68BE3B06729}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -100,6 +107,14 @@ Global
 		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{061AAA10-2170-487B-8C20-F10D79305D9A}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F43ACE2F-730B-4B54-9C75-F68BE3B06729}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F43ACE2F-730B-4B54-9C75-F68BE3B06729}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F43ACE2F-730B-4B54-9C75-F68BE3B06729}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F43ACE2F-730B-4B54-9C75-F68BE3B06729}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,6 +132,8 @@ Global
 		{3B8D299C-5CF7-4E20-AE48-449F5043B2A6} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
 		{7645A6BB-CCA5-4EC9-ABEE-B0A752BE82FC} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
 		{061AAA10-2170-487B-8C20-F10D79305D9A} = {4ED9868C-5277-4FD0-817F-9D4F74E4FD4E}
+		{C1E7513B-3452-409F-A854-B1F64A8AFA92} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
+		{F43ACE2F-730B-4B54-9C75-F68BE3B06729} = {1FBB702E-EAD6-4259-9590-D34D015F4A73}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EED38A6B-FD8B-4735-9632-1F78301B6F9F}
