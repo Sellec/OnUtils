@@ -326,10 +326,10 @@ namespace OnUtils.Architecture.AppCore
                 assemblyStartupList.ForEach(x => Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): {x.Item1.GetType()} (привязка типов - {(x.Item2 != null ? "да" : "нет")}, действия при запуске - {(x.Item2 != null ? "да" : "нет")})"));
             }
 
-                var bindingsCollection = new BindingsCollection<TAppCore>();
-                if (AppDebugLevel >= DebugLevel.Common)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): выполнение {nameof(IConfigureBindingsLazy<TAppCore>)}.{nameof(IConfigureBindingsLazy<TAppCore>.ConfigureBindingsLazy)}");
-                assemblyStartupList.Where(x => x.Item2 != null).ForEach(x => x.Item2.Invoke(x.Item1, new object[] { bindingsCollection }));
+            var bindingsCollection = new BindingsCollection<TAppCore>();
+            if (AppDebugLevel >= DebugLevel.Common)
+                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(LazyAssemblyLoad)}('{assembly.FullName}'): выполнение {nameof(IConfigureBindingsLazy<TAppCore>)}.{nameof(IConfigureBindingsLazy<TAppCore>.ConfigureBindingsLazy)}");
+            assemblyStartupList.Where(x => x.Item2 != null).ForEach(x => x.Item2.Invoke(x.Item1, new object[] { bindingsCollection }));
 
             var queryTypesBound = new List<Type>();
             foreach (var pair in bindingsCollection._typesCollection)

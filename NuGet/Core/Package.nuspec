@@ -2,7 +2,7 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils</id>
-    <version>0.1.19</version>
+    <version>0.1.20</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -13,9 +13,7 @@
       4) Инструменты для отладки и измерения производительности в логах (System.Debug, System.MeasureTime и пр.).
     </description>
     <releaseNotes>
-      Добавлены интерфейсы OnUtils.Architecture.AppCore.IConfigureBindingsLazy&lt;&gt; и OnUtils.Architecture.AppCore.IExecuteStartLazy&lt;&gt;.
-      Сборки, загруженные во время и после запуска приложения, обрабатываются в "ленивом" режиме - привязки типов регистрируются только для новых query-типов.
-      Исправлена ошибка привязки типов в методе OnUtils.Architecture.AppCore.DI.BindingsCollection&lt;&gt;.AddTransient&lt;&gt;.
+      Добавлены дополнительные проверки во время распознавания типов в OnUtils.Architecture.AppCore.DI.BindingsObjectProvider с учетом ленивой загрузки.
     </releaseNotes>
     <language>ru-RU</language>
     <projectUrl>https://github.com/Sellec/OnUtils</projectUrl>

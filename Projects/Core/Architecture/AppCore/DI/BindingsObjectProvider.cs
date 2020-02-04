@@ -53,10 +53,17 @@ namespace OnUtils.Architecture.AppCore.DI
                     if (resolver == null) return null;
 
                     var bindingDescriptionPossible = resolver.ResolveType<T>(storeInstance);
-                    if (bindingDescriptionPossible == null) return null;
-                    // здесь должны быть проверки.
-                    _typesCollectionResolved[typeof(T)] = bindingDescriptionPossible;
-                    bindingDescription = bindingDescriptionPossible;
+                    if (bindingDescriptionPossible != null)
+                    {
+                        // здесь должны быть проверки.
+                        _typesCollectionResolved[typeof(T)] = bindingDescriptionPossible;
+                        bindingDescription = bindingDescriptionPossible;
+                    }
+                    else
+                    {
+                        // Повторная проверка - во время распознавания типа могли быть загружены дополнительные сборки, предоставившие новые привязки.
+                        if (!_typesCollectionResolved.TryGetValue(typeof(T), out bindingDescription)) return null;
+                    }
                 }
             }
 
