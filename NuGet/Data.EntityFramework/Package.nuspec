@@ -2,13 +2,14 @@
 <package>
   <metadata minClientVersion="3.3">
     <id>OnUtils.Data.EntityFramework</id>
-    <version>0.1.14</version>
+    <version>0.1.15</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
       Реализация абстракций уровня данных для OnUtils на основе EntityFramework.
     </description>
     <releaseNotes>
+      Исправление нюансов со связыванием версий библиотек EntityFramework.
     </releaseNotes>
     <language>ru-RU</language>
     <projectUrl>https://github.com/Sellec/OnUtils</projectUrl>
@@ -20,13 +21,11 @@
     <dependencies>
       <group targetFramework="net40">
         <dependency id="OnUtils" version="0.1.8" />
-        <dependency id="EntityFramework" version="6.2.0" />
+        <dependency id="EntityFramework" version="6.4.0" />
       </group>
       <group targetFramework="netstandard2.0">
         <dependency id="OnUtils" version="0.1.8" />
-        <dependency id="Microsoft.EntityFrameworkCore" version="2.2.3" />
-        <dependency id="Microsoft.EntityFrameworkCore.SqlServer" version="2.2.3" />
-        <dependency id="Microsoft.Extensions.DiagnosticAdapter" version="2.2.0" />
+        <dependency id="EntityFramework" version="6.4.0" />
       </group>
     </dependencies>
     <contentFiles>
