@@ -213,7 +213,11 @@ namespace OnUtils.Architecture.AppCore
                 }
 
                 var assemblyLoadedDuringStartup = new List<Assembly>();
-                var assemblyLoadedDuringStartupHandler = new AssemblyLoadEventHandler((e, args) => assemblyLoadedDuringStartup.Add(args.LoadedAssembly));
+                var assemblyLoadedDuringStartupHandler = new AssemblyLoadEventHandler((e, args) =>
+                {
+                    if (!args.LoadedAssembly.ReflectionOnly)
+                        assemblyLoadedDuringStartup.Add(args.LoadedAssembly);
+                });
                 AppDomain.CurrentDomain.AssemblyLoad += assemblyLoadedDuringStartupHandler;
 
                 try
@@ -237,24 +241,6 @@ namespace OnUtils.Architecture.AppCore
                     if (AppDebugLevel >= DebugLevel.Detailed)
                         Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsApplied)}");
                     OnBindingsApplied();
-
-                    //AppDomain.CurrentDomain.AssemblyLoad += (e, args) => {
-                    //    var assemblyStartupListLazy = GetAssemblyStartupLazyList(args.LoadedAssembly);
-                    //    assemblyStartupListLazy.Where(x => x.Item2 != null).ForEach(x =>
-                    //    {
-                    //        var bindingsCollection2 = new BindingsCollection<TAppCore>();
-                    //        x.Item2.Invoke(x.Item1, new object[] { bindingsCollection2, bindingsCollection2 });
-                    //        bindingsCollection2._typesCollection.ForEach(pair =>
-                    //        {
-                    //            if (_objectProvider.GetQueryTypes !_bindingsResolver.BindingsCollectionFromLazy._typesCollection.TryAdd(pair.Key, pair.Value))
-                    //            {
-                    //                if (AppDebugLevel >= DebugLevel.Detailed)
-                    //                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.AssemblyLoadLazy: для query-типа '' уже существует привязка.");
-                    //            }
-                    //        });
-                    //    });
-                    //};
-
                 }
                 finally
                 {
