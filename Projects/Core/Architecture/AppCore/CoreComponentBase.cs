@@ -20,7 +20,7 @@ namespace OnUtils.Architecture.AppCore
                 try
                 {
                     AppCore = core;
-                    OnStart();
+                    OnStarting();
                 }
                 finally
                 {
@@ -82,12 +82,29 @@ namespace OnUtils.Architecture.AppCore
         /// <summary>
         /// Вызывается при запуске компонента.
         /// </summary>
-        protected abstract void OnStart();
+        /// <remarks>
+        /// Если в данном методе возникает исключение, это прерывает процесс активации экземпляра объекта.
+        /// </remarks>
+        protected virtual void OnStarting()
+        {
+        }
+
+        /// <summary>
+        /// Вызывается при запуске компонента.
+        /// </summary>
+        /// <remarks>
+        /// Если в данном методе возникает исключение, это не прерывает процесс активации экземпляра объекта.
+        /// </remarks>
+        internal protected virtual void OnStarted()
+        {
+        }
 
         /// <summary>
         /// Вызывается при остановке компонента, либо при вызове Dispose. Вызывается всего один раз. Все ресурсы должны освобождаться именно в этом методе. См. также <see cref="IComponent{TAppCore}.Stop"/>.
         /// </summary>
-        protected abstract void OnStop();
+        protected virtual void OnStop()
+        {
+        }
         #endregion
 
     }

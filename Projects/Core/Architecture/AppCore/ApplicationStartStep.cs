@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OnUtils.Architecture.AppCore
+﻿namespace OnUtils.Architecture.AppCore
 {
     /// <summary>
     /// Содержит перечисление этапов запуска ядра приложения.

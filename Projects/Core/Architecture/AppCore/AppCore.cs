@@ -15,6 +15,60 @@ namespace OnUtils.Architecture.AppCore
     public abstract partial class AppCore<TAppCore> : IDisposable
         where TAppCore : AppCore<TAppCore>
     {
+        class InstanceActivatingHandlerImpl : IInstanceActivatingHandler
+        {
+            private readonly TAppCore _core;
+
+            public InstanceActivatingHandlerImpl(TAppCore core)
+            {
+                _core = core;
+            }
+
+            public void OnInstanceActivating<TRequestedType>(object instance)
+            {
+                if (_core.AppDebugLevel >= DebugLevel.Common)
+                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatingHandlerImpl)}.{nameof(OnInstanceActivating)}: активация компонента '{instance.GetType().FullName}'.");
+
+                if (instance is IComponent<TAppCore> coreComponent)
+                {
+                    if (!coreComponent.GetState().In(CoreComponentState.Started, CoreComponentState.Stopped))
+                    {
+                        if (_core.AppDebugLevel >= DebugLevel.Detailed)
+                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatingHandlerImpl)}.{nameof(OnInstanceActivating)}: компонент не запущен, состояние - {coreComponent.GetState()}");
+
+                        if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable)
+                        {
+                            if (_core.AppDebugLevel >= DebugLevel.Detailed)
+                            {
+                                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatingHandlerImpl)}.{nameof(OnInstanceActivating)}: попытка запуска компонента.");
+                                try
+                                {
+                                    coreComponentStartable.Start(_core);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatingHandlerImpl)}.{nameof(OnInstanceActivating)}: ошибка запуска компонента");
+                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatingHandlerImpl)}.{nameof(OnInstanceActivating)}: {ex}");
+                                    throw;
+                                }
+                            }
+                            else
+                            {
+                                coreComponentStartable.Start(_core);
+                            }
+                        }
+                    }
+
+                    if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
+                }
+
+                if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
+                {
+                    _core._activatedSingletonInstances.Push(coreComponentSingleton);
+                }
+            }
+        }
+
         class InstanceActivatedHandlerImpl : IInstanceActivatedHandler
         {
             private readonly TAppCore _core;
@@ -26,66 +80,7 @@ namespace OnUtils.Architecture.AppCore
 
             public void OnInstanceActivated<TRequestedType>(object instance)
             {
-                if (_core.AppDebugLevel >= DebugLevel.Common)
-                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: активация компонента '{instance.GetType().FullName}'.");
-
-                if (instance is IComponent<TAppCore> coreComponent)
-                {
-                    if (!coreComponent.GetState().In(CoreComponentState.Started, CoreComponentState.Stopped))
-                    {
-                        if (_core.AppDebugLevel >= DebugLevel.Detailed)
-                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: компонент не запущен, состояние - {coreComponent.GetState()}");
-
-                        if (coreComponent is IComponentStartable<TAppCore> coreComponentStartable)
-                        {
-                            if (_core.AppDebugLevel >= DebugLevel.Detailed)
-                            {
-                                Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: попытка запуска компонента.");
-                                try
-                                {
-                                    coreComponentStartable.Start(_core);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: ошибка запуска компонента");
-                                    Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: {ex}");
-                                    throw;
-                                }
-                            }
-                            else
-                            {
-                                coreComponentStartable.Start(_core);
-                            }
-                        }
-                    }
-
-                    if (_core.AppDebugLevel >= DebugLevel.Detailed)
-                    {
-                        try
-                        {
-                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: событие активации в ядре");
-
-                            _core.OnInstanceActivated<TRequestedType>(coreComponent);
-                            if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: ошибка события активации в ядре");
-                            Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(InstanceActivatedHandlerImpl)}.{nameof(OnInstanceActivated)}: {ex}");
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        _core.OnInstanceActivated<TRequestedType>(coreComponent);
-                        if (_core.GetState() == CoreComponentState.Starting && coreComponent is Listeners.IAppCoreStartListener listenerComponent) _core._instancesActivatedDuringStartup.Add(listenerComponent);
-                    }
-                }
-
-                if (instance is IComponentSingleton<TAppCore> coreComponentSingleton)
-                {
-                    _core._activatedSingletonInstances.Push(coreComponentSingleton);
-                }
+                if (instance is CoreComponentBase<TAppCore> coreComponentBase) coreComponentBase.OnStarted();
             }
         }
 
@@ -172,7 +167,9 @@ namespace OnUtils.Architecture.AppCore
         private bool _bindingsPreparing = false;
         private ConcurrentStack<IComponentSingleton<TAppCore>> _activatedSingletonInstances = null;
 
+        private readonly InstanceActivatingHandlerImpl _instanceActivatingHandler = null;
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
+
         private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
         private List<Listeners.IAppCoreStartListener> _instancesActivatedDuringStartup = new List<Listeners.IAppCoreStartListener>();
         private BindingsResolverInternalImpl _bindingsResolver = null;
@@ -187,6 +184,7 @@ namespace OnUtils.Architecture.AppCore
                 if (AppDebugLevel>= DebugLevel.Disabled) Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.new: Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
                 throw new TypeAccessException($"Параметр-тип {nameof(TAppCore)} должен находиться в цепочке наследования текущего типа.");
             }
+            _instanceActivatingHandler = new InstanceActivatingHandlerImpl((TAppCore)(object)this);
             _instanceActivatedHandler = new InstanceActivatedHandlerImpl((TAppCore)(object)this);
             _activatedSingletonInstances = new ConcurrentStack<IComponentSingleton<TAppCore>>();
         }
@@ -237,6 +235,7 @@ namespace OnUtils.Architecture.AppCore
                     startStep = ApplicationStartStep.BindingsApplying;
 
                     BindingsApply(bindingsCollection);
+                    ((IBindingsObjectProvider)_objectProvider).RegisterInstanceActivatingHandler(_instanceActivatingHandler);
                     ((IBindingsObjectProvider)_objectProvider).RegisterInstanceActivatedHandler(_instanceActivatedHandler);
                     if (AppDebugLevel >= DebugLevel.Detailed)
                         Debug.WriteLine($"{nameof(AppCore<TAppCore>)}.{nameof(OnBindingsApplied)}");
@@ -1014,34 +1013,6 @@ namespace OnUtils.Architecture.AppCore
         }
         #endregion
 
-        ///// <summary>
-        ///// Присоединяет компонент <paramref name="component"/> к ядру и запускает его (<see cref="ICoreComponent.Start(TAppCore)"/>). 
-        ///// Присоединить можно только не присоединенный к другому ядру компонент, в противном случае будет сгенерировано исключение.
-        ///// </summary>
-        ///// <exception cref="ArgumentNullException">Генерируется, если <paramref name="component"/> равен null.</exception>
-        ///// <exception cref="InvalidOperationException">Генерируется, если компонент уже присоединен к другому ядру.</exception>
-        //public void Attach<TCoreComponent>(TCoreComponent component) where TCoreComponent : class, ICoreComponent
-        //{
-        //    if (component == null) throw new ArgumentNullException(nameof(component));
-        //    if (component.GetAppCore() != this) throw new InvalidOperationException("Компонент уже присоединен к другому ядру.");
-
-        //    if (component.GetState() == CoreComponentState.None) component.Start((TAppCore)this);
-        //}
-
-        ///// <summary>
-        ///// Пытается присоединить компонент <paramref name="component"/> к ядру и запустить его (<see cref="ICoreComponent.Start(TAppCore)"/>). 
-        ///// Присоединить можно только не присоединенный к другому ядру компонент, в противном случае будет возвращено значение false.
-        ///// </summary>
-        ///// <returns>Возвращает false, если <paramref name="component"/> равен null или компонент уже присоединен к другому ядру.</returns>
-        //public bool TryAttach<TCoreComponent>(TCoreComponent component) where TCoreComponent : class, ICoreComponent
-        //{
-        //    if (component == null) return false;
-        //    if (component.GetAppCore() != this) return false;
-
-        //    if (component.GetState() == CoreComponentState.None) component.Start((TAppCore)this);
-        //    return true;
-        //}
-
         /// <summary>
         /// Возвращает список типов, имеющих привязку к типу <typeparamref name="TQueryType"/> (см. описание методов <see cref="BindingsCollection{TAppCore}"/>). 
         /// </summary>
@@ -1108,14 +1079,6 @@ namespace OnUtils.Architecture.AppCore
         /// Вызывается при остановке ядра. Остановка может быть вызвана как прямым вызовом <see cref="Stop"/>, так и через использование <see cref="IDisposable.Dispose"/>. 
         /// </summary>
         protected virtual void OnStop()
-        {
-
-        }
-
-        /// <summary>
-        /// Вызывается, когда создан новый экземпляр компонента <paramref name="instance"/> на основании затребованного типа <typeparamref name="TRequestedType"/>.
-        /// </summary>
-        protected virtual void OnInstanceActivated<TRequestedType>(IComponent<TAppCore> instance)
         {
 
         }

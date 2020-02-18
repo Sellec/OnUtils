@@ -12,9 +12,9 @@ namespace OnUtils.Architecture.AppCore.DI
 
     class BindingDescription
     {
-        public BindingDescription(Type activatedType, Func<object> activator) : this(new BindedType() { Type = activatedType, Activator = activator })
+        public BindingDescription(Type queryType, Func<object> activator) : this(new BindedType() { Type = queryType, Activator = activator })
         {
-            if (activatedType == null) throw new ArgumentNullException(nameof(activatedType));
+            if (queryType == null) throw new ArgumentNullException(nameof(queryType));
         }
 
         public BindingDescription(BindedType bindedType) : this(bindedType.ToEnumerable())

@@ -74,15 +74,6 @@ namespace TestConsole
 
     class t : CoreComponentBase<apptest>, IComponentSingleton<apptest>
     {
-        protected override void OnStart()
-        {
-         //   throw new NotImplementedException();
-        }
-
-        protected override void OnStop()
-        {
-          //  throw new NotImplementedException();
-        }
     }
 
     class startup : IConfigureBindings<apptest>

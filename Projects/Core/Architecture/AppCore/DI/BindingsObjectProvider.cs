@@ -17,6 +17,7 @@ namespace OnUtils.Architecture.AppCore.DI
         private static MethodInfo _methodGetInstances = null;
         private readonly TypesCollection _typesCollection = new TypesCollection(new Dictionary<Type, BindingDescription>());
         private readonly Dictionary<Type, BindingDescription> _typesCollectionResolved = new Dictionary<Type, BindingDescription>(new Dictionary<Type, BindingDescription>());
+        private List<IInstanceActivatingHandler> _activatingHandlers = new List<IInstanceActivatingHandler>();
         private List<IInstanceActivatedHandler> _activatedHandlers = new List<IInstanceActivatedHandler>();
         private BindingsResolverInternal _bindingsResolver = null;
 
@@ -69,23 +70,33 @@ namespace OnUtils.Architecture.AppCore.DI
 
             if (bindingDescription == null) return null;
 
-            lock (bindingDescription.InstancesSetSyncRoot)
+            if (!bindingDescription.Instances.IsNullOrEmpty())
             {
-                if (!bindingDescription.Instances.IsNullOrEmpty())
+                return bindingDescription.Instances.Select(x => (T)x);
+            }
+            else
+            {
+                lock (bindingDescription.InstancesSetSyncRoot)
                 {
-                    return bindingDescription.Instances.Select(x => (T)x);
-                }
-                else if (bindingDescription.BindedTypes.Count > 0)
-                {
-                    var typesToCreateInstance = useSingleInstance ? bindingDescription.BindedTypes.Take(1) : bindingDescription.BindedTypes;
-                    var createdInstances = typesToCreateInstance.Select(x => (T)x.Activator()).ToList();
-                    if (_activatedHandlers != null)
+                    if (!bindingDescription.Instances.IsNullOrEmpty())
                     {
-                        var activatedHadlersSnapshot = _activatedHandlers.ToList();
-                        createdInstances.ForEach(instance => activatedHadlersSnapshot.ForEach(handler => handler.OnInstanceActivated<T>(instance)));
+                        return bindingDescription.Instances.Select(x => (T)x);
                     }
-                    if (storeInstance) bindingDescription.Instances = createdInstances;
-                    return createdInstances;
+                    else if (bindingDescription.BindedTypes.Count > 0)
+                    {
+                        var typesToCreateInstance = useSingleInstance ? bindingDescription.BindedTypes.Take(1) : bindingDescription.BindedTypes;
+                        var createdInstances = typesToCreateInstance.Select(x => (T)x.Activator()).ToList();
+
+                        var activatingHadlersSnapshot = _activatingHandlers?.ToList();
+                        if (activatingHadlersSnapshot != null) createdInstances.ForEach(instance => activatingHadlersSnapshot.ForEach(handler => handler.OnInstanceActivating<T>(instance)));
+
+                        if (storeInstance) bindingDescription.Instances = createdInstances;
+
+                        var activatedHadlersSnapshot = _activatedHandlers?.ToList();
+                        if (activatedHadlersSnapshot != null) createdInstances.ForEach(instance => activatedHadlersSnapshot.ForEach(handler => handler.OnInstanceActivated<T>(instance)));
+
+                        return createdInstances;
+                    }
                 }
             }
             return null;
@@ -120,6 +131,11 @@ namespace OnUtils.Architecture.AppCore.DI
         public IEnumerable<Type> GetQueryTypes()
         {
             return _typesCollection.Keys.Union(_typesCollectionResolved.Keys).ToList();
+        }
+
+        void IBindingsObjectProvider.RegisterInstanceActivatingHandler(IInstanceActivatingHandler handler)
+        {
+            if (!_activatingHandlers.Contains(handler)) _activatingHandlers.Add(handler);
         }
 
         void IBindingsObjectProvider.RegisterInstanceActivatedHandler(IInstanceActivatedHandler handler)

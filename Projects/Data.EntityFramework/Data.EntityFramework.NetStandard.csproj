@@ -6,7 +6,7 @@
     <RootNamespace>OnUtils.Data</RootNamespace>
     <PackageId>OnUtils.Data.EntityFramework</PackageId>
     <Authors>Sellec</Authors>
-    <Version>0.1.15</Version>
+    <Version>0.1.16</Version>
     <Company>TraceStudio</Company>
     <Product>TraceUtils</Product>
     <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>

@@ -8,6 +8,12 @@
         /// <summary>
         /// Регистрирует новый обработчик, вызываемый при активации нового экземпляра объекта.
         /// </summary>
+        void RegisterInstanceActivatingHandler(IInstanceActivatingHandler handler);
+
+        /// <summary>
+        /// Регистрирует новый обработчик, вызываемый после активации нового экземпляра объекта.
+        /// </summary>
         void RegisterInstanceActivatedHandler(IInstanceActivatedHandler handler);
+
     }
 }

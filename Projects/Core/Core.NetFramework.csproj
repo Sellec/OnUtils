@@ -63,6 +63,7 @@
     <Compile Include="Architecture\AppCore\AppCore.cs" />
     <Compile Include="Architecture\AppCore\DebugLevel.cs" />
     <Compile Include="Architecture\AppCore\DI\BindingsResolverInternal.cs" />
+    <Compile Include="Architecture\AppCore\DI\IInstanceActivatingHandler.cs" />
     <Compile Include="Architecture\AppCore\IBindingsResolver.cs" />
     <Compile Include="Architecture\AppCore\DI\ITransientBindingsHandler.cs" />
     <Compile Include="Architecture\AppCore\DI\ISingletonBindingsHandler.cs" />

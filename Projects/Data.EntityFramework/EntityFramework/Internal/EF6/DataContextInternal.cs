@@ -99,12 +99,12 @@ namespace OnUtils.Data.EntityFramework.Internal
                             DecimalPropertyConfiguration decimalConfig;
                             if (propAttr.prop.PropertyType.IsGenericType && propAttr.prop.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
                             {
-                                MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property").ToList()[7];
+                                MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property" && p.ReturnType == typeof(DecimalPropertyConfiguration)).ElementAt(1);
                                 decimalConfig = methodInfo.Invoke(entityConfig, new[] { lambdaExpression }) as DecimalPropertyConfiguration;
                             }
                             else
                             {
-                                MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property").ToList()[6];
+                                MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property" && p.ReturnType == typeof(DecimalPropertyConfiguration)).ElementAt(0);
                                 decimalConfig = methodInfo.Invoke(entityConfig, new[] { lambdaExpression }) as DecimalPropertyConfiguration;
                             }
 
