@@ -22,7 +22,7 @@ namespace OnUtils.Tasks
         /// <summary>
         /// Устанавливает разовую задачу с именем <paramref name="name"/>, указанным временем запуска <paramref name="startTime"/> на основе делегата <paramref name="taskDelegate"/>.
         /// </summary>
-        void SetTask(string name, DateTime startTime, Expression<Action> taskDelegate);
+        void SetTask(string name, DateTimeOffset startTime, Expression<Action> taskDelegate);
 
         /// <summary>
         /// Удаляет все существующие задачи.

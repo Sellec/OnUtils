@@ -11,6 +11,6 @@ namespace OnUtils.Tasks.MomentalThreading
 
         public Action ExecutionDelegate { get; set; }
 
-        public DateTime ClosestOccurrence { get; set; }
+        public DateTimeOffset ClosestOccurrence { get; set; }
     }
 }

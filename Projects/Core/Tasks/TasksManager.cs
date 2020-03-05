@@ -61,6 +61,15 @@ namespace OnUtils.Tasks
         /// <exception cref="InvalidOperationException">Возникает, если не установлен сервис <see cref="ITasksService"/> (см. <see cref="SetDefaultService(ITasksService)"/>).</exception>
         public static void SetTask(string name, DateTime startTime, Expression<Action> taskDelegate)
         {
+            SetTask(name, new DateTimeOffset(startTime), taskDelegate);
+        }
+
+        /// <summary>
+        /// Устанавливает разовую задачу с именем <paramref name="name"/>, указанным временем запуска <paramref name="startTime"/> на основе делегата <paramref name="taskDelegate"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Возникает, если не установлен сервис <see cref="ITasksService"/> (см. <see cref="SetDefaultService(ITasksService)"/>).</exception>
+        public static void SetTask(string name, DateTimeOffset startTime, Expression<Action> taskDelegate)
+        {
             CheckDefaultService();
             GetDefaultService().SetTask(name, startTime, taskDelegate);
         }

@@ -29,9 +29,9 @@ namespace OnUtils.Tasks.MomentalThreading
         {
             lock (_jobsSyncRoot)
             {
-                var jobsListSnapshot = _jobsList.Where(job => job.ClosestOccurrence <= DateTime.Now).ToList();
-                _jobsList.RemoveAll(job => job.CronSchedule == null && job.ClosestOccurrence <= DateTime.Now);
-                _jobsList.Where(job => job.CronSchedule != null).ForEach(job => job.ClosestOccurrence = job.CronSchedule.GetNextOccurrence(DateTime.Now));
+                var jobsListSnapshot = _jobsList.Where(job => job.ClosestOccurrence <= DateTimeOffset.Now).ToList();
+                _jobsList.RemoveAll(job => job.CronSchedule == null && job.ClosestOccurrence <= DateTimeOffset.Now);
+                _jobsList.Where(job => job.CronSchedule != null).ForEach(job => job.ClosestOccurrence = job.CronSchedule.GetNextOccurrence(DateTime.UtcNow));
 
                 jobsListSnapshot.ForEach(job => Task.Factory.StartNew(() => job.ExecutionDelegate()));
             }
@@ -54,7 +54,6 @@ namespace OnUtils.Tasks.MomentalThreading
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
-                    //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
 
                 var schedule = CrontabSchedule.Parse(cronExpression);
@@ -63,20 +62,19 @@ namespace OnUtils.Tasks.MomentalThreading
                     CronSchedule = schedule,
                     JobName = name,
                     ExecutionDelegate = taskDelegate.Compile(), // todo добавить проверки на тип тела лямбды.
-                    ClosestOccurrence = schedule.GetNextOccurrence(DateTime.Now) // todo разобраться с UtcTime.
+                    ClosestOccurrence = schedule.GetNextOccurrence(DateTime.UtcNow)
                 });
             }
         }
 
-        void ITasksService.SetTask(string name, DateTime startTime, Expression<Action> taskDelegate)
+        void ITasksService.SetTask(string name, DateTimeOffset startTime, Expression<Action> taskDelegate)
         {
             lock (_jobsSyncRoot)
             {
                 if (_jobsList.Any(x => x.JobName == name))
-                    //throw new InvalidOperationException("Задача с указанным именем уже существует.");
                     _jobsList.RemoveAll(x => x.JobName == name);
 
-                if (startTime < DateTime.Now) return;
+                if (startTime < DateTimeOffset.Now) return;
 
                 _jobsList.Add(new Job()
                 {
