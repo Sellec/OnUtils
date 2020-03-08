@@ -18,7 +18,7 @@ namespace OnUtils.Data.EntityFramework
         /// </summary>
         public DataService()
         {
-            System.Data.Entity.DbConfiguration.SetConfiguration(new Internal.MyConfig());
+            System.Data.Entity.DbConfiguration.SetConfiguration(new Internal.DbConfigInternal());
 
             System.Data.Entity.Infrastructure.Interception.DbInterception.Add(new Internal.DBCommandInterceptorInternal());
 

@@ -7,7 +7,8 @@ namespace OnUtils.Data.EntityFramework.Internal
 
     class ModelAccessorInternal : IModelAccessor
     {
-        internal Action<ModelBuilder> ModelBuilderDelegate { get; set; }
+        internal Action<DbContextOptionsBuilder> ConfiguringDelegate { get; set; }
+        internal Action<ModelBuilder> ModelCreatingDelegate { get; set; }
 
         public string ConnectionString { get; set; }
     }

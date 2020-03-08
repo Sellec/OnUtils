@@ -1,0 +1,18 @@
+<Project>
+ <PropertyGroup>
+    <Company>TraceStudio</Company>
+    <Authors>Sellec</Authors>
+    <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+ </PropertyGroup>
+  <Target Name="CopyPackage" AfterTargets="Pack">
+    <Exec Command="copy /y &quot;$(TargetDir)..\$(PackageId).$(Version).symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(PackageId).$(Version).nupkg&quot;" />
+  </Target>
+</Project>

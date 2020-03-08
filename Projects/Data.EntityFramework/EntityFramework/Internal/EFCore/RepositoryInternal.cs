@@ -346,10 +346,7 @@ namespace OnUtils.Data.EntityFramework.Internal
 
         string IRepository<TEntity>.GetTableName()
         {
-            var mapping = _context.Model.FindEntityType(typeof(TEntity)).Relational();
-            var schema = mapping.Schema;
-            var table = mapping.TableName;
-
+            var table = _context.Model.FindEntityType(typeof(TEntity)).GetTableName();
             return table;
         }
 

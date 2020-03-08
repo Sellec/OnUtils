@@ -96,10 +96,6 @@
       <Project>{e72e8b9c-9668-46c6-84e6-47d9ce44ad80}</Project>
       <Name>Core.NetFramework</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Data.EntityFramework\Data.EntityFramework.NetFramework.csproj">
-      <Project>{8f3240c4-1a14-4e3b-85ac-c94ee406041e}</Project>
-      <Name>Data.EntityFramework.NetFramework</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Costura.Fody">

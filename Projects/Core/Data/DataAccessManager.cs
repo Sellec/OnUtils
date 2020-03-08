@@ -37,7 +37,8 @@ namespace OnUtils.Data
                     try
                     {
                         _testKnownService = false;
-                        var serviceType = Type.GetType("OnUtils.Data.EntityFramework.DataService, OnUtils.Data.EntityFramework, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
+                        var serviceType = Type.GetType("OnUtils.Data.EntityFramework.DataService, OnUtils.Data.EntityFramework6, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
+                        if (serviceType == null) serviceType = Type.GetType("OnUtils.Data.EntityFramework.DataService, OnUtils.Data.EntityFrameworkCore, Culture=neutral, PublicKeyToken=8e22adab863b765a", false);
                         if (serviceType != null) SetDefaultService((IDataService)Activator.CreateInstance(serviceType));
                     }
                     catch { }

@@ -25,7 +25,7 @@ namespace OnUtils.Data.EntityFramework.Internal
             _context = context;
         }
 
-#region Свойства
+        #region Свойства
         /// <summary>
         /// Возвращает контекст доступа к БД.
         /// Передается в конструкторе. Если не задан в конструкторе - на момент запроса создается новый.
@@ -33,14 +33,11 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// </summary>
         protected DataContextInternal Context
         {
-            get
-            {
-                return _context;
-            }
+            get => _context;
         }
-#endregion
+        #endregion
 
-#region IQueryProvider
+        #region IQueryProvider
         protected abstract IQueryProvider GetProvider();
 
         IQueryable IQueryProvider.CreateQuery(Expression expression)
@@ -77,7 +74,7 @@ namespace OnUtils.Data.EntityFramework.Internal
             return GetProvider().Execute<TResult>(expression);
         }
 
-#endregion
+        #endregion
 
         internal abstract IQueryable GetQuery();
     }
@@ -90,16 +87,13 @@ namespace OnUtils.Data.EntityFramework.Internal
         {
         }
 
-#region Свойства
+        #region Свойства
         /// <summary>
         /// См. <see cref="IRepository.DataContext"/>.
         /// </summary>
         public IDataContext DataContext
         {
-            get
-            {
-                return Context as DataContextInternal;
-            }
+            get => Context as DataContextInternal;
         }
 
         /// <summary>
@@ -112,9 +106,9 @@ namespace OnUtils.Data.EntityFramework.Internal
                 return _dbSet;
             }
         }
-#endregion
+        #endregion
 
-#region IRepository<TEntity>
+        #region IRepository<TEntity>
         /// <summary>
         /// См. <see cref="IRepository{TEntity}.Add(TEntity[])"/>.
         /// </summary>
@@ -268,19 +262,19 @@ namespace OnUtils.Data.EntityFramework.Internal
         {
             return (DbSet);
         }
-#endregion
+        #endregion
 
-#region IQuery
+        #region IQuery
         /// <summary>
         /// См. <see cref="IQuery.Repository"/>.
         /// </summary>
         public IRepository Repository
         {
-            get { return this; }
+            get => this;
         }
-#endregion
+        #endregion
 
-#region IQuery<TEntity>
+        #region IQuery<TEntity>
         /// <summary>
         /// См. <see cref="IQuery{TEntity}.AsNoTracking"/>.
         /// </summary>
@@ -320,27 +314,27 @@ namespace OnUtils.Data.EntityFramework.Internal
             }
             return new QueryInternal<TEntity>(DbSet.Include(text), this);
         }
-#endregion
+        #endregion
 
-#region IQueryable
+        #region IQueryable
         Type IQueryable.ElementType
         {
-            get { return (DbSet as IQueryable).ElementType; }
+            get => (DbSet as IQueryable).ElementType;
         }
 
         Expression IQueryable.Expression
         {
-            get { return (DbSet as IQueryable).Expression; }
+            get => (DbSet as IQueryable).Expression;
         }
 
         IQueryProvider IQueryable.Provider
         {
-            get { return this as IQueryProvider; }
+            get => this as IQueryProvider;
         }
 
-#endregion
+        #endregion
 
-#region IEnumerable
+        #region IEnumerable
         IEnumerator IEnumerable.GetEnumerator()
         {
             return (DbSet as IEnumerable).GetEnumerator();
@@ -350,6 +344,6 @@ namespace OnUtils.Data.EntityFramework.Internal
         {
             return (DbSet as IEnumerable<TEntity>).GetEnumerator();
         }
-#endregion
+        #endregion
     }
 }

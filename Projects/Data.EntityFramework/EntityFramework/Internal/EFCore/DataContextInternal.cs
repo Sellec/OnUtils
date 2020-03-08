@@ -1,161 +1,64 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace OnUtils.Data.EntityFramework.Internal
 {
     using Data;
     using Data.Errors;
     using UnitOfWork;
-
-    static class DataContextInternalModelFactory
-    {
-        private static ConcurrentDictionary<string, Tuple<IModel, string>> _compiledModels = new ConcurrentDictionary<string, Tuple<IModel, string>>();
-
-        internal static Tuple<IModel, string> GetCompiledModel(DbContextOptionsBuilder optionsBuilder, Type[] entityTypes, Func<ModelBuilder, string, string> callModelCreating)
-        {
-            var modelKey = string.Join(";", entityTypes.Select(x => x.FullName).OrderBy(x => x));
-
-            Tuple<IModel, string> compiledModel = null;
-            if (!_compiledModels.TryGetValue(modelKey, out compiledModel))
-            {
-                compiledModel = _compiledModels.GetOrAdd(modelKey, (key) =>
-                {
-                    var conventionSet = Microsoft.EntityFrameworkCore.Metadata.Conventions.SqlServerConventionSetBuilder.Build();
-                    var modelBuilder = new ModelBuilder(conventionSet);
-                    foreach (var type in entityTypes)
-                    {
-                        modelBuilder.Entity(type);
-                        Dapper.SqlMapper.SetTypeMap(type, Activator.CreateInstance(typeof(DapperColumnAttributeTypeMapper<>).MakeGenericType(type)) as SqlMapper.ITypeMap);
-                    }
-
-                    foreach (var property in modelBuilder.Model.GetEntityTypes()
-                        .SelectMany(t => t.GetProperties())
-                        .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
-                    {
-                        property.Relational().ColumnType = "decimal(18, 2)";
-                    }
-
-                    //modelBuilder.Conventions.Remove<DecimalPropertyConvention>();
-                    //modelBuilder.Conventions.Add(new DecimalPropertyConvention(38, 18));
-
-                    foreach (Type classType in entityTypes)
-                    {
-                        foreach (var propAttr in classType.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.GetCustomAttributes<DecimalPrecisionAttribute>(true).FirstOrDefault() != null).Select(
-                               p => new { prop = p, attr = p.GetCustomAttributes<DecimalPrecisionAttribute>(true).FirstOrDefault() }))
-                        {
-
-                            //var entityConfig = modelBuilder.GetType().GetMethod("Entity").MakeGenericMethod(classType).Invoke(modelBuilder, null);
-                            //var param = ParameterExpression.Parameter(classType, "c");
-                            //var property = Expression.Property(param, propAttr.prop.Name);
-                            //var lambdaExpression = Expression.Lambda(property, true, new ParameterExpression[] { param });
-
-                            //DecimalPropertyConfiguration decimalConfig;
-                            //if (propAttr.prop.PropertyType.IsGenericType && propAttr.prop.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                            //{
-                            //    MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property").ToList()[7];
-                            //    decimalConfig = methodInfo.Invoke(entityConfig, new[] { lambdaExpression }) as DecimalPropertyConfiguration;
-                            //}
-                            //else
-                            //{
-                            //    MethodInfo methodInfo = entityConfig.GetType().GetMethods().Where(p => p.Name == "Property").ToList()[6];
-                            //    decimalConfig = methodInfo.Invoke(entityConfig, new[] { lambdaExpression }) as DecimalPropertyConfiguration;
-                            //}
-
-                            //decimalConfig.HasPrecision(propAttr.attr.Precision, propAttr.attr.Scale);
-                        }
-                    }
-
-                    var connectionStringBase = GetConnectionString(entityTypes);
-                    var connectionString = callModelCreating(modelBuilder, connectionStringBase);
-                    if (string.IsNullOrEmpty(connectionString)) connectionString = connectionStringBase;
-
-                    if (string.IsNullOrEmpty(connectionString))
-                        throw new InvalidOperationException($"Невозможно получить строку подключения. Задайте поставщик строк подключения в {nameof(DataAccessManager)}.{nameof(DataAccessManager.SetConnectionStringResolver)} или верните строку подключения через свойство {typeof(IModelAccessor).FullName}.{nameof(IModelAccessor.ConnectionString)} в методе {typeof(UnitOfWorkBase).FullName}.OnModelCreating.");
-
-                    // Соединение здесь не нужно, но оставляем для проверки подключенного ресолвера строк подключения для совместимости с Data.EF.NetFull.
-                    using (var connection = new SqlConnection(connectionString))
-                    {
-                        return new Tuple<IModel, string>(modelBuilder.FinalizeModel(), connectionString);
-                    }
-                });
-            }
-
-            return compiledModel;
-        }
-
-        internal static string GetConnectionString(Type[] entityTypes)
-        {
-            var connectionStringResolver = DataAccessManager.GetConnectionStringResolver();
-            if (connectionStringResolver == null) return null;
-
-            var connectionString = connectionStringResolver.ResolveConnectionStringForDataContext(entityTypes ?? new Type[0]);
-            var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-            connectionStringBuilder.MaxPoolSize = Math.Max(10000, connectionStringBuilder.MaxPoolSize);
-
-            return connectionStringBuilder.ToString();
-        }
-
-    }
+    using Validation;
 
     class DataContextInternal : DbContext, IDataContext
     {
         private List<Type> _entityTypes = new List<Type>();
         private bool _isReadonly = false;
-        private Action<IModelAccessor> _modelAccessorDelegate = null;
-        private string _connectionString = null;
+        private ModelAccessorInternal _modelAccessor = null;
 
         public DataContextInternal(Action<IModelAccessor> modelAccessorDelegate, Type[] entityTypes)
         {
-            _modelAccessorDelegate = modelAccessorDelegate;
-            //_model = model;
-            entityTypes.ForEach(x => RecursivelyAddEntityTypes(x));
-            //Database.Log = Debug.SQLDebug;
-            // Эта строка нужна для инициализации InternalServiveProvider в EF Core, что приводит к вызову OnConfiguring. Это нужно для совместимости с версией под NetFramework.
-            if (Database.GetDbConnection() is SqlConnection conn) conn.InfoMessage += Conn_InfoMessage;
-            IsReadonly = false;
+            _entityTypes = entityTypes.ToList();
+            _modelAccessor = new ModelAccessorInternal() { };
+            modelAccessorDelegate(_modelAccessor);
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        protected sealed override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var model = DataContextInternalModelFactory.GetCompiledModel(optionsBuilder, _entityTypes.ToArray(), (modelBuilder, connectionString) =>
+            _modelAccessor?.ConfiguringDelegate?.Invoke(optionsBuilder);
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="modelBuilder"></param>
+        protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in _entityTypes)
             {
-                OnModelCreating(modelBuilder);
+                modelBuilder.Entity(entityType);
+            }
 
-                if (_modelAccessorDelegate != null)
-                {
-                    var modelAccessor = new ModelAccessorInternal() { ConnectionString = connectionString };
-                    _modelAccessorDelegate(modelAccessor);
-                    modelAccessor?.ModelBuilderDelegate?.Invoke(modelBuilder);
-                    connectionString = modelAccessor.ConnectionString;
-                }
+            _modelAccessor?.ModelCreatingDelegate?.Invoke(modelBuilder);
 
-                return connectionString;
-            });
-            optionsBuilder.
-                UseModel(model.Item1).
-                UseSqlServer(model.Item2);
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
             foreach (var entityTypeFirst in modelBuilder.Model.GetEntityTypes())
             {
                 if (entityTypeFirst is EntityType entityType)
                 {
+                    if (entityType.HasClrType())
+                    {
+                        Dapper.SqlMapper.SetTypeMap(entityType.ClrType, Activator.CreateInstance(typeof(DapperColumnAttributeTypeMapper<>).MakeGenericType(entityType.ClrType)) as SqlMapper.ITypeMap);
+                    }
+
                     if (entityType.BaseType == null)
                     {
                         var primaryKey = entityType.FindPrimaryKey();
@@ -181,44 +84,14 @@ namespace OnUtils.Data.EntityFramework.Internal
                     }
                 }
             }
-        }
 
-        private void Conn_InfoMessage(object sender, SqlInfoMessageEventArgs e)
-        {
-
-        }
-
-        private void RecursivelyAddEntityTypes(Type entityType)
-        {
-            if (_entityTypes.Contains(entityType)) return;
-            _entityTypes.Add(entityType);
-
-            /*
-             * Добавлял на случай, если надо будет брать вложенные типы, но не потребовалось.
-             */
-            //var properties = entityType.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            //foreach (var property in properties)
-            //{
-            //    if (property.PropertyType.IsValueType) continue;
-            //    if (property.PropertyType.Namespace == nameof(System)) continue;
-
-            //    Type type2 = Navigator.Core.Types.TypeHelpers.ExtractGenericInterface(property.PropertyType, typeof(IEnumerable<>));
-            //    if (type2 != null)
-            //    {
-            //        Type type3 = type2.GetGenericArguments()[0];
-            //        _entityTypes.TryAdd(type3);
-
-            //        Console.WriteLine("generic: {0}", type3.FullName);
-            //        RecursivelyAddEntityTypes(type3);
-            //    }
-            //    else
-            //    {
-            //        _entityTypes.TryAdd(property.PropertyType);
-
-            //        Console.WriteLine("common: {0}", property.PropertyType.FullName);
-            //        RecursivelyAddEntityTypes(property.PropertyType);
-            //    }
-            //}
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
+            {
+                var decimalAttribute = property.PropertyInfo.GetCustomAttribute<DecimalPrecisionAttribute>(true);
+                if (decimalAttribute != null) property.SetColumnType($"decimal({decimalAttribute.Precision}, {decimalAttribute.Scale})");
+            }
         }
 
         private void UpdateReadonlyBehaviour()
@@ -315,6 +188,7 @@ namespace OnUtils.Data.EntityFramework.Internal
 
         //private MappingFragment GetTableMappings(Type type)
         //{
+        //    this.Model.
         //    var metadata = ((IObjectContextAdapter)this).ObjectContext.MetadataWorkspace;
 
         //    // Get the part of the model that contains info about the actual CLR types
@@ -344,11 +218,6 @@ namespace OnUtils.Data.EntityFramework.Internal
         //        .Fragments.Single();
 
         //    return tableMappings;
-
-        //    //var table = tableMappings.StoreEntitySet;
-
-        //    //// Return the table name from the storage entity set
-        //    //return (string)table.MetadataProperties["Table"].Value ?? table.Name;
         //}
 
         internal int InsertOrDuplicateUpdate<TEntity>(IEnumerable<TEntity> objectsIntoQuery, out object lastIdentity, params UpsertField[] updateFields)
@@ -360,9 +229,9 @@ namespace OnUtils.Data.EntityFramework.Internal
 
                 throw new NotImplementedException();
                 //var entityType = typeof(TEntity);
-                //var mappings = GetTableMappings(entityType);
-                //var tableName = mappings.StoreEntitySet.Table;
-                //var properties = entityType.GetProperties().Join(mappings.PropertyMappings,
+                ////var mappings = GetTableMappings(entityType);
+                ////var tableName = mappings.StoreEntitySet.Table;
+                //var properties = entityType.GetProperties().Join(Model.GetEntityTypes( mappings.PropertyMappings,
                 //                                       property => property.Name,
                 //                                       mapping => mapping.Property.Name,
                 //                                       (property, mapping) => new { Property = property, Column = (mapping as ScalarPropertyMapping).Column }).ToDictionary(x => x.Property.Name, x => x);
@@ -385,35 +254,35 @@ namespace OnUtils.Data.EntityFramework.Internal
 
                 //    for (int i = 0; i < objectsIntoQuery.Count(); i += 1000)
                 //    {
-                        //var rows = objectsIntoQuery.Skip(i).Take(1000).Select(x => "(" + string.Join(", ", properties.Values.Select(y => new { Property = y, Value = y.Property.GetValue(x, null) }).Select(y =>
-                        //{
-                        //    var clrType = y.Property.Column.PrimitiveType.ClrEquivalentType;
-                        //    var preValue = y.Value == null ? null : (y.Property.Property.PropertyType != clrType ? Convert.ChangeType(y.Value, clrType) : y.Value);
+                //var rows = objectsIntoQuery.Skip(i).Take(1000).Select(x => "(" + string.Join(", ", properties.Values.Select(y => new { Property = y, Value = y.Property.GetValue(x, null) }).Select(y =>
+                //{
+                //    var clrType = y.Property.Column.PrimitiveType.ClrEquivalentType;
+                //    var preValue = y.Value == null ? null : (y.Property.Property.PropertyType != clrType ? Convert.ChangeType(y.Value, clrType) : y.Value);
 
-                        //    if (preValue == null) return "NULL";
+                //    if (preValue == null) return "NULL";
 
-                        //    var preValueStr = preValue.ToString();
-                        //    var preValueStrLength = preValueStr.Length;
+                //    var preValueStr = preValue.ToString();
+                //    var preValueStrLength = preValueStr.Length;
 
-                        //    var isBinary = y.Property.Column.TypeName.Contains("binary");
-                        //    if (isBinary)
-                        //    {
-                        //        var binaryData = (byte[])preValue;
-                        //        preValueStr = "0x" + BitConverter.ToString(binaryData).Replace("-", "").ToLower();
-                        //        preValueStrLength = binaryData.Length;
-                        //    }
+                //    var isBinary = y.Property.Column.TypeName.Contains("binary");
+                //    if (isBinary)
+                //    {
+                //        var binaryData = (byte[])preValue;
+                //        preValueStr = "0x" + BitConverter.ToString(binaryData).Replace("-", "").ToLower();
+                //        preValueStrLength = binaryData.Length;
+                //    }
 
-                        //    var castToType = y.Property.Column.TypeName;
-                        //    if (castToType.EndsWith("char", StringComparison.InvariantCultureIgnoreCase) && preValueStr.Length > 0) castToType += $"({preValueStr.Length})";
-                        //    else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
-                        //    //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
+                //    var castToType = y.Property.Column.TypeName;
+                //    if (castToType.EndsWith("char", StringComparison.InvariantCultureIgnoreCase) && preValueStr.Length > 0) castToType += $"({preValueStr.Length})";
+                //    else if (y.Property.Column.Precision.HasValue && y.Property.Column.Scale.HasValue) castToType += $"({y.Property.Column.Precision.Value}, {y.Property.Column.Scale.Value})";
+                //    //else if (y.Property.Column.Precision.HasValue) castToType += $"({y.Property.Column.Precision.Value})";
 
-                        //    if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
+                //    if (castToType.ToLower().Contains("char")) preValueStr = preValueStr.Replace("'", "''");
 
-                        //    if (!isBinary) preValueStr = "'" + preValueStr + "'";
+                //    if (!isBinary) preValueStr = "'" + preValueStr + "'";
 
-                        //    return "CAST(" + preValueStr + " as " + castToType + ")";
-                        //})) + ")");
+                //    return "CAST(" + preValueStr + " as " + castToType + ")";
+                //})) + ")");
 
                 //        var insertString = "INSERT INTO @t (" + string.Join(", ", properties.Values.Select(x => $"[{x.Column.Name}]")) + ") VALUES " + string.Join(", ", rows);
                 //        results += InsertOrDuplicateUpdate(tableName, insertString, out lastIdentity, updateFields2.ToDictionary(x => x.source, x => x.mapped.Column.Name));
@@ -573,16 +442,8 @@ namespace OnUtils.Data.EntityFramework.Internal
         #region IDisposable
         void IDisposable.Dispose()
         {
-            if (Database.GetDbConnection() is SqlConnection)
-            {
-                var conn = Database.GetDbConnection() as SqlConnection;
-                conn.InfoMessage -= Conn_InfoMessage;
-            }
-
             base.Dispose();
-
             _entityTypes = null;
-            //_model = null;
         }
 
         #endregion
@@ -656,18 +517,18 @@ namespace OnUtils.Data.EntityFramework.Internal
                     throw newEx;
                 }
             }
-            //else if (exSource is System.Data.Entity.Validation.DbEntityValidationException)
-            //{
-            //    var ex2 = exSource as System.Data.Entity.Validation.DbEntityValidationException;
+            else if (exSource is ValidationException)
+            {
+                var ex2 = exSource as ValidationException;
 
-            //    var newEx = new EntityValidationException(
-            //            ex2.Message,
-            //            ex2.EntityValidationErrors.Select(x => new EntityValidationResult(new RepositoryEntryInternal(x.Entry), x.ValidationErrors.Select(y => new ValidationError(y.PropertyName, y.ErrorMessage)))),
-            //            ex2.InnerException
-            //    );
+                var newEx = new EntityValidationException(
+                        ex2.Message,
+                        null, //ex2.ValidationResult..EntityValidationErrors.Select(x => new EntityValidationResult(new RepositoryEntryInternal(x.Entry), x.ValidationErrors.Select(y => new ValidationError(y.PropertyName, y.ErrorMessage)))),
+                        ex2.InnerException
+                );
 
-            //    throw newEx;
-            //}
+                throw newEx;
+            }
         }
 
         /// <summary>
@@ -681,6 +542,12 @@ namespace OnUtils.Data.EntityFramework.Internal
             var entities = GetChangedEntities();
             try
             {
+                foreach (var entity in entities)
+                {
+                    var validationContext = new ValidationContext(entity.Key.Entity);
+                    Validator.ValidateObject(entity.Key.Entity, validationContext);
+                }
+
                 return base.SaveChanges();
             }
             catch (Exception ex)
@@ -735,6 +602,12 @@ namespace OnUtils.Data.EntityFramework.Internal
             var entities = GetChangedEntities();
             try
             {
+                foreach (var entity in entities)
+                {
+                    var validationContext = new ValidationContext(entity.Key.Entity);
+                    Validator.ValidateObject(entity.Key.Entity, validationContext);
+                }
+
                 return base.SaveChanges();
             }
             catch (Exception ex)
@@ -765,19 +638,59 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// <returns>Задача, представляющая асинхронную операцию сохранения. Результат задачи содержит количество объектов, записанных в базу данных.</returns>
         public Task<int> SaveChangesAsync()
         {
-            throw new NotImplementedException("Для .NET Framework 4.0 не поддерживается асинхронное сохранение изменений.");
+            var entities = GetChangedEntities();
+
+            var task = base.SaveChangesAsync();
+            return Task.Factory.StartNew<int>(() =>
+            {
+                try
+                {
+                    task.Wait();
+                    var rows = task.Result;
+                    return rows;
+                }
+                catch (Exception ex)
+                {
+                    PrepareEFException(ex);
+                    throw;
+                }
+                finally
+                {
+                    DetectSavedEntities(entities);
+                }
+            });
         }
 
         /// <summary>
         /// Асинхронно применяет все изменения базы данных, произведенные в контексте.
         /// После окончания операции для каждого сохраненного объекта выполняются методы, помеченные атрибутом <see cref="Items.SavedInContextEventAttribute"/>.
-        /// Более подробную информацию см. <see cref="DbContext.SaveChangesAsync(bool, CancellationToken)"/>. 
+        /// Более подробную информацию см. <see cref="DbContext.SaveChanges()"/>. 
         /// </summary>
         /// <param name="cancellationToken">Токен System.Threading.CancellationToken, который нужно отслеживать во время ожидания выполнения задачи.</param>
         /// <returns>Задача, представляющая асинхронную операцию сохранения. Результат задачи содержит количество объектов, записанных в базу данных.</returns>
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException("Для .NET Framework 4.0 не поддерживается асинхронное сохранение изменений.");
+            var entities = GetChangedEntities();
+
+            var task = base.SaveChangesAsync(cancellationToken);
+            return Task.Factory.StartNew<int>(() =>
+            {
+                try
+                {
+                    task.Wait();
+                    var rows = task.Result;
+                    return rows;
+                }
+                catch (Exception ex)
+                {
+                    PrepareEFException(ex);
+                    throw;
+                }
+                finally
+                {
+                    DetectSavedEntities(entities);
+                }
+            });
         }
 
         #endregion
@@ -843,7 +756,7 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// </summary>
         public Type[] RegisteredTypes
         {
-            get { return _entityTypes.ToArray(); }
+            get => _entityTypes.ToArray();
         }
 
         /// <summary>
@@ -851,8 +764,8 @@ namespace OnUtils.Data.EntityFramework.Internal
         /// </summary>
         public int QueryTimeout
         {
-            get { return !Database.GetCommandTimeout().HasValue ? 30000 : Database.GetCommandTimeout().Value * 1000; }
-            set { Database.SetCommandTimeout(TimeSpan.FromMilliseconds(value)); }
+            get => !Database.GetCommandTimeout().HasValue ? 30000 : Database.GetCommandTimeout().Value * 1000;
+            set => Database.SetCommandTimeout(TimeSpan.FromMilliseconds(value));
         }
         #endregion
 

@@ -93,7 +93,7 @@ namespace OnUtils.Tasks.Hangfire
             ExecuteAction(() => RecurringJob.AddOrUpdate(name, taskDelegate, cronExpression));
         }
 
-        void ITasksService.SetTask(string name, DateTime startTime, Expression<Action> taskDelegate)
+        void ITasksService.SetTask(string name, DateTimeOffset startTime, Expression<Action> taskDelegate)
         {
             ExecuteAction(() =>
             {
