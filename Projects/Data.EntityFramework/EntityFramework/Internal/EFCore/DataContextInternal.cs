@@ -99,16 +99,6 @@ namespace OnUtils.Data.EntityFramework.Internal
             ChangeTracker.QueryTrackingBehavior = _isReadonly ? QueryTrackingBehavior.NoTracking : QueryTrackingBehavior.TrackAll;
         }
 
-        public static string FullNameWithNesting(Type type)
-        {
-            if (!type.IsNested)
-            {
-                return type.FullName;
-            }
-
-            return type.FullName.Replace('+', '.');
-        }
-
         #region Работа с объектами
         IEnumerable<TEntity> IDataContext.ExecuteQuery<TEntity>(object query, object parameters, bool cacheInLocal, TEntity entityExample)
         {

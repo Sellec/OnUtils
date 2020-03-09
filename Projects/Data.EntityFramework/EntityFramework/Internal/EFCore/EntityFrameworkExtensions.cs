@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using OnUtils.Data;
+using OnUtils.Data.EntityFramework.Internal;
+using OnUtils.Data.UnitOfWork;
 using System;
 
-namespace OnUtils.Data.EntityFramework
+namespace Microsoft.EntityFrameworkCore
 {
-    using UnitOfWork;
-
     /// <summary>
     /// </summary>
     public static class EntityFrameworkExtensions
@@ -14,7 +14,7 @@ namespace OnUtils.Data.EntityFramework
         /// </summary>
         public static void UseEntityFrameworkCore(this IModelAccessor modelAccessor, Action<DbContextOptionsBuilder> onConfiguringDelegate, Action<ModelBuilder> onModelCreatingDelegate)
         {
-            if (modelAccessor is Internal.ModelAccessorInternal modelAccessorInternal)
+            if (modelAccessor is ModelAccessorInternal modelAccessorInternal)
             {
                 modelAccessorInternal.ConfiguringDelegate = onConfiguringDelegate;
                 modelAccessorInternal.ModelCreatingDelegate = onModelCreatingDelegate;
@@ -31,7 +31,11 @@ namespace OnUtils.Data.EntityFramework
         public static DbSet<TEntity> GetDbSet<TEntity>(this IRepository<TEntity> repository)
             where TEntity : class
         {
-            return ((Internal.RepositoryInternal<TEntity>)repository).DbSet;
+            return (repository is RepositoryInternal<TEntity> repositoryInternal)
+                ? repositoryInternal.DbSet
+                : (repository.Repository is RepositoryInternal<TEntity> repositoryInternal2)
+                    ? repositoryInternal2.DbSet
+                    : throw new InvalidCastException("Cannot take inner DbSet instance.");
         }
 
         /// <summary>
