@@ -112,7 +112,6 @@
     <Compile Include="Data\IConnectionStringResolver.cs" />
     <Compile Include="Data\IDataService.cs" />
     <Compile Include="Data\QueryCounterExtensions.cs" />
-    <Compile Include="Data\RepositoryAndQueryExtensions.cs" />
     <Compile Include="Data\SQL\SQLFunctions.cs" />
     <Compile Include="Data\System.ComponentModel.DataAnnotations.Schema\DecimalPrecisionAttribute.cs" />
     <Compile Include="Data\TransactionsHelper.cs" />

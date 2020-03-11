@@ -14,7 +14,7 @@
     <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <AssemblyName>OnUtils</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.4.0</Version>
     <PackageId>OnUtils</PackageId>
     <Authors>Sellec</Authors>
     <Company>TraceStudio</Company>
@@ -46,12 +46,15 @@
 
   <ItemGroup>
     <Compile Remove="Architecture\LogicalCore\**" />
+    <Compile Remove="Data\**" />
     <Compile Remove="obj40\**" />
     <Compile Remove="Resources\**" />
     <EmbeddedResource Remove="Architecture\LogicalCore\**" />
+    <EmbeddedResource Remove="Data\**" />
     <EmbeddedResource Remove="obj40\**" />
     <EmbeddedResource Remove="Resources\**" />
     <None Remove="Architecture\LogicalCore\**" />
+    <None Remove="Data\**" />
     <None Remove="obj40\**" />
     <None Remove="Resources\**" />
   </ItemGroup>
