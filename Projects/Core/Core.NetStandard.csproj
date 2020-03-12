@@ -14,7 +14,7 @@
     <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <AssemblyName>OnUtils</AssemblyName>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <PackageId>OnUtils</PackageId>
     <Authors>Sellec</Authors>
     <Company>TraceStudio</Company>
@@ -29,8 +29,6 @@
     <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
