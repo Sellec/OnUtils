@@ -10,7 +10,7 @@
     <AssemblyName>OnUtils.Data.EntityFramework6</AssemblyName>
     <RootNamespace>OnUtils.Data</RootNamespace>
     <PackageId>OnUtils.Data.EntityFramework6</PackageId>
-    <Version>1.5.1-beta1</Version>
+    <Version>1.5.2-beta1</Version>
     <Product>OnUtils</Product>
     <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -21,14 +21,14 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>bin\DebugNet40</OutputPath>
+    <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>TRACE;DEBUG;NET40</DefineConstants>
-    <DocumentationFile>bin\DebugNet40\OnUtils.Data.EntityFramework6.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\OnUtils.Data.EntityFramework6.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>bin\ReleaseNet40</OutputPath>
-    <DocumentationFile>bin\ReleaseNet40\OnUtils.Data.EntityFramework6.xml</DocumentationFile>
+    <OutputPath>bin\Release</OutputPath>
+    <DocumentationFile>bin\Release\OnUtils.Data.EntityFramework6.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
