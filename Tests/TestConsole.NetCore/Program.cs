@@ -6,10 +6,7 @@ namespace TestConsole.NetCore
     {
         static void Main(string[] args)
         {
-            Data.EFCore.ProgramTest.Run();
-
             Console.WriteLine("Hello World!");
-
             Console.ReadKey();
         }
 

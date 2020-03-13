@@ -172,6 +172,7 @@ namespace OnUtils.Reflection
                                             !x.File.StartsWith("BusinessObjects") &&
                                             !x.File.StartsWith("stdole") &&
                                             !x.File.StartsWith("System,") &&
+                                            !x.File.StartsWith("SNI.") &&
                                             !x.File.StartsWith("Microsoft."))
                                 .Where(x => _preparedAssemblies.Where(y => x.Uri.AbsoluteUri.Equals(y.Key.CodeBase, StringComparison.CurrentCultureIgnoreCase)).Count() == 0)
                                 .ToList();

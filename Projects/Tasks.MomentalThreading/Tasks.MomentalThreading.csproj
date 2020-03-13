@@ -12,7 +12,7 @@
     <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>1.0.0</Version>
+    <Version>1.5.1-beta1</Version>
     <PackageIconUrl>http://tracestudio.ru/favicon.ico</PackageIconUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <SignAssembly>true</SignAssembly>
@@ -39,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.NetStandard.csproj" />
+    <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
   <Target Name="CopyPackage" AfterTargets="Pack">
     <Exec Command="copy /y &quot;$(TargetDir)..\$(PackageId).$(Version).symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(PackageId).$(Version).nupkg&quot;" />

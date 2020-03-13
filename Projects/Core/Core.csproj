@@ -1,0 +1,93 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Common.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net40;netstandard2.0</TargetFrameworks>
+    <RootNamespace>OnUtils</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <AssemblyName>OnUtils</AssemblyName>
+    <Version>1.5.1-beta1</Version>
+    <PackageId>OnUtils</PackageId>
+    <Authors>Sellec</Authors>
+    <Company>TraceStudio</Company>
+    <Product>OnUtils</Product>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Набор утилит и абстракций для повышения удобства работы.</Description>
+    <Copyright>Copyright © Петров Дмитрий 2016</Copyright>
+    <IncludeSymbols>True</IncludeSymbols>
+    <IncludeSource>True</IncludeSource>
+    <PackageLicenseUrl>https://github.com/Sellec/OnUtils/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Sellec/OnUtils</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Sellec/OnUtils</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\DebugNetStandard\OnUtils.xml</DocumentationFile>
+    <OutputPath>bin\DebugNetStandard</OutputPath>
+    <NoWarn>1701;1702;0659</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\ReleaseNetStandard\OnUtils.xml</DocumentationFile>
+    <OutputPath>bin\ReleaseNetStandard</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Architecture\LogicalCore\**" />
+    <Compile Remove="Data\**" />
+    <Compile Remove="obj40\**" />
+    <Compile Remove="Resources\**" />
+    <EmbeddedResource Remove="Architecture\LogicalCore\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="obj40\**" />
+    <EmbeddedResource Remove="Resources\**" />
+    <None Remove="Architecture\LogicalCore\**" />
+    <None Remove="Data\**" />
+    <None Remove="obj40\**" />
+    <None Remove="Resources\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ModuleInitializer.cs" />
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+    <Compile Remove="Properties\Resources.Designer.cs" />
+    <Compile Remove="System\Extensions\NameValueCollectionExtension.cs" />
+    <Compile Remove="System\Extensions\NameValueCollectionExtensionCustom.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Properties\Resources.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove=".refsignored" />
+    <None Remove="app.config" />
+    <None Remove="Extensions.NetFramework.csproj.vspscc" />
+    <None Remove="Extensions.NetStandard.csproj.vspscc" />
+    <None Remove="FodyWeavers.xml" />
+    <None Remove="FodyWeavers.xsd" />
+    <None Remove="TraceCore.csproj.vspscc" />
+    <None Remove="TraceCore.NetStandard.csproj.vspscc" />
+    <None Remove="Utils.csproj.vspscc" />
+    <None Remove="Utils.NetStandard.csproj.vspscc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.DataAnnotations" Condition="'$(TargetFramework)' == 'net40'" />
+  </ItemGroup>
+
+</Project>

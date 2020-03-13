@@ -92,12 +92,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.NetFramework.csproj">
-      <Project>{e72e8b9c-9668-46c6-84e6-47d9ce44ad80}</Project>
-      <Name>Core.NetFramework</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Costura.Fody">
       <Version>3.3.3</Version>
     </PackageReference>
@@ -132,6 +126,16 @@
     <Content Include="..\..\External Libraries\Hangfire from GIT fork\Owin.dll">
       <Link>Libs\Owin.dll</Link>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{668d450f-3998-41e6-9004-54492662d871}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Data.EntityFramework\Data.EntityFramework6.csproj">
+      <Project>{99a19924-2d93-42a5-b8e9-2c417538059c}</Project>
+      <Name>Data.EntityFramework6</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>

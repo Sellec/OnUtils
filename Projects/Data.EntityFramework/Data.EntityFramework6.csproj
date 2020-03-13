@@ -10,7 +10,7 @@
     <AssemblyName>OnUtils.Data.EntityFramework6</AssemblyName>
     <RootNamespace>OnUtils.Data</RootNamespace>
     <PackageId>OnUtils.Data.EntityFramework6</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.5.1-beta1</Version>
     <Product>OnUtils</Product>
     <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -52,12 +52,6 @@
     <None Include="FodyWeavers.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.NetFramework.csproj">
-      <Project>{e72e8b9c-9668-46c6-84e6-47d9ce44ad80}</Project>
-      <Name>Core.NetFramework</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Costura.Fody">
       <Version>3.3.3</Version>
     </PackageReference>
@@ -78,7 +72,14 @@
     <Reference Include="System.Transactions" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Data\SQL\SQL\" />
+    <Folder Include="Data\System.ComponentModel.DataAnnotations.Schema\System.ComponentModel.DataAnnotations.Schema\" />
+    <Folder Include="Data\UnitOfWork\UnitOfWork\" />
+    <Folder Include="Data\Validation\Validation\" />
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

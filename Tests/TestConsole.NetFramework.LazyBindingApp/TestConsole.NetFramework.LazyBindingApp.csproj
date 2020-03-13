@@ -52,11 +52,5 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StartupApp.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Projects\Core\Core.NetFramework.csproj">
-      <Project>{e72e8b9c-9668-46c6-84e6-47d9ce44ad80}</Project>
-      <Name>Core.NetFramework</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

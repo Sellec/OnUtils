@@ -13,6 +13,6 @@
     <RepositoryType>git</RepositoryType>
  </PropertyGroup>
   <Target Name="CopyPackage" AfterTargets="Pack">
-    <Exec Command="copy /y &quot;$(TargetDir)..\$(PackageId).$(Version).symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(PackageId).$(Version).nupkg&quot;" />
+    <Exec Command="copy /y &quot;$(PackageOutputAbsolutePath)$(PackageId).$(Version).symbols.nupkg&quot; &quot;$(SolutionDir)..\Build\$(PackageId).$(Version).nupkg&quot;" />
   </Target>
 </Project>
