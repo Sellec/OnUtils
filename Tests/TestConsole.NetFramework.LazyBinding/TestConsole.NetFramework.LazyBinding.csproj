@@ -53,6 +53,10 @@
     <Compile Include="TestComponent1Lazy.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Projects\Core\Core.csproj">
+      <Project>{920cec59-06e6-437f-bb48-124e8ad6cfbf}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TestConsole.NetFramework.LazyBindingApp\TestConsole.NetFramework.LazyBindingApp.csproj">
       <Project>{f43ace2f-730b-4b54-9c75-f68be3b06729}</Project>
       <Name>TestConsole.NetFramework.LazyBindingApp</Name>
