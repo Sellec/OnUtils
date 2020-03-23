@@ -40,7 +40,7 @@ namespace OnUtils.Data.EntityFramework.Internal
             _model = model.Item1;
             entityTypes.ForEach(x => RecursivelyAddEntityTypes(x));
             SetInitializer(this);
-            Database.Log = Debug.SQLDebug;
+            Database.Log = DataAccessManager.SQLDebug;
             IsReadonly = false;
         }
 

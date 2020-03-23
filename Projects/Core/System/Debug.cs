@@ -20,7 +20,6 @@ namespace System
 
         static Debug()
         {
-            DebugSQL = false;
             EnableLoggingOnDebugOutput = true;
             EnableAdditionalCommonLog = true;
 
@@ -116,22 +115,6 @@ namespace System
         public static void WriteLineNoLog(object obj)
         {
             if (obj != null) WriteLineNoLog(obj.ToString());
-        }
-        #endregion
-
-        #region SQL
-        /// <summary>
-        /// Указывает, должны ли выводиться сообщения к SQL-серверу в консоль вывода.
-        /// </summary>
-        public static volatile bool DebugSQL;
-
-        /// <summary>
-        /// Используется для перехвата сообщений к SQL-серверу.
-        /// </summary>
-        /// <param name="sql"></param>
-        public static void SQLDebug(string sql)
-        {
-            if (DebugSQL) WriteLine(sql);
         }
         #endregion
 

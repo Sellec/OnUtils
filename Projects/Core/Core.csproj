@@ -8,7 +8,7 @@
     <AssemblyOriginatorKeyFile>D:\Projects\TraceStudio\SigningKeys\OnUtils.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <AssemblyName>OnUtils</AssemblyName>
-    <Version>1.5.1-beta1</Version>
+    <Version>1.5.4-beta1</Version>
     <PackageId>OnUtils</PackageId>
     <Authors>Sellec</Authors>
     <Company>TraceStudio</Company>

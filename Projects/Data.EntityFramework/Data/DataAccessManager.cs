@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 
 namespace OnUtils.Data
@@ -8,6 +9,11 @@ namespace OnUtils.Data
     /// </summary>
     public static class DataAccessManager
     {
+        static DataAccessManager()
+        {
+            DebugSQL = false;
+        }
+
         #region IDataService
         private static bool _testKnownService = true;
         private static IDataService _defaultService = null;
@@ -145,6 +151,27 @@ namespace OnUtils.Data
         internal static void CheckDefaultService()
         {
             if (GetDefaultService() == null) throw new InvalidOperationException($"Не установлен сервис для построения контекстов данных и репозиториев '{nameof(IDataService)}'.");
+        }
+        #endregion
+
+        #region SQL
+        /// <summary>
+        /// Указывает, должны ли выводиться сообщения к SQL-серверу в консоль вывода.
+        /// </summary>
+        public static volatile bool DebugSQL;
+
+        /// <summary>
+        /// Указывает, должны ли выводиться сообщения к SQL-серверу в консоль вывода в текущем потоке.
+        /// </summary>
+        public static ThreadLocal<bool> DebugSQLByThread { get; private set; } = new ThreadLocal<bool>();
+
+        /// <summary>
+        /// Используется для перехвата сообщений к SQL-серверу.
+        /// </summary>
+        /// <param name="sql"></param>
+        public static void SQLDebug(string sql)
+        {
+            if (DebugSQL || (DebugSQLByThread.IsValueCreated && DebugSQLByThread.Value)) Debug.WriteLine(sql);
         }
         #endregion
 

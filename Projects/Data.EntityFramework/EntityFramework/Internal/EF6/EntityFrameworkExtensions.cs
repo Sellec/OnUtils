@@ -3,6 +3,7 @@ using System.Data.Entity;
 
 namespace OnUtils.Data.EntityFramework
 {
+    using Internal;
     using UnitOfWork;
 
     /// <summary>
@@ -30,7 +31,11 @@ namespace OnUtils.Data.EntityFramework
         public static DbSet<TEntity> GetDbSet<TEntity>(this IRepository<TEntity> repository)
             where TEntity : class
         {
-            return ((Internal.RepositoryInternal<TEntity>)repository).DbSet;
+            return (repository is RepositoryInternal<TEntity> repositoryInternal)
+                ? repositoryInternal.DbSet
+                : (repository.Repository is RepositoryInternal<TEntity> repositoryInternal2)
+                    ? repositoryInternal2.DbSet
+                    : throw new InvalidCastException("Cannot take inner DbSet instance.");
         }
 
         /// <summary>
