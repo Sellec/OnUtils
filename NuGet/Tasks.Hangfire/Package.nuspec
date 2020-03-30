@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>OnUtils.Tasks.Hangfire</id>
-    <version>0.1.1</version>
+    <version>2.0.0</version>
     <authors>Sellec</authors>
     <owners>Sellec</owners>
     <description>
@@ -18,7 +18,7 @@
     <copyright>Copyright © Петров Дмитрий 2016 (Sellec)</copyright>
     <tags>Repository, Startup, .Net 4.5+</tags>
     <dependencies>
-      <dependency id="OnUtils" version="0.1.1" />
+      <dependency id="OnUtils" version="2.0.0" />
     </dependencies>
   </metadata>
   <files>
