@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace OnUtils.Types
 {
@@ -21,6 +22,22 @@ namespace OnUtils.Types
             }
             Type[] interfaces = queryType.GetInterfaces();
             return TypeHelpers.MatchGenericTypeFirstOrDefault(interfaces, interfaceType);
+        }
+
+        /// <summary>
+        /// Пробует извлечь интерфейс <paramref name="interfaceType"/> из типа <paramref name="queryType"/>. 
+        /// </summary>
+        /// <returns>
+        /// Возвращает массив реализованных интерфейсов, соответствующих <paramref name="interfaceType"/>.
+        /// </returns>
+        public static Type[] ExtractGenericInterfaces(Type queryType, Type interfaceType)
+        {
+            if (TypeHelpers.MatchesGenericType(queryType, interfaceType))
+            {
+                return new Type[] { queryType };
+            }
+            Type[] interfaces = queryType.GetInterfaces();
+            return TypeHelpers.MatchGenericTypeAll(interfaces, interfaceType);
         }
 
         /// <summary>
@@ -74,6 +91,9 @@ namespace OnUtils.Types
             return null;
         }
 
-
+        private static Type[] MatchGenericTypeAll(Type[] types, Type matchType)
+        {
+            return types.Where(type => TypeHelpers.MatchesGenericType(type, matchType)).ToArray();
+        }
     }
 }

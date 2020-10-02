@@ -508,13 +508,13 @@ namespace OnUtils.Architecture.AppCore
 
                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
                                 {
-                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindings<>));
+                                    if (interfaceTypes.Any(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))) return true;
                                 }
                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
                                 {
-                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStart<>));
+                                    if (interfaceTypes.Any(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))) return true;
                                 }
                                 return false;
                             }).
@@ -540,20 +540,22 @@ namespace OnUtils.Architecture.AppCore
                                                     MethodInfo methodConfigureBindings2 = null;
                                                     if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
                                                     {
-                                                        var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                                                        if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                        var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindings<>));
+                                                        var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                                        if (interfaceType2 != null)
                                                         {
-                                                            methodConfigureBindings2 = interfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
+                                                            methodConfigureBindings2 = interfaceType2.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
                                                         }
                                                     }
 
                                                     MethodInfo methodExecuteStart2 = null;
                                                     if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
                                                     {
-                                                        var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                                                        if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                        var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStart<>));
+                                                        var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                                        if (interfaceType2 != null)
                                                         {
-                                                            methodExecuteStart2 = interfaceType.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
+                                                            methodExecuteStart2 = interfaceType2.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
                                                         }
                                                     }
 
@@ -579,20 +581,22 @@ namespace OnUtils.Architecture.AppCore
                                 MethodInfo methodConfigureBindings = null;
                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindings<int>))))
                                 {
-                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindings<>));
-                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindings<>));
+                                    var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                    if (interfaceType2 != null)
                                     {
-                                        methodConfigureBindings = interfaceType.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
+                                        methodConfigureBindings = interfaceType2.GetMethod(nameof(IConfigureBindings<object>.ConfigureBindings));
                                     }
                                 }
 
                                 MethodInfo methodExecuteStart = null;
                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
                                 {
-                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStart<>));
-                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStart<>));
+                                    var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                    if (interfaceType2 != null)
                                     {
-                                        methodExecuteStart = interfaceType.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
+                                        methodExecuteStart = interfaceType2.GetMethod(nameof(IExecuteStart<object>.ExecuteStart));
                                     }
                                 }
 
@@ -692,13 +696,13 @@ namespace OnUtils.Architecture.AppCore
 
                             if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
                             {
-                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
-                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                                var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindingsLazy<>));
+                                if (interfaceTypes.Any(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))) return true;
                             }
                             if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStart<int>))))
                             {
-                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
-                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0])) return true;
+                                var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStartLazy<>));
+                                if (interfaceTypes.Any(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))) return true;
                             }
                             return false;
                         }).
@@ -724,20 +728,22 @@ namespace OnUtils.Architecture.AppCore
                                                 MethodInfo methodConfigureBindings2 = null;
                                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
                                                 {
-                                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
-                                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindingsLazy<>));
+                                                    var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                                    if (interfaceType2 != null)
                                                     {
-                                                        methodConfigureBindings2 = interfaceType.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
+                                                        methodConfigureBindings2 = interfaceType2.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
                                                     }
                                                 }
 
                                                 MethodInfo methodExecuteStart2 = null;
                                                 if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStartLazy<int>))))
                                                 {
-                                                    var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
-                                                    if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                                    var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStartLazy<>));
+                                                    var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                                    if (interfaceType2 != null)
                                                     {
-                                                        methodExecuteStart2 = interfaceType.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
+                                                        methodExecuteStart2 = interfaceType2.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
                                                     }
                                                 }
 
@@ -756,20 +762,22 @@ namespace OnUtils.Architecture.AppCore
                             MethodInfo methodConfigureBindings = null;
                             if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IConfigureBindingsLazy<int>))))
                             {
-                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IConfigureBindingsLazy<>));
-                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IConfigureBindingsLazy<>));
+                                var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                if (interfaceType2 != null)
                                 {
-                                    methodConfigureBindings = interfaceType.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
+                                    methodConfigureBindings = interfaceType2.GetMethod(nameof(IConfigureBindingsLazy<object>.ConfigureBindingsLazy));
                                 }
                             }
 
                             MethodInfo methodExecuteStart = null;
                             if (type.GetInterfaces().Any(x => x.Name.Contains(nameof(IExecuteStartLazy<int>))))
                             {
-                                var interfaceType = Types.TypeHelpers.ExtractGenericInterface(type, typeof(IExecuteStartLazy<>));
-                                if (interfaceType != null && typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]))
+                                var interfaceTypes = Types.TypeHelpers.ExtractGenericInterfaces(type, typeof(IExecuteStartLazy<>));
+                                var interfaceType2 = interfaceTypes.FirstOrDefault(interfaceType => typeof(TAppCore).IsAssignableFrom(interfaceType.GetGenericArguments()[0]));
+                                if (interfaceType2 != null)
                                 {
-                                    methodExecuteStart = interfaceType.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
+                                    methodExecuteStart = interfaceType2.GetMethod(nameof(IExecuteStartLazy<object>.ExecuteStartLazy));
                                 }
                             }
 
