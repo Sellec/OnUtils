@@ -40,16 +40,6 @@ namespace System
 
                 _logsSourceDirectoryIsCustom = true;
             }
-
-            if (IsDeveloper)
-            {
-                var desktopFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                if (!string.IsNullOrEmpty(desktopFolder))
-                {
-                    _logsSourceDirectoryCustom = desktopFolder;
-                    _logsSourceDirectoryIsCustom = true;
-                }
-            }
         }
 
         #region Вывод в консоль
@@ -198,11 +188,12 @@ namespace System
 
 #region Property
         /// <summary>
-        /// Это машина разработчика, значит надо менять папку логов на рабочий стол.
+        /// Хранит признак работы в режиме разработки.
         /// </summary>
         public static bool IsDeveloper
         {
             get => _isDeveloper;
+            set => _isDeveloper = value;
         }
 
         /// <summary>
