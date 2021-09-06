@@ -113,7 +113,7 @@ namespace OnUtils.Architecture.AppCore
                 var typeRequested = typeof(TRequstedType);
                 if (BindingsCollectionFromLazy._typesCollection.TryGetValue(typeRequested, out var valueFromLazy))
                 {
-                    return valueFromLazy;
+                    return valueFromLazy.Item1;
                 }
                 else
                 {
@@ -121,12 +121,12 @@ namespace OnUtils.Architecture.AppCore
                     BindingsResolverFromProtected?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
                     if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromProtected))
                     {
-                        return valueFromProtected;
+                        return valueFromProtected.Item1;
                     }
                     else
                     {
                         BindingsResolverFromExternal?.OnSingletonBindingResolve<TRequstedType>(bindingsCollection);
-                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal : null;
+                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal?.Item1 : null;
                     }
                 }
             }
@@ -136,7 +136,7 @@ namespace OnUtils.Architecture.AppCore
                 var typeRequested = typeof(TRequstedType);
                 if (BindingsCollectionFromLazy._typesCollection.TryGetValue(typeRequested, out var valueFromLazy))
                 {
-                    return valueFromLazy;
+                    return valueFromLazy.Item1;
                 }
                 else
                 {
@@ -144,12 +144,12 @@ namespace OnUtils.Architecture.AppCore
                     BindingsResolverFromProtected?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
                     if (bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromProtected))
                     {
-                        return valueFromProtected;
+                        return valueFromProtected.Item1;
                     }
                     else
                     {
                         BindingsResolverFromExternal?.OnTransientBindingResolve<TRequstedType>(bindingsCollection);
-                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal : null;
+                        return bindingsCollection._typesCollection.TryGetValue(typeof(TRequstedType), out var valueFromExternal) ? valueFromExternal?.Item1 : null;
                     }
                 }
             }
@@ -170,7 +170,7 @@ namespace OnUtils.Architecture.AppCore
         private readonly InstanceActivatingHandlerImpl _instanceActivatingHandler = null;
         private readonly InstanceActivatedHandlerImpl _instanceActivatedHandler = null;
 
-        private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(Enumerable.Empty<KeyValuePair<Type, BindingDescription>>());
+        private BindingsObjectProvider _objectProvider = new BindingsObjectProvider(new List<KeyValuePair<Type, BindingDescription>>());
         private List<Listeners.IAppCoreStartListener> _instancesActivatedDuringStartup = new List<Listeners.IAppCoreStartListener>();
         private BindingsResolverInternalImpl _bindingsResolver = null;
 
@@ -319,7 +319,7 @@ namespace OnUtils.Architecture.AppCore
             var queryTypesBound = new List<Type>();
             foreach (var pair in bindingsCollection._typesCollection)
             {
-                if (_objectProvider.TryAppendBinding(pair.Key, pair.Value))
+                if (_objectProvider.TryAppendBinding(pair.Key, pair.Value.Item1))
                 {
                     queryTypesBound.Add(pair.Key);
                 }
@@ -397,7 +397,12 @@ namespace OnUtils.Architecture.AppCore
             }
             if (collection == null) throw new ArgumentNullException(nameof(collection));
 
-            _objectProvider = new BindingsObjectProvider(collection._typesCollection.ToList());
+            _objectProvider = new BindingsObjectProvider(
+                collection._typesCollection.
+                    OrderBy(x => x.Value.Item2).
+                    Select(x => new KeyValuePair<Type, BindingDescription>(x.Key, x.Value.Item1)).
+                    ToList()
+            );
 
             var bindingsResolver = new BindingsResolverInternalImpl() { BindingsResolverFromProtected = GetBindingsResolver(), BindingsResolverFromExternal = _bindingsResolver?.BindingsResolverFromExternal };
             _objectProvider.RegisterBindingsResolver(bindingsResolver);
@@ -875,6 +880,7 @@ namespace OnUtils.Architecture.AppCore
         /// <returns>Возвращает экземпляр компонента ядра или null, если не задана привязка типа или не удалось создать экземпляр компонента.</returns>
         /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        [System.Diagnostics.DebuggerStepThrough]
         public TQuery Get<TQuery>() where TQuery : class, IComponentSingleton<TAppCore>
         {
             return Get<TQuery>((Action<TQuery>)null);
@@ -887,6 +893,7 @@ namespace OnUtils.Architecture.AppCore
         /// <returns>Возвращает экземпляр компонента ядра или null, если не задана привязка типа или не удалось создать экземпляр компонента.</returns>
         /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        [System.Diagnostics.DebuggerStepThrough]
         public TQuery Get<TQuery>(Action<TQuery> onGetAction) where TQuery : class, IComponentSingleton<TAppCore>
         {
             if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
@@ -904,6 +911,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="ArgumentException">Возникает, тип <paramref name="queryType"/> не наследуется от <typeparamref name="TQueryBase"/>.</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        [System.Diagnostics.DebuggerStepThrough]
         public TQueryBase Get<TQueryBase>(Type queryType) where TQueryBase : class, IComponentSingleton<TAppCore>
         {
             return Get<TQueryBase>(queryType, null);
@@ -918,6 +926,7 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="ArgumentException">Возникает, тип <paramref name="queryType"/> не наследуется от <typeparamref name="TQueryBase"/>.</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        [System.Diagnostics.DebuggerStepThrough]
         public TQueryBase Get<TQueryBase>(Type queryType, Action<TQueryBase> onGetAction) where TQueryBase : class, IComponentSingleton<TAppCore>
         {
             if (!typeof(TQueryBase).IsAssignableFrom(queryType)) throw new ArgumentException($"Тип {nameof(queryType)} должен наследоваться от {nameof(TQueryBase)}.", nameof(queryType));

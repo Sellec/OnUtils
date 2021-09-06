@@ -1,22 +1,36 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 
 namespace OnUtils.Architecture.AppCore.DI
 {
+    using BindingDescriptionOrdered = Tuple<BindingDescription, int>;
 #if NET40
-    using TypesCollection = Dictionary<Type, BindingDescription>;
+    using TypesCollection = Dictionary<Type, Tuple<BindingDescription, int>>;
 #else
-    using TypesCollection = ReadOnlyDictionary<Type, BindingDescription>;
+    using TypesCollection = ReadOnlyDictionary<Type, Tuple<BindingDescription, int>>;
 #endif
 
     class BindingsObjectProvider : IBindingsObjectProvider
     {
+        class EqualityComparer : IEqualityComparer<KeyValuePair<Type, BindingDescriptionOrdered>>
+        {
+            bool IEqualityComparer<KeyValuePair<Type, BindingDescriptionOrdered>>.Equals(KeyValuePair<Type, BindingDescriptionOrdered> x, KeyValuePair<Type, BindingDescriptionOrdered> y)
+            {
+                return x.Key.Equals(y.Key);
+            }
+
+            int IEqualityComparer<KeyValuePair<Type, BindingDescriptionOrdered>>.GetHashCode(KeyValuePair<Type, BindingDescriptionOrdered> obj)
+            {
+                return obj.Key.GetHashCode();
+            }
+        }
+
         private static MethodInfo _methodGetInstances = null;
-        private readonly TypesCollection _typesCollection = new TypesCollection(new Dictionary<Type, BindingDescription>());
-        private readonly Dictionary<Type, BindingDescription> _typesCollectionResolved = new Dictionary<Type, BindingDescription>(new Dictionary<Type, BindingDescription>());
+        private readonly TypesCollection _typesCollection = new TypesCollection(new Dictionary<Type, BindingDescriptionOrdered>());
+        private readonly Dictionary<Type, BindingDescriptionOrdered> _typesCollectionResolved = new Dictionary<Type, BindingDescriptionOrdered>(new Dictionary<Type, BindingDescriptionOrdered>());
         private List<IInstanceActivatingHandler> _activatingHandlers = new List<IInstanceActivatingHandler>();
         private List<IInstanceActivatedHandler> _activatedHandlers = new List<IInstanceActivatedHandler>();
         private BindingsResolverInternal _bindingsResolver = null;
@@ -27,10 +41,13 @@ namespace OnUtils.Architecture.AppCore.DI
             if (_methodGetInstances == null) throw new InvalidProgramException();
         }
 
-        public BindingsObjectProvider(IEnumerable<KeyValuePair<Type, BindingDescription>> source)
+        public BindingsObjectProvider(List<KeyValuePair<Type, BindingDescription>> source)
         {
-            var sourceDictionary = new Dictionary<Type, BindingDescription>();
-            source.ForEach(x => sourceDictionary.Add(x.Key, x.Value));
+            var sourceDictionary = new Dictionary<Type, BindingDescriptionOrdered>();
+            for (int i = 0; i < source.Count; i++)
+            {
+                sourceDictionary.Add(source[i].Key, new BindingDescriptionOrdered(source[i].Value, i));
+            }
             _typesCollection = new TypesCollection(sourceDictionary);
         }
 
@@ -40,13 +57,13 @@ namespace OnUtils.Architecture.AppCore.DI
             if (bindingDescription == null) throw new ArgumentNullException(nameof(bindingDescription));
             if (_typesCollection.ContainsKey(queryType) || _typesCollectionResolved.ContainsKey(queryType)) return false;
 
-            _typesCollectionResolved[queryType] = bindingDescription;
+            _typesCollectionResolved[queryType] = new BindingDescriptionOrdered(bindingDescription, _typesCollectionResolved.Count);
             return true;
         }
 
         public IEnumerable<T> GetInstances<T>(bool storeInstance, bool useSingleInstance) where T : class
         {
-            if (!_typesCollection.TryGetValue(typeof(T), out BindingDescription bindingDescription))
+            if (!_typesCollection.TryGetValue(typeof(T), out var bindingDescription))
             {
                 if (!_typesCollectionResolved.TryGetValue(typeof(T), out bindingDescription))
                 {
@@ -57,8 +74,8 @@ namespace OnUtils.Architecture.AppCore.DI
                     if (bindingDescriptionPossible != null)
                     {
                         // здесь должны быть проверки.
-                        _typesCollectionResolved[typeof(T)] = bindingDescriptionPossible;
-                        bindingDescription = bindingDescriptionPossible;
+                        _typesCollectionResolved[typeof(T)] = new BindingDescriptionOrdered(bindingDescriptionPossible, _typesCollectionResolved.Count);
+                        bindingDescription = new BindingDescriptionOrdered(bindingDescriptionPossible, 0);
                     }
                     else
                     {
@@ -67,30 +84,29 @@ namespace OnUtils.Architecture.AppCore.DI
                     }
                 }
             }
-
             if (bindingDescription == null) return null;
 
-            if (!bindingDescription.Instances.IsNullOrEmpty())
+            if (!bindingDescription.Item1.Instances.IsNullOrEmpty())
             {
-                return bindingDescription.Instances.Select(x => (T)x);
+                return bindingDescription.Item1.Instances.Select(x => (T)x);
             }
             else
             {
-                lock (bindingDescription.InstancesSetSyncRoot)
+                lock (bindingDescription.Item1.InstancesSetSyncRoot)
                 {
-                    if (!bindingDescription.Instances.IsNullOrEmpty())
+                    if (!bindingDescription.Item1.Instances.IsNullOrEmpty())
                     {
-                        return bindingDescription.Instances.Select(x => (T)x);
+                        return bindingDescription.Item1.Instances.Select(x => (T)x);
                     }
-                    else if (bindingDescription.BindedTypes.Count > 0)
+                    else if (bindingDescription.Item1.BindedTypes.Count > 0)
                     {
-                        var typesToCreateInstance = useSingleInstance ? bindingDescription.BindedTypes.Take(1) : bindingDescription.BindedTypes;
+                        var typesToCreateInstance = useSingleInstance ? bindingDescription.Item1.BindedTypes.Take(1) : bindingDescription.Item1.BindedTypes;
                         var createdInstances = typesToCreateInstance.Select(x => (T)x.Activator()).ToList();
 
                         var activatingHadlersSnapshot = _activatingHandlers?.ToList();
                         if (activatingHadlersSnapshot != null) createdInstances.ForEach(instance => activatingHadlersSnapshot.ForEach(handler => handler.OnInstanceActivating<T>(instance)));
 
-                        if (storeInstance) bindingDescription.Instances = createdInstances;
+                        if (storeInstance) bindingDescription.Item1.Instances = createdInstances;
 
                         var activatedHadlersSnapshot = _activatedHandlers?.ToList();
                         if (activatedHadlersSnapshot != null) createdInstances.ForEach(instance => activatedHadlersSnapshot.ForEach(handler => handler.OnInstanceActivated<T>(instance)));
@@ -114,13 +130,13 @@ namespace OnUtils.Architecture.AppCore.DI
 
         public IEnumerable<Type> GetBindedTypes(Type queryType)
         {
-            if (_typesCollection.TryGetValue(queryType, out BindingDescription bindingDescription))
+            if (_typesCollection.TryGetValue(queryType, out var bindingDescription))
             {
-                return bindingDescription.BindedTypes.Select(x => x.Type).ToList();
+                return bindingDescription.Item1.BindedTypes.Select(x => x.Type).ToList();
             }
             else if (_typesCollectionResolved.TryGetValue(queryType, out bindingDescription))
             {
-                return bindingDescription.BindedTypes.Select(x => x.Type).ToList();
+                return bindingDescription.Item1.BindedTypes.Select(x => x.Type).ToList();
             }
             else
             {
@@ -128,9 +144,13 @@ namespace OnUtils.Architecture.AppCore.DI
             }
         }
 
-        public IEnumerable<Type> GetQueryTypes()
+        public List<Type> GetQueryTypes()
         {
-            return _typesCollection.Keys.Union(_typesCollectionResolved.Keys).ToList();
+            return _typesCollection.
+                Union(_typesCollectionResolved, new EqualityComparer()).
+                OrderBy(x => x.Value.Item2).
+                Select(x => x.Key).
+                ToList();
         }
 
         void IBindingsObjectProvider.RegisterInstanceActivatingHandler(IInstanceActivatingHandler handler)

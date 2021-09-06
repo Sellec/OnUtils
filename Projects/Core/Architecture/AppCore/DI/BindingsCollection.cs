@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -21,7 +20,7 @@ namespace OnUtils.Architecture.AppCore.DI
     /// </summary>
     public class BindingsCollection<TAppCore> : IBindingsCollection<TAppCore>
     {
-        internal readonly ConcurrentDictionary<Type, BindingDescription> _typesCollection = new ConcurrentDictionary<Type, BindingDescription>();
+        internal readonly Dictionary<Type, Tuple<BindingDescription, int>> _typesCollection = new Dictionary<Type, Tuple<BindingDescription, int>>();
         private List<IBindingConstraintHandler> _constraintHandlers = new List<IBindingConstraintHandler>();
 
         /// <summary>
@@ -129,7 +128,20 @@ namespace OnUtils.Architecture.AppCore.DI
             if (!queryType.IsAssignableFrom(implementationType)) throw new ArgumentException($"Параметр-тип {nameof(implementationType)} должен наследовать {nameof(queryType)}.", nameof(implementationType));
 
             CheckBinding(queryType, implementationType);
-            _typesCollection[queryType] = new BindingDescription(implementationType, creationLambda) { Instances = null };
+            if (!_typesCollection.TryGetValue(queryType, out var oldValue))
+            {
+                _typesCollection[queryType] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(implementationType, creationLambda) { Instances = null },
+                    _typesCollection.Count
+                );
+            }
+            else
+            {
+                _typesCollection[queryType] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(implementationType, creationLambda) { Instances = null }, 
+                    oldValue.Item2
+                );
+            }
         }
         #endregion
 
@@ -189,7 +201,22 @@ namespace OnUtils.Architecture.AppCore.DI
             }
 
             var bindedTypes = implementationTypes.Select(x => new BindedType() { Type = x, Activator = CreateActivator(x) });
-            _typesCollection[typeof(TQuery)] = new BindingDescription(bindedTypes);
+
+            var t = typeof(TQuery);
+            if (!_typesCollection.TryGetValue(t, out var oldValue))
+            {
+                _typesCollection[t] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(bindedTypes),
+                    _typesCollection.Count
+                );
+            }
+            else
+            {
+                _typesCollection[t] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(bindedTypes),
+                    oldValue.Item2
+                );
+            }
         }
 
         /// <summary>
@@ -207,18 +234,25 @@ namespace OnUtils.Architecture.AppCore.DI
         {
             if (typeof(TImplementation).IsAbstract) throw new ArgumentException($"Параметр-тип {nameof(TImplementation)} не должен быть абстрактным типом.", nameof(TImplementation));
 
-            CheckBinding(typeof(TQuery), typeof(TImplementation));
+            var t = typeof(TQuery);
+            CheckBinding(t, typeof(TImplementation));
 
-            _typesCollection.AddOrUpdate(
-                typeof(TQuery),
-                value => new BindingDescription(typeof(TImplementation), CreateActivator(typeof(TImplementation))) { Instances = null },
-                (value, oldTypeDesctiption) =>
-                {
-                    var bindedTypes = oldTypeDesctiption.BindedTypes;
-                    bindedTypes.Add(new BindedType() { Type = typeof(TImplementation), Activator = CreateActivator(typeof(TImplementation)) });
-                    return new BindingDescription(bindedTypes) { Instances = null };
-                }
-            );
+            if (!_typesCollection.TryGetValue(t, out var oldValue))
+            {
+                _typesCollection[t] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(typeof(TImplementation), CreateActivator(typeof(TImplementation))) { Instances = null },
+                    _typesCollection.Count
+                );
+            }
+            else
+            {
+                var bindedTypes = oldValue.Item1.BindedTypes;
+                bindedTypes.Add(new BindedType() { Type = typeof(TImplementation), Activator = CreateActivator(typeof(TImplementation)) });
+                _typesCollection[t] = new Tuple<BindingDescription, int>(
+                    new BindingDescription(bindedTypes) { Instances = null },
+                    oldValue.Item2
+                );
+            }
         }
         #endregion
 
