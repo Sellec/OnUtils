@@ -1057,10 +1057,21 @@ namespace OnUtils.Architecture.AppCore
         /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
         public IEnumerable<Type> GetBindedTypes<TQueryType>() where TQueryType : class
         {
+            return GetBindedTypes(typeof(TQueryType));
+        }
+
+        /// <summary>
+        /// Возвращает список типов, имеющих привязку к типу <paramref name="queryType"/> (см. описание методов <see cref="BindingsCollection{TAppCore}"/>). 
+        /// </summary>
+        /// <returns>Возвращает коллекцию типов или null, если для <paramref name="queryType"/> не найдено привязок.</returns>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро не было запущено (не был вызван метод <see cref="Start"/>).</exception>
+        /// <exception cref="InvalidOperationException">Возникает, если ядро было остановлено (был вызван метод <see cref="Stop"/>).</exception>
+        public IEnumerable<Type> GetBindedTypes(Type queryType)
+        {
             if (!_started && !_starting) throw new InvalidOperationException("Ядро не запущено. Вызовите Start.");
             if (_stopped) throw new InvalidOperationException("Ядро остановлено, повторный запуск и использование невозможны.");
 
-            return _objectProvider.GetBindedTypes(typeof(TQueryType));
+            return _objectProvider.GetBindedTypes(queryType);
         }
 
         /// <summary>
