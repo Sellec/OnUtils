@@ -174,6 +174,8 @@ namespace OnUtils.Architecture.AppCore
         private List<Listeners.IAppCoreStartListener> _instancesActivatedDuringStartup = new List<Listeners.IAppCoreStartListener>();
         private BindingsResolverInternalImpl _bindingsResolver = null;
 
+        private readonly string[] _assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
+
         /// <summary>
         /// Создает новый объект <see cref="AppCore{TAppCore}"/>. 
         /// </summary>
@@ -470,8 +472,6 @@ namespace OnUtils.Architecture.AppCore
         {
             var currentType = GetType();
 
-            var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
-
             var unsortedDictionary = new Dictionary<Assembly, List<Internal.AppCoreStartupInfo>>();
             var assembliesLoaded = new List<Assembly>();
             assembliesLoaded.AddRange(AppDomain.CurrentDomain.GetAssemblies());
@@ -483,7 +483,7 @@ namespace OnUtils.Architecture.AppCore
                 assembliesLoaded.Clear();
 
                 var instances2 = assembliesLoadedCopy.
-                    Where(assembly => !FilterAssemblyOnStartup(assembly) || !assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
+                    Where(assembly => !FilterAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
                     Select(assembly =>
                     {
                         var assemblyStartupTypes = assembly.
@@ -668,10 +668,8 @@ namespace OnUtils.Architecture.AppCore
         {
             var currentType = GetType();
 
-            var assemblyPublicKeyTokenIgnored = new string[] { "b03f5f7f11d50a3a", "31bf3856ad364e35", "b77a5c561934e089", "71e9bce111e9429c" };
-
             var instances2 = assemblyLazy.ToEnumerable().
-                Where(assembly => !assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
+                Where(assembly => !FilterAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
                 Select(assembly =>
                 {
                     var assemblyStartupTypes = assembly.
