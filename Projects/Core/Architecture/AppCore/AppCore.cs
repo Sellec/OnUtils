@@ -483,7 +483,7 @@ namespace OnUtils.Architecture.AppCore
                 assembliesLoaded.Clear();
 
                 var instances2 = assembliesLoadedCopy.
-                    Where(assembly => !FilterAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
+                    Where(assembly => !IgnoreAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
                     Select(assembly =>
                     {
                         var assemblyStartupTypes = assembly.
@@ -669,7 +669,7 @@ namespace OnUtils.Architecture.AppCore
             var currentType = GetType();
 
             var instances2 = assemblyLazy.ToEnumerable().
-                Where(assembly => !FilterAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
+                Where(assembly => !IgnoreAssemblyOnStartup(assembly) && !_assemblyPublicKeyTokenIgnored.Contains(string.Join("", assembly.GetName().GetPublicKeyToken().Select(b => b.ToString("x2"))))).
                 Select(assembly =>
                 {
                     var assemblyStartupTypes = assembly.
@@ -853,9 +853,9 @@ namespace OnUtils.Architecture.AppCore
         /// <summary>
         /// Определяет, следует ли игнорировать загрузку указанной сборки во время запуска ядра.
         /// </summary>
-        protected virtual bool FilterAssemblyOnStartup(Assembly assembly)
+        protected virtual bool IgnoreAssemblyOnStartup(Assembly assembly)
         {
-            return true;
+            return false;
         }
 
         /// <summary>
