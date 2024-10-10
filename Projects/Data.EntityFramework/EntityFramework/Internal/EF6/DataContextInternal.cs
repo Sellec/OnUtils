@@ -7,7 +7,6 @@ using System.Data.Entity.Core.Mapping;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -118,7 +117,15 @@ namespace OnUtils.Data.EntityFramework.Internal
                 if (Utils.TypeHelper.IsAnonymousType(typeof(TEntity)))
                 {
                     var type = typeof(TEntity);
-                    var properties = type.GetProperties().ToDictionary(x => x, x => type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic).Where(y => y.Name.StartsWith("<" + x.Name + ">")).FirstOrDefault());
+                    var properties = type.
+                        GetProperties().
+                        ToDictionary(
+                            x => x, 
+                            x => type.
+                                GetFields(BindingFlags.Instance | BindingFlags.NonPublic).
+                                Where(y => y.Name.StartsWith("<" + x.Name + ">") || y.Name == "$" + x.Name).
+                                FirstOrDefault()
+                        );
 
                     var t = typeof(Dapper.SqlMapper).GetNestedType("DapperRow", BindingFlags.NonPublic);
                     if (t != null)
@@ -134,7 +141,9 @@ namespace OnUtils.Data.EntityFramework.Internal
                             return results.Select(res =>
                             {
                                 var obj = (TEntity)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(TEntity));
-                                properties.Where(x => x.Value != null).ForEach(x => x.Value.SetValue(obj, dapperTypeContainsKey.Invoke(res, new object[] { x.Key.Name }).Equals(true) ? dapperTypeGet.Invoke(res, new object[] { x.Key.Name }) : null));
+                                properties.
+                                    Where(x => x.Value != null).
+                                    ForEach(x => x.Value.SetValue(obj, dapperTypeContainsKey.Invoke(res, new object[] { x.Key.Name }).Equals(true) ? dapperTypeGet.Invoke(res, new object[] { x.Key.Name }) : null));
                                 return obj;
                             });
                         }

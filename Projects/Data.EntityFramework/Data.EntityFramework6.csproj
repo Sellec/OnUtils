@@ -10,7 +10,7 @@
     <AssemblyName>OnUtils.Data.EntityFramework6</AssemblyName>
     <RootNamespace>OnUtils.Data</RootNamespace>
     <PackageId>OnUtils.Data.EntityFramework6</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2.1.7</Version>
     <Product>OnUtils</Product>
     <Description>Реализация абстракций уровня данных на основе EntityFramework.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
